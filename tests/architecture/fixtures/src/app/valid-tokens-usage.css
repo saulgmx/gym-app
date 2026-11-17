@@ -1,0 +1,11 @@
+.button {
+  border: 1px solid var(--border);
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--bg);
+  color: var(--bg);
+}
+
+.icon {
+  fill: currentcolor;
+  stroke: transparent;
+}

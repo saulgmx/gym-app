@@ -86,7 +86,9 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `Chart` | Envoltorio de uPlot (ADR-0004) con tabla alternativa accesible |
 | `StatCard` | Valor + etiqueta |
 | `SafetyNote` | Caja de aviso con `--warn` |
-| `tokens.css` | Variables de spec §7.4 |
+| `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`; `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
+| `fonts.css` | `@font-face` autoalojados, solo subconjunto latino, `font-display: swap` |
+| `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido |
 
 ## 5. Dónde vive cada componente de la spec §7.5
 

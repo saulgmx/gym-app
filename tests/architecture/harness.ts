@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { cruise, type IConfiguration, type IViolation } from 'dependency-cruiser';
 import extractTSConfig from 'dependency-cruiser/config-utl/extract-ts-config';
 import { ESLint, type Linter } from 'eslint';
+import stylelint from 'stylelint';
 import tseslint from 'typescript-eslint';
 
 // Runs the project's real rule sets against the fixtures tree, so the tests prove that the
@@ -55,4 +56,18 @@ export async function cruiseFixtures(): Promise<{ violations: IViolation[]; modu
     violations: result.output.summary.violations,
     modules: result.output.modules.map((m) => m.source),
   };
+}
+
+/** Lints every CSS fixture with stylelint.config.js; returns warnings keyed by fixture path. */
+export async function stylelintFixtures(): Promise<Map<string, stylelint.Warning[]>> {
+  // Loaded lazily so the other architecture tests still run while the config is missing.
+  const { default: config } = (await import('../../stylelint.config.js')) as {
+    default: stylelint.Config;
+  };
+  const { results } = await stylelint.lint({ files: 'src/**/*.css', cwd: FIXTURES, config });
+  const invalidOptions = results.flatMap((r) => r.invalidOptionWarnings.map((w) => w.text));
+  if (invalidOptions.length > 0) {
+    throw new Error(`Invalid stylelint options: ${invalidOptions.join('; ')}`);
+  }
+  return new Map(results.map((r) => [path.relative(FIXTURES, r.source ?? ''), r.warnings]));
 }

@@ -12,7 +12,7 @@ Proyecto Vite 8 + React 19 + TypeScript 6 con la estructura de architecture §5.
 |---|---|---|
 | `shared/kernel` | Implementación completa de modules/shared.md §2 + `systemClock` y `createUuidV7Generator` | Sí: modules/shared.md §2 (se añaden las implementaciones de producción) |
 | `shared/events` | `createEventBus` + entrada de pruebas `@/shared/events/testing` | No (ya documentado en §3) |
-| `shared/ui` | Solo `tokens.css` y `fonts.css` | No |
+| `shared/ui` | Solo `tokens.css`, `fonts.css` y `base.css` (§6.10) | Sí: modules/shared.md §4 (nombres de tokens y hojas globales) |
 | `plan`, `training`, `progression`, `health`, `data` | Carpetas de capas vacías e `index.ts` con `create<Module>()` que devuelve `{}` | No |
 | `app` | `main.tsx`, `compose.ts`, `router.tsx`, `TabBar`, 4 páginas vacías, manejo de errores, aviso de actualización | No (architecture §5.3) |
 
@@ -145,6 +145,23 @@ Importar el CSS de `@fontsource-variable` declara todos los subconjuntos (ciríl
 `size-limit` con `@size-limit/file` y gzip sobre `dist/assets/*.js`, con límite de 200 KB.
 
 En la fase 0 todo el JS es inicial. Cuando haya rutas diferidas (*lazy*), el patrón se ajustará para medir solo el JS inicial.
+
+### 6.10 Estilos globales y colores literales (AC-27)
+
+Tres hojas globales en `shared/ui`, importadas una vez desde `app/main.tsx`:
+
+- `tokens.css`: variables de spec §7.4 (nombres en modules/shared.md §4). Único archivo con valores de color literales.
+- `fonts.css`: `@font-face` latinos (§6.7).
+- `base.css`: `color-scheme: dark`; `html { font-size: 100% }` para respetar el tamaño de letra del sistema, y medidas en `rem`; fondo y texto con tokens; `:focus-visible` con contorno en `--accent`; `prefers-reduced-motion` reduce animaciones y transiciones.
+
+Stylelint (`stylelint-config-standard`) considera color literal:
+
+- Con `stylelint-declaration-strict-value`, todo valor que no sea `var()` en `/color$/`, `fill` y `stroke`, y en `background`, `border` y `outline` gracias a `expandShorthand`. Se permiten `currentColor`, `transparent`, `inherit`, `initial` y `unset`.
+- Con `color-no-hex` y `color-named: never`, cualquier hexadecimal o color con nombre en cualquier propiedad (por ejemplo `box-shadow`).
+
+`src/shared/ui/tokens.css` es el único archivo exento. La prueba corre la configuración real sobre fixtures CSS.
+
+Contraste (calculado el 17-nov-2026): todos los textos superan AA sobre `--bg`, `--surface` y `--surface-2` (el mínimo es `--text-muted` sobre `--surface-2`, 6.68:1). `--border` (1.48:1 sobre `--bg`) es solo decorativo: no puede ser el único límite visible de un control (WCAG 1.4.11).
 
 ## 7. Estrategia de pruebas
 
