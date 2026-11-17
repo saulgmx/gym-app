@@ -22,12 +22,11 @@ describe('Result', () => {
     expectTypeOf(err({ code: 'negative' as const, message: 'x' })).toExtend<
       Result<number, ParseError>
     >();
-    // @ts-expect-error: the value type must match T
-    const wrongValue: Result<number, ParseError> = ok('5');
-    // @ts-expect-error: the error code must be one of E's codes
-    const wrongCode: Result<number, ParseError> = err({ code: 'other' as const, message: 'x' });
-    void wrongValue;
-    void wrongCode;
+    // The value type must match T, and the error code must be one of E's codes.
+    expectTypeOf(ok('5')).not.toExtend<Result<number, ParseError>>();
+    expectTypeOf(err({ code: 'other' as const, message: 'x' })).not.toExtend<
+      Result<number, ParseError>
+    >();
   });
 
   it('AC-16: if (!r.ok) estrecha el tipo a cada rama', () => {
@@ -35,16 +34,16 @@ describe('Result', () => {
     if (!r.ok) {
       expectTypeOf(r.error).toEqualTypeOf<ParseError>();
       expectTypeOf(r.error.code).toEqualTypeOf<'not-a-number' | 'negative'>();
-      // @ts-expect-error: no value on the error branch
-      void r.value;
+      expectTypeOf(r).not.toHaveProperty('value');
       return;
     }
     expectTypeOf(r.value).toEqualTypeOf<number>();
-    // @ts-expect-error: no error on the success branch
-    void r.error;
+    expectTypeOf(r).not.toHaveProperty('error');
   });
 
   it('AC-16: el error por omisión es DomainError', () => {
-    expectTypeOf<Result<number>>().toEqualTypeOf<Result<number, DomainError>>();
+    expectTypeOf<Result<number>>().toEqualTypeOf<
+      { ok: true; value: number } | { ok: false; error: DomainError }
+    >();
   });
 });
