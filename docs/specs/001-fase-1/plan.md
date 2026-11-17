@@ -118,6 +118,16 @@ Cómo se traducen los "o" y las variantes de plan.md:
 | "Plancha o pallof press" (30-45 s) | Principal 34, alternativa 36 (misma métrica, RN-PLN-11) |
 | "8-10 por lado", "10-12 por pierna" | Rango de reps en `reps` y "Por lado" o "Por pierna" en la nota |
 
+Reglas de transcripción (aprobadas el 17-nov-2026, antes de T13):
+
+- **Notas:** el texto de la columna "Notas" de plan.md, tal cual. Delante va la indicación de la tabla anterior o del paréntesis del nombre, separada con ". " ("Sentado, con respaldo", "Banco con respaldo", "O asistidas si aún no llegas", "Puente: pelvis inclinada atrás").
+- **Alternativas solo donde plan.md dice "o":** "Press de banca" de Torso A, "Press inclinado con mancuernas" de Torso B y Push, y "Patada de glúteo en polea" de Pierna A van sin alternativa. "(o asistidos)" de los fondos es una forma de hacerlos, no otro ejercicio.
+- **Descansos:** compuestos [120, 180] (1, 2, 3, 12 a 15, 18 a 22, 25 y 26); el resto [60, 90].
+- **Sin `cue` ni `secondaryMuscles`** en el seed v1: las indicaciones van en las notas; `secondaryMuscles` sigue `[PROPUESTO]`.
+- **Cardio:** la nota es el texto de la tabla de días de cada bloque; en el bloque 3, jueves "Cardio muy suave 30-40 min" (§4.2) y domingo "Cardio moderado o descanso".
+- **Nombres:** programa "Hipertrofia en 3 bloques"; plantillas con los títulos de plan.md; bloques como en §4.2.
+- **Verificación:** `src/app/seed/__tests__/plan-seed.summary.md`, escrito a mano desde plan.md, se compara con el resumen que la prueba genera desde el JSON (§6.5).
+
 ### 4.2 Bloques
 
 | Bloque (nombre visible) | Semanas | `targetRir` | `weekRir` | `weekFactors` | Calendario |
