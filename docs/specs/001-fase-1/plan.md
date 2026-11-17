@@ -183,6 +183,7 @@ ADR-0007 (hoy ADR-0012) permite `zod/mini` si el tamaño importa. Se empieza con
 
 - **`jitless` (T12):** Zod 4 prueba `new Function` para compilar validadores rápidos, y la CSP sin `unsafe-eval` (architecture §7.10) lo reporta como violación aunque Zod capture el error. `seed-schema.ts` llama a `z.config({ jitless: true })` antes de definir los esquemas; lo verifica `csp.spec` en E2E.
 - **Medición (T12, 17-nov):** con Dexie, Zod clásico y el seed en el bundle inicial, 166.76 kB de 200 kB (antes 102.81 kB): por debajo del umbral de 170 kB, pero con poco margen para la UI de "Hoy". Se vuelve a medir en T18. `npm run size` mide `dist/` tal como está: hay que construir antes.
+- **Medición final (T18, 17-nov):** 168.64 kB de 200 kB con "Hoy" completo (T15–T17). Por debajo de 170 kB, así que se mantiene Zod clásico (AC-23 pasa). **Riesgo:** quedan 1.4 kB hasta el umbral y la fase 2 añade la sesión activa; lo más probable es que el cambio a `zod/mini` (solo `infrastructure/seed-schema.ts`) llegue entonces, decidido con su propia medición.
 
 ### 6.3 Hooks en `ui`, no en `application`
 
