@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.0 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.1 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -45,7 +45,7 @@ interface Block {
   targetRir: [number, number];
   weekFactors: Record<number, number>;   // semana → factor; por defecto 1.0
   isDeload: boolean;
-  schedule: ScheduleEntry[];             // [PROPUESTO] ver RN-PLN-03
+  schedule: ScheduleEntry[];             // ver RN-PLN-03
 }
 
 type ScheduleEntry =
@@ -56,7 +56,8 @@ type ScheduleEntry =
 interface SessionTemplate { id: ID; blockId: ID; name: string; items: TemplateItem[] }
 
 interface TemplateItem {
-  exerciseId: ID; order: number;
+  exerciseId: ID; order: number;         // ejercicio principal
+  alternatives?: ID[];                   // "Dominadas o jalón al pecho"; ver RN-PLN-11
   sets: [number, number];                // rango de series
   reps: [number, number];                // rango de reps (o segundos si metric = 'time')
   note?: string;
@@ -127,14 +128,15 @@ No escucha eventos.
 |---|---|---|
 | RN-PLN-01 | `week = floor(días(startDate, date) / 7) + 1`. Si `date < startDate` → `not_started`; si `week > totalWeeks` → `finished`. | RF-02 |
 | RN-PLN-02 | El bloque activo es el que cumple `startWeek ≤ week ≤ endWeek`. Siempre hay exactamente uno para cada semana del programa (lo valida el seed). | RF-02, spec §6.4 |
-| RN-PLN-03 | La sesión del día sale de `block.schedule` por `weekday`. Si hay entradas con `weekParity`, se elige la que coincide con la paridad de la semana dentro del bloque (alternancia A/B/A – B/A/B del bloque 1). [PROPUESTO] | plan.md bloque 1 |
+| RN-PLN-03 | La sesión del día sale de `block.schedule` por `weekday`. Si hay entradas con `weekParity`, se elige la que coincide con la paridad de la semana dentro del bloque (`week − block.startWeek + 1`; alternancia A/B/A – B/A/B del bloque 1). Manda el calendario: una sesión que no se hizo no desplaza a las siguientes. | plan.md bloque 1 |
 | RN-PLN-04 | `volumeFactor = block.weekFactors[week] ?? 1.0`; en semana de deload, `0.5`. | spec §6.3, §6.4 |
-| RN-PLN-05 | `plannedSets = max(1, round(item.sets[0] × volumeFactor))`. Se planifica el mínimo del rango; el usuario puede añadir series hasta el máximo (RF-16). [PROPUESTO] | RF-05, plan.md |
+| RN-PLN-05 | `plannedSets = max(1, round(item.sets[0] × volumeFactor))`. Se planifica el mínimo del rango; el usuario puede añadir series hasta el máximo (RF-16). | RF-05, plan.md |
 | RN-PLN-06 | En deload, `targetRir = [4, 4]`. | spec §6.3 |
-| RN-PLN-07 | **Ningún ejercicio `lumbarRisk: 'high'` puede estar en una plantilla.** `ensureSeeded` y `updateTemplate` lo rechazan con `plan/high-risk-exercise`. | P-1, spec §6.5 |
+| RN-PLN-07 | **Ningún ejercicio `lumbarRisk: 'high'` puede estar en una plantilla**, ni como principal ni como alternativa. Bloqueo total, sin opción de anularlo. `ensureSeeded`, `updateTemplate` y la importación de `dataPort` lo rechazan con `plan/high-risk-exercise`. | P-1, spec §6.5 |
 | RN-PLN-08 | Un ejercicio `medium` se puede añadir a una plantilla con confirmación explícita en la UI. | spec §6.5 |
 | RN-PLN-09 | `jumpToWeek(n)` fija `startDate = lunes de la semana actual − (n − 1) × 7 días`. | RF-03 |
 | RN-PLN-10 | La semana empieza en lunes (ISO 8601). | [PROPUESTO] |
+| RN-PLN-11 | `alternatives` contiene IDs de ejercicios existentes, distintos del principal y sin repetir. `PlannedItem` muestra el principal; la serie registra el ejercicio que realmente se usó, y cada ejercicio lleva su propia progresión. | plan.md |
 
 ## 7. Errores
 
@@ -145,15 +147,17 @@ No escucha eventos.
 - RN-PLN-01: fecha anterior, primera, última y posterior al programa.
 - RN-PLN-03: lunes de la semana 1 → Full body A; lunes de la semana 2 → Full body B.
 - RN-PLN-05: semana 1 del bloque 1 (factor 0.7) con `sets: [3, 3]` → 2 series.
-- RN-PLN-07: seed con "Peso muerto rumano" en una plantilla → `plan/high-risk-exercise`.
+- RN-PLN-07: seed con "Peso muerto rumano" en una plantilla, como principal o como alternativa → `plan/high-risk-exercise`.
+- RN-PLN-11: alternativa inexistente, igual al principal o repetida → `plan/invalid-seed`.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
 
 ## 9. Trazabilidad
 
 RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 
-## 10. Preguntas abiertas
+## 10. Decisiones (17-nov-2026)
 
-1. **Ejercicios `high`:** ¿bloqueo total sin opción de anularlo (propuesta actual), o advertencia con confirmación como dice la spec §6.5? La constitución P-1 sugiere bloqueo total.
-2. **Ejercicios con alternativa** ("Dominadas o jalón al pecho", "Hack squat o prensa"): ¿un ejercicio con `alternatives: ID[]` o dos ejercicios distintos? Propuesta: `alternatives` y que la serie registre el ejercicio realmente usado (afecta a las sustituciones de v1.1).
-3. **Alternancia A/B del bloque 1:** la spec §9.1 solo tiene `weekday` en la plantilla, lo que no permite alternar A/B/A y B/A/B. Propuesta: `Block.schedule` con `weekParity` (RN-PLN-03).
+1. **Ejercicios `high`:** bloqueo total, sin opción de anularlo (RN-PLN-07, P-1).
+2. **Ejercicios con alternativa** ("Dominadas o jalón al pecho", "Hack squat o prensa"): `TemplateItem.alternatives`, y la serie registra el ejercicio realmente usado (RN-PLN-11). En la fase 1 "Hoy" muestra el principal; elegir la alternativa llega en la fase 2.
+3. **Alternancia A/B del bloque 1:** `Block.schedule` con `weekParity`, por paridad de la semana dentro del bloque y según el calendario (RN-PLN-03).
+4. **Series planificadas:** el mínimo del rango; se pueden añadir extras hasta el máximo (RN-PLN-05).
