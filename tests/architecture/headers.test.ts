@@ -13,6 +13,7 @@ interface Header {
 interface VercelConfig {
   headers: { source: string; headers: Header[] }[];
   rewrites: { source: string; destination: string }[];
+  installCommand?: string;
 }
 
 const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
@@ -82,12 +83,18 @@ describe('vercel.json rewrites', () => {
 });
 
 describe('portability and preview', () => {
-  it('ADR-0011: vercel.json uses only headers and rewrites', () => {
+  it('ADR-0011: vercel.json uses only headers, rewrites and the install command', () => {
     expect(
       Object.keys(vercel)
         .filter((k) => k !== '$schema')
         .sort(),
-    ).toEqual(['headers', 'rewrites']);
+    ).toEqual(['headers', 'installCommand', 'rewrites']);
+  });
+
+  it('Vercel installs dependencies with the same command as CI (plan §6.3)', () => {
+    const ciInstall = /^\s*- run: (npm ci\b.*)$/m.exec(read('.github/workflows/ci.yml'))?.[1];
+    expect(ciInstall).toBeDefined();
+    expect(vercel.installCommand).toBe(ciInstall);
   });
 
   it('AC-35: vite preview serves the same global headers as production', () => {

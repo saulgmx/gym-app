@@ -35,11 +35,17 @@ Módulos en `src/modules/`: `plan`, `training`, `progression`, `health`, `data`.
 ## Restricciones de dominio (importante)
 El usuario tiene espondilolistesis L5-S1 grado I. La app **nunca** sugiere peso muerto (ninguna variante), buenos días, sentadilla con barra pesada ni ejercicios de impacto. Los ejercicios llevan `lumbarRisk` (spec 6.5). Las alertas de dolor son orientativas, no diagnóstico médico.
 
-## Comandos (completar al crear el proyecto)
-- dev: `npm run dev`
-- test: `npm test`
-- lint: `npm run lint`
-- build: `npm run build`
+## Comandos
+- dev: `npm run dev` (sin CSP: Vite inyecta scripts inline para HMR)
+- build: `npm run build` (`tsc -b` + `vite build`); `npm run preview` sirve `dist/` con los headers de `vercel.json`
+- typecheck: `npm run typecheck`
+- lint: `npm run lint` (ESLint + stylelint + dependency-cruiser, sin warnings)
+- format: `npm run format` / `npm run format:check`
+- test: `npm test` (Vitest); `npm run test:watch`; `npm run test:coverage`
+- e2e: `npm run test:e2e` (construye y corre Playwright en Chromium y WebKit)
+- size: `npm run size` (presupuesto del bundle inicial)
+- icons: `npm run icons` (regenera los PNG desde `public/icon.svg`)
+- Instalar: `npm ci --strict-allow-scripts` (igual que CI y Vercel)
 
 ## Idioma
 Conversación en español; código, nombres técnicos y commits en inglés.

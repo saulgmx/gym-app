@@ -14,10 +14,11 @@
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
 - `docs/plan.md`: plan de entrenamiento de 3 bloques (fuente del seed).
 - Prototipo visual (4 pantallas): https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- Repo `saulgmx/gym-app` (público) en `~/dev/personal/side-projects/gym-app`. Código de la fase 0 hasta el punto de control C:
+- Repo `saulgmx/gym-app` (público) en `~/dev/personal/side-projects/gym-app`. **Fase 0 completa** (spec 000 implementada):
   - A y B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`).
   - C: tokens y estilos base con stylelint, router con `TabBar` y 4 páginas vacías, manejo de errores (ADR-0010), `bootstrap()`, PWA instalable y offline con aviso de actualización, `vercel.json` con los headers, `size-limit` (102.87 kB de 200 kB) y Playwright en Chromium y WebKit.
-  - Aún no hay datos, Dexie ni despliegue.
+  - D: `main` protegida; app en producción en **https://gym.saulgmx.com** (Vercel), verificada con `curl -I` e instalada en el iPhone con modo avión.
+  - Aún no hay datos ni Dexie: "Hoy" y "Progreso" muestran su estado vacío.
 
 ## Decisiones tomadas
 
@@ -36,6 +37,10 @@
   - PWA: nombre "Gym", ícono de mancuerna (`public/icon.svg`), aviso de actualización con "Actualizar" y "Ahora no".
   - CSP con `frame-ancestors 'none'`, más `nosniff` y `no-referrer`; `no-cache` en toda ruta fuera de `/assets/`.
   - Aceptadas 4 vulnerabilidades moderadas de `glob`/`minimatch` vía `workbox-build` (solo build; plan §8).
+- Bloque D (17-nov):
+  - `main` protegida (protección de rama clásica, `gh api`): solo por PR, 0 aprobaciones (GitHub no deja aprobar tus propios PR), check `ci` obligatorio y solo si lo publica GitHub Actions (`app_id 15368`), rama al día con `main` (`strict`), `enforce_admins` (la regla también aplica al admin), sin force push ni borrado.
+  - Vercel: la app de GitHub tiene acceso solo a `gym-app`; framework Vite, Node 24.x por `engines`. `installCommand` vive en `vercel.json` y una prueba exige que sea el mismo `npm ci` de CI (plan §6.3).
+  - Dominio `saulgmx.com` en Cloudflare Registrar. `gym` es un CNAME al valor propio del proyecto (`….vercel-dns-017.com`) en modo **DNS only** (nube gris): con proxy, Cloudflare se pondría en medio del TLS y podría inyectar scripts que la CSP bloquea. Certificado de Let's Encrypt emitido y renovado por Vercel.
 - Forma de trabajo: el usuario quiere ser guiado paso a paso; ejecuta con Claude Code o su terminal.
 
 ## Pendiente de confirmar (bloquea las fases indicadas)
@@ -50,15 +55,12 @@
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
-## Siguiente paso: fase 0, bloque D (despliegue)
+## Siguiente paso: fase 1 (Dexie, seed y loader, `schedule.ts`)
 
-1. ~~Confirmar ADR-0009, ADR-0010 y hosting~~ (hecho, 16-nov).
-2. ~~Spec, plan y tareas en `docs/specs/000-fase-0/`~~ (aprobados y fusionados, PR #1 y #2).
-3. ~~Bloque A, T1–T7: herramientas y fronteras~~ (fusionado, PR #3).
-4. ~~Bloque B, T8–T13: kernel y bus de eventos~~ (fusionado, PR #4).
-5. ~~Bloque C, T14–T22: app shell, PWA y E2E~~ (PR #5, 17-nov, listo para revisión, CI verde). Fusionarlo con "Create a merge commit".
-6. **Siguiente: T23** (proteger `main`: cambios por PR, check `ci` obligatorio, sin push directo) en una rama nueva `feat/000-phase-0-d` creada desde `main` **después** de fusionar el PR #5. T23 usa `gh api` y necesita tu confirmación explícita.
-7. Pendiente del usuario: comprar el dominio (T24). T25 (proyecto en Vercel y DNS) y T26 (verificación en producción con `curl -I`, instalación en el iPhone y modo avión) dependen de él. T27 cierra la fase (handoff, comandos en `CLAUDE.md`, spec implementada).
+1. ~~Fase 0~~ (bloques A–D, PR #3 a #6). Al fusionar el PR del bloque D: "Create a merge commit", con `ci` en verde y la rama al día (si GitHub dice "out-of-date", pulsar "Update branch").
+2. **Siguiente:** resolver las preguntas pendientes 1 a 4 de la tabla de arriba; bloquean la fase 1.
+3. Escribir `docs/specs/001-fase-1/spec.md` con la plantilla (`docs/templates/`), trazando a spec §13 fase 1: Dexie, seed desde `docs/plan.md` validado con Zod, loader y `schedule.ts`; resultado: "Hoy" muestra la sesión correcta. Luego plan y tareas, con la misma puerta de aprobación que la fase 0.
+4. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -82,7 +84,11 @@ Notas para retomar:
 - Verificar con `set -o pipefail` cuando se encadenan comandos con `|`: un `| tail` oculta el código de salida. En zsh, `echo =====` falla (usar comillas) y un glob sin coincidencias aborta el comando.
 - `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
 - Al fusionar PR: "Create a merge commit".
+- `main` protegida: ni un push directo ni un PR con `ci` en rojo entran, tampoco como admin. Para una emergencia, desactivar temporalmente en Settings → Branches.
+- zsh no divide variables sin comillas: opciones de `curl` en una variable van como array, `R=(--resolve a)` y `curl "${R[@]}"`.
+- DNS: si el Mac preguntó por un nombre antes de que existiera, guarda el "no existe" (~30 min). Verificar con `dig +short nombre @1.1.1.1` y `curl --resolve nombre:443:IP`, o limpiar con `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
+- En la fase 0 solo hay 2 pestañas (Hoy y Progreso); Sesión y Cierre se abren por URL.
 
 ## Prompt sugerido para un chat nuevo
 
-"Vamos a seguir con la fase 0 en docs/specs/000-fase-0/tasks.md, desde la siguiente tarea pendiente (T23). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
+"Vamos a empezar la fase 1. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Empecemos por las preguntas pendientes 1 a 4 y luego la spec 001. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
