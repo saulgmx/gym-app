@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.8 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.9 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -163,6 +163,7 @@ No escucha eventos.
 | RN-PLN-23 | Las consultas no guardan caché: cada llamada lee el almacenamiento, para que `useLiveQuery` vea los cambios (spec 001, plan §6.4). | Spec 001 |
 | RN-PLN-24 | Esquema Zod del seed (forma, antes de RN-PLN-15): (a) rechaza claves desconocidas en todos los niveles; (b) IDs UUIDv7 en minúsculas; (c) `sets`, `reps`, `restSeconds`, `startWeek`, `endWeek`, `totalWeeks` y `order` son enteros ≥ 1; (d) RIR (`targetRir` y valores de `weekRir`) enteros de 0 a 5; (e) todo rango `[min, max]` cumple `min ≤ max`; (f) `weekFactors` en (0, 1]; (g) claves de `weekRir` y `weekFactors`: enteros positivos escritos como texto; (h) `name`, `note`, `cue` y la nota de cardio no vacíos ni solo espacios (los opcionales se omiten); (i) `exercises`, `blocks`, `templates`, `items`, `blockIds` y `schedule` no vacíos, y `alternatives`, si aparece, también; (j) `lumbarRisk: 'high'` es válido para el esquema: lo rechaza RN-PLN-07; (k) un fallo es `plan/invalid-seed` con `details` = lista de `{ path, code }`; (l) la salida es `PlanSeed` con los tipos *branded* del kernel, comprobado con una prueba de tipos. | ADR-0012, P-8 |
 | RN-PLN-25 | Almacenamiento: cada tabla guarda los objetos del dominio tal cual (`Exercise`, `Program` con `startDate`, `Block`, `SessionTemplate`). La lectura toma el único programa, sus bloques (índice `programId`), todas las plantillas y todos los ejercicios. Más de un programa es un bug: lanza. | P-2, ADR-0010 |
+| RN-PLN-26 | Hooks (`useTodayPlan`, `useWeekPlan`, con `useLiveQuery`): devuelven `undefined` mientras cargan y mientras el resultado pertenece a otra fecha (nunca el plan de ayer con la fecha de hoy, AC-20); se actualizan solos al cambiar las tablas del plan (spec 001 plan §6.4); un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta (AC-21). | Spec 001 |
 | RN-PLN-18 | Notas del día: en cardio, la `note` de la entrada del calendario; en descanso, ninguna (el texto lo pone la UI); en pesas, la `note` de cada `TemplateItem` en su `PlannedItem`. | Spec 001 §6 |
 
 ## 7. Errores
@@ -196,6 +197,7 @@ No escucha eventos.
 - RN-PLN-23: tras un cambio en el repositorio, la siguiente consulta lo refleja.
 - RN-PLN-14: un fallo a mitad de la escritura → rechaza y las 4 tablas quedan vacías; dos conexiones a la misma base → un solo programa; filas sin programa → lanza sin escribir.
 - RN-PLN-25: más de un programa → lanza.
+- RN-PLN-26: cambiar la fecha nunca devuelve el plan de la fecha anterior; escribir en `programs` o `templates` actualiza el hook sin volver a renderizar; sin programa, el error llega al *error boundary*.
 - RN-PLN-24: un seed por cada caso (a)–(i) → `plan/invalid-seed` con su ruta; un `high` pasa el esquema.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
 
@@ -216,3 +218,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 9. **Servicio de aplicación, antes de T7 (contrato v1.6):** puertos `SeedParser` y `PlanRepository` (spec 001, plan §6.9); `ensureSeeded` valida siempre y se detiene en el primer error (RN-PLN-20); fallos del almacenamiento como rechazo (RN-PLN-21); consultas sin programa lanzan (RN-PLN-22); sin caché (RN-PLN-23); `clock.today()` al llamar (RN-PLN-13). `getExercise(s)` y `listExercises` pasan a la fase 2, cuando `training` las use (P-7).
 10. **Esquema del seed, antes de T9 (contrato v1.7):** ADR-0012 reemplaza a ADR-0007 (Zod valida la forma, el dominio las reglas incluido `high`; el seed se valida en cada arranque). Detalle del esquema en RN-PLN-24.
 11. **Persistencia, antes de T10 (contrato v1.8):** "vacía" son las 4 tablas; un estado parcial lanza sin escribir y la escritura usa `bulkAdd` (RN-PLN-14); objetos del dominio tal cual y un solo programa (RN-PLN-25).
+12. **Hooks, antes de T15 (contrato v1.9):** `useLiveQuery` conserva el resultado anterior al cambiar las dependencias, así que cada resultado lleva su fecha y el hook devuelve `undefined` si no coincide; los errores se lanzan en el render, como hace `useLiveQuery`, para el *error boundary* (RN-PLN-26).
