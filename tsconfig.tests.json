@@ -5,6 +5,7 @@
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowJs": true,
     "types": ["node"],
     "noEmit": true,
     "isolatedModules": true,
@@ -20,5 +21,6 @@
 
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["tests"]
+  "include": ["tests"],
+  "exclude": ["tests/architecture/fixtures"]
 }

@@ -3,9 +3,20 @@ import prettier from 'eslint-config-prettier';
 import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import boundaries from './config/eslint/boundaries.js';
+import security from './config/eslint/security.js';
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'playwright-report/', 'test-results/'] },
+  {
+    ignores: [
+      'dist/',
+      'coverage/',
+      'playwright-report/',
+      'test-results/',
+      // Deliberate violations used by the architecture tests (T6).
+      'tests/architecture/fixtures/',
+    ],
+  },
 
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
@@ -22,22 +33,8 @@ export default tseslint.config(
     extends: [reactHooks.configs.flat.recommended],
   },
 
-  // Security (RNF-10, P-8, architecture §7.10).
-  {
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      'no-eval': 'error',
-      'no-new-func': 'error',
-      '@typescript-eslint/no-implied-eval': 'error',
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
-          message: 'dangerouslySetInnerHTML is forbidden (RNF-10).',
-        },
-      ],
-    },
-  },
+  ...security,
+  ...boundaries,
 
   // Plain JS config files are not part of any tsconfig.
   {
