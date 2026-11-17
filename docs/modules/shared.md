@@ -23,17 +23,17 @@ const ok: <T>(value: T) => Result<T, never>;
 const err: <E extends DomainError>(error: E) => Result<never, E>;
 
 // Fechas
-function daysBetween(a: LocalDate, b: LocalDate): number;
-function addDays(d: LocalDate, n: number): LocalDate;
+function daysBetween(a: LocalDate, b: LocalDate): number;  // b − a en días (positivo si b es posterior)
+function addDays(d: LocalDate, n: number): LocalDate;      // n puede ser negativo
 function startOfIsoWeek(d: LocalDate): LocalDate;           // lunes
 function weekdayOf(d: LocalDate): Weekday;
-function compareInstants(a: Instant, b: Instant): number;  // nunca comparar Instant como string
+function compareInstants(a: Instant, b: Instant): number;  // < 0, 0 o > 0 (como Array.sort); nunca comparar Instant como string
 
-// Números
-function roundToStep(value: number, step: number): number;
-function floorToStep(value: number, step: number): number;
-function kgToLb(kg: number): number;
-function lbToKg(lb: number): number;
+// Números (resultados sin ruido de coma flotante: 0.1 + 0.2 con paso 0.1 → 0.3)
+function roundToStep(value: number, step: number): number;  // al múltiplo más cercano; la mitad sube (61.25, 2.5 → 62.5)
+function floorToStep(value: number, step: number): number;  // al múltiplo inferior
+function kgToLb(kg: number): number;  // 1 lb = 0.45359237 kg exacto; redondeado a 2 decimales
+function lbToKg(lb: number): number;  // ídem
 
 // Exportación: contrato que implementa cada módulo con datos (ver modules/data.md §3)
 interface DataPort<T = unknown> { /* name, version, order, tables, exportData, validate, importData, wipe, csv? */ }
@@ -46,8 +46,8 @@ function createUuidV7Generator(opts?: {
 }): IdGenerator;                          // RFC 9562, monótono por dispositivo (ADR-0009)
 
 // Pruebas
-function fixedClock(now: string): Clock;
-function sequentialIds(prefix?: string): IdGenerator;
+function fixedClock(now: string): Clock;                 // today() = fecha del propio string, sin depender de la zona de la máquina
+function sequentialIds(prefix?: string): IdGenerator;    // 'id-0001', 'id-0002'…: el orden del string coincide con el de creación
 ```
 
 ## 3. `shared/events`
