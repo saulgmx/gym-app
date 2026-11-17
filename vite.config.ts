@@ -1,9 +1,23 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const BG = '#0E1411'; // --bg (spec §7.4)
+
+/**
+ * Global headers of vercel.json (CSP and security), so `vite preview` and the e2e tests run with
+ * the same policy as production (plan §6.3). `vite dev` does not get them: HMR injects inline scripts.
+ */
+function productionHeaders(): Record<string, string> {
+  const vercel = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf8')) as {
+    headers: { source: string; headers: { key: string; value: string }[] }[];
+  };
+  const global = vercel.headers.find((rule) => rule.source === '/(.*)');
+  if (!global) throw new Error('vercel.json has no global "/(.*)" header rule');
+  return Object.fromEntries(global.headers.map(({ key, value }) => [key, value]));
+}
 
 export default defineConfig({
   plugins: [
@@ -47,5 +61,8 @@ export default defineConfig({
   build: {
     // Vite's default baseline excludes Safari 16.0-16.3; RNF-07 requires iOS 16+ (plan §6.8).
     target: ['es2022', 'safari16', 'ios16'],
+  },
+  preview: {
+    headers: productionHeaders(),
   },
 });
