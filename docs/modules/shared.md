@@ -62,7 +62,15 @@ export interface EventBus {
 export function createEventBus(opts?: { onError?: (e: unknown, type: string) => void }): EventBus;
 ```
 
-Reglas: entrega asíncrona (microtarea), un handler que falla no afecta a los demás ni al publicador, `subscribe` devuelve la función para desuscribirse. En pruebas, `createEventBus` más `await flushEvents()`, exportado solo desde `@/shared/events/testing` (nunca desde la entrada pública). `flushEvents(): Promise<void>` espera a que terminen todos los handlers pendientes de cualquier bus creado en la prueba.
+Reglas:
+
+- Entrega asíncrona (microtarea): `publish` nunca ejecuta un handler de forma síncrona.
+- Destinatarios: los suscritos al momento de `publish`, excepto los que se desuscriban antes de la entrega (como `EventTarget`).
+- Cada handler corre en su propia microtarea, en orden de suscripción, sin esperar a los demás: un handler `async` lento no retrasa al resto.
+- Un handler que falla (lanza o devuelve una promesa rechazada) no afecta a los demás ni al publicador; el error va a `onError(error, type)`. Por omisión, `onError` hace `console.error('[events] <type>', error)`.
+- `subscribe` devuelve la función para desuscribirse.
+
+En pruebas, `createEventBus` más `await flushEvents()`, exportado solo desde `@/shared/events/testing` (nunca desde la entrada pública). `flushEvents(): Promise<void>` espera a que terminen todos los handlers pendientes de cualquier bus creado en la prueba, incluidos los eventos que esos handlers publiquen en cascada.
 
 ## 4. `shared/ui`
 
