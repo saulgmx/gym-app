@@ -148,7 +148,7 @@ sequenceDiagram
   T->>P: useTodayPlan(plan, date), useWeekPlan(plan, startOfIsoWeek(date))
 ```
 
-- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0007) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo en una transacción `rw` sobre las 4 tablas solo si `programs` está vacía (RN-PLN-14). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
+- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0012) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo en una transacción `rw` sobre las 4 tablas solo si `programs` está vacía (RN-PLN-14). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
 - `ready` rechaza con un `Error` si `ensureSeeded` devuelve `err` o si la base no abre. `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
 - `AppContext` (en `app/context.tsx`) es inyección de dependencias, no estado: el valor nunca cambia. No contradice ADR-0006 (Zustand para estado efímero).
 
@@ -167,7 +167,7 @@ En la tarea de instalación se revisa que ninguno ejecute scripts de instalació
 
 ### 6.2 Zod clásico, no `zod/mini`
 
-ADR-0007 permite `zod/mini` si el tamaño importa. Se empieza con el clásico, que tiene mejor API y mejores mensajes, y se mide con `size-limit` al integrarlo. Si el JS inicial pasa de 170 KB, se cambia a `zod/mini`; solo afecta a `infrastructure/seed-schema.ts`.
+ADR-0007 (hoy ADR-0012) permite `zod/mini` si el tamaño importa. Se empieza con el clásico, que tiene mejor API y mejores mensajes, y se mide con `size-limit` al integrarlo. Si el JS inicial pasa de 170 KB, se cambia a `zod/mini`; solo afecta a `infrastructure/seed-schema.ts`.
 
 ### 6.3 Hooks en `ui`, no en `application`
 
