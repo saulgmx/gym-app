@@ -9,7 +9,7 @@
 ## 2. `shared/kernel`
 
 ```ts
-type ID = string & { readonly __brand: 'ID' };            // ULID (ADR-0009)
+type ID = string & { readonly __brand: 'ID' };            // UUIDv7 (ADR-0009)
 type LocalDate = string & { readonly __brand: 'LocalDate' };  // 'YYYY-MM-DD'
 type Instant = string & { readonly __brand: 'Instant' };      // ISO 8601 con offset
 type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;                     // 0 = domingo (como Date.getDay)
@@ -18,7 +18,7 @@ interface Clock { now(): Instant; today(): LocalDate }
 interface IdGenerator { next(): ID }
 
 type Result<T, E extends DomainError = DomainError> = { ok: true; value: T } | { ok: false; error: E };
-interface DomainError { code: string; message: string; details?: unknown }
+interface DomainError<C extends string = string> { code: C; message: string; details?: unknown }  // message: técnico, solo logs (ADR-0010)
 const ok: <T>(value: T) => Result<T, never>;
 const err: <E extends DomainError>(error: E) => Result<never, E>;
 
@@ -27,6 +27,7 @@ function daysBetween(a: LocalDate, b: LocalDate): number;
 function addDays(d: LocalDate, n: number): LocalDate;
 function startOfIsoWeek(d: LocalDate): LocalDate;           // lunes
 function weekdayOf(d: LocalDate): Weekday;
+function compareInstants(a: Instant, b: Instant): number;  // nunca comparar Instant como string
 
 // Números
 function roundToStep(value: number, step: number): number;
