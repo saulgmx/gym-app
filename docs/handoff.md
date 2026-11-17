@@ -7,8 +7,8 @@
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.3: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos.
-  - `docs/architecture.md` v1.0: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
+  - `docs/spec.md` v0.4: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5.
+  - `docs/architecture.md` v1.1: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0011 aceptados (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
@@ -47,10 +47,6 @@
 
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
-| 1 | ¿Ejercicios `high`: bloqueo total o advertencia con confirmación? | Bloqueo total | plan.md §10 | 1 |
-| 2 | Alternancia A/B del bloque 1 | `Block.schedule` con `weekParity` | plan.md RN-PLN-03 | 1 |
-| 3 | Ejercicios con alternativa ("dominadas o jalón") | `alternatives: ID[]` | plan.md §10 | 1 |
-| 4 | Series planificadas: ¿mínimo del rango? | Mínimo; extras hasta el máximo | plan.md RN-PLN-05 | 1 |
 | 6 | Workouts cerrados inmutables en v1 | Sí, salvo notas | training.md RN-TRN-07 | 2 |
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
@@ -58,9 +54,12 @@
 ## Siguiente paso: fase 1 (Dexie, seed y loader, `schedule.ts`)
 
 1. ~~Fase 0~~ (bloques A–D, PR #3 a #6). Al fusionar el PR del bloque D: "Create a merge commit", con `ci` en verde y la rama al día (si GitHub dice "out-of-date", pulsar "Update branch").
-2. **Siguiente:** resolver las preguntas pendientes 1 a 4 de la tabla de arriba; bloquean la fase 1.
-3. Escribir `docs/specs/001-fase-1/spec.md` con la plantilla (`docs/templates/`), trazando a spec §13 fase 1: Dexie, seed desde `docs/plan.md` validado con Zod, loader y `schedule.ts`; resultado: "Hoy" muestra la sesión correcta. Luego plan y tareas, con la misma puerta de aprobación que la fase 0.
-4. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+2. ~~Preguntas 1 a 4~~ (17-nov, `modules/plan.md` v1.1 §10): `high` con bloqueo total, también como alternativa y al importar (RN-PLN-07); `Block.schedule` con `weekParity` por semana dentro del bloque, manda el calendario (RN-PLN-03); `TemplateItem.alternatives` y la serie registra el ejercicio usado (RN-PLN-11); se planifica el mínimo del rango (RN-PLN-05).
+3. ~~Spec 001~~ aprobada (17-nov): `docs/specs/001-fase-1/spec.md`, con sus reglas ya en `modules/plan.md` v1.2 (RN-PLN-06 y 10 a 15).
+4. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/001-fase-1/plan.md`, con el catálogo del seed (36 ejercicios, §4.1), contrato `plan` v1.3 y architecture §5.2 (hooks en `ui`) y §7.3 (v1 solo con tablas de `plan`).
+   `docs/specs/001-fase-1/tasks.md`: T1 a T20 en 4 puntos de control (A dominio, B persistencia y seed, C "Hoy", D verificación y cierre).
+   **Siguiente:** fusionar el PR de `docs/001-phase-1-spec` y empezar T1 en `feat/001-phase-1-a`.
+5. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).

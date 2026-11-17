@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.3 (borrador) · **Fecha:** 16-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.4 (borrador) · **Fecha:** 17-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -194,7 +194,7 @@ La primera semana de cada bloque aplica ~70% de las series. El volumen por seman
 
 El seed marca ejercicios con `lumbarRisk`:
 
-- `high`: peso muerto (cualquier variante), buenos días, remo con barra inclinado, sentadilla con barra pesada, saltos. Bloqueados por defecto; al intentar añadirlos a una plantilla se muestra una advertencia.
+- `high`: peso muerto (cualquier variante), buenos días, remo con barra inclinado, sentadilla con barra pesada, saltos. Bloqueo total, sin opción de anularlo: no están en el seed y no se pueden añadir a una plantilla ni importar en una (P-1, RN-PLN-07).
 - `medium`: zancadas, búlgara, hip thrust con carga.
 - `low`: máquinas guiadas, remos con apoyo de pecho, press con respaldo.
 
@@ -264,8 +264,9 @@ Movido a los contratos de cada módulo ([`modules/`](modules/)); esquema Dexie c
 - El dolor lumbar y las banderas rojas salen de `Workout` y pasan a `health.PainEntry` (una entrada por sesión).
 - `Workout.items` guarda una instantánea del plan al iniciar, para que editar una plantilla no altere el historial.
 - La tabla `settings` se reparte por dueño: `progressionSettings`, `healthSettings`, `uiPreferences` (app).
-- `Block.schedule` reemplaza a `SessionTemplate.weekday` para soportar la alternancia A/B del bloque 1 [PROPUESTO].
-- `Exercise` añade `isPrimary`, `beltRecommended` y `metric: 'time'` [PROPUESTO].
+- `Block.schedule` reemplaza a `SessionTemplate.weekday` para soportar la alternancia A/B del bloque 1 (RN-PLN-03).
+- `TemplateItem.alternatives` para los ejercicios con alternativa del plan ("dominadas o jalón"); la serie registra el ejercicio usado (RN-PLN-11).
+- `Exercise` añade `isPrimary`, `beltRecommended` y `metric: 'time'`; `Block` añade `weekRir` (spec 001).
 
 El seed completo se genera a partir de [`plan.md`](plan.md).
 
