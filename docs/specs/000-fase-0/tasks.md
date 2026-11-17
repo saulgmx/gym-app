@@ -37,7 +37,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T14 | `tokens.css` (spec §7.4), `fonts.css` con solo `woff2` latinos (§6.7), estilos base (tema oscuro, `rem`, foco visible); stylelint con `declaration-strict-value` y su prueba con un fixture CSS (escrita primero) | `shared/ui` | La prueba de AC-27 pasa; `npm run lint` incluye stylelint | AC-27 | C | ☐ |
+| T14 | `tokens.css` (spec §7.4), `fonts.css` con solo `woff2` latinos (§6.7), estilos base (tema oscuro, `rem`, foco visible); stylelint con `declaration-strict-value` y su prueba con un fixture CSS (escrita primero) | `shared/ui` | La prueba de AC-27 pasa; `npm run lint` incluye stylelint | AC-27 | C | ☑ |
 | T15 | Router (`createBrowserRouter`): layout con `TabBar` para `/` y `/progreso`; `/sesion/:workoutId/:exerciseIndex` y `/sesion/:workoutId/cierre` sin `TabBar`; `*` → `/`; páginas vacías con los textos de spec §6 | `app` | Pruebas de componente con router en memoria | AC-22, AC-24, AC-25 | C | ☐ |
 | T16 | Errores (ADR-0010): `AppErrorBoundary`, `installGlobalErrorHandlers`, store de avisos (Zustand), `AppNotice` y mapa `messages.ts` tipado (vacío) | `app` | Pruebas de componente | AC-28, AC-29 | C | ☐ |
 | T17 | `bootstrap()` en `main.tsx`: handlers globales, `storage.persist()` con fallo silencioso, `compose()`, render | `app` | Prueba unitaria con `navigator.storage` simulado (existe / no existe / lo niega) | AC-33 | C | ☐ |
