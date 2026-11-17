@@ -30,7 +30,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 | T11 | `infrastructure/schema.ts` (`planStores`), repositorio Dexie (`seedIfEmpty` en una transacción `rw` sobre las 4 tablas) y `createPlan({ db, clock })` en `index.ts` | `plan/infrastructure`, `index.ts` | T10 en verde; `npm run lint` (fronteras) pasa | AC-1 a AC-3, AC-5, AC-6 | C | ☑ |
 | T12 | `app/db.ts` (`openDatabase` con `planStores` en la versión 1; `indexedDB` inyectable para pruebas), `compose({ db, clock })` con `ready`, `bootstrap` actualizado y `messages.ts` con `PlanErrorCode` (se quita el `eslint-disable` de la fase 0) | `app` | Pruebas de `bootstrap` y `compose`: `ready` resuelve con un seed válido y rechaza con uno inválido o si la base no abre | AC-21 (arranque) | C | ☐ |
 | T13 | Pruebas del seed real: validación (AC-4), resumen legible por plantilla comparado con `docs/plan.md` y AC-8 a AC-14 con datos reales a través de la API | `app/seed` | Pruebas en rojo (aún no hay JSON) | AC-4, AC-8 a AC-14 | C | ☑ |
-| T14 | Generar los UUIDv7 una vez (script local, no se versiona) y escribir `src/app/seed/plan-seed.json` con el catálogo (plan §4.1), los bloques (§4.2) y las 11 plantillas | `app/seed` | T13 en verde; revisas el resumen legible en el PR | AC-4, AC-8 a AC-14, RF-01 | C + U | ☐ |
+| T14 | Generar los UUIDv7 una vez (script local, no se versiona) y escribir `src/app/seed/plan-seed.json` con el catálogo (plan §4.1), los bloques (§4.2) y las 11 plantillas | `app/seed` | T13 en verde; revisas el resumen legible en el PR | AC-4, AC-8 a AC-14, RF-01 | C + U | ☑ |
 
 **Punto de control B:** PR "plan persistence and seed".
 
