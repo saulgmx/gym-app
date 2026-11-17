@@ -226,6 +226,7 @@ Las pruebas del dominio y de `ensureSeeded` se escriben antes que el código, ci
 | El bundle crece de más con Dexie y Zod | Medición con `size-limit` en la tarea de integración; si hace falta, `zod/mini` (§6.2) |
 | `page.clock` de Playwright con el service worker | El reloj se instala antes de navegar; si da problemas, AC-1 en E2E se limita a "se ve una sesión" y la fecha exacta queda en la prueba de componente |
 | Safari borra el almacenamiento y el plan vuelve a empezar en la semana 1 | Aceptado en spec 001 §7; RF-03 y la exportación lo resuelven en fases siguientes |
+| `npm audit` (17-nov-2026, T1): 28 altas por un solo aviso, `picomatch` ≤ 4.0.7 (ReDoS con *extglobs*, GHSA-fc5q-39xc-vjpf), vía Vite, Vitest, ESLint, stylelint, dependency-cruiser y vite-plugin-pwa; más las 2 moderadas de `glob`/`minimatch` de la fase 0. No existe versión corregida (4.0.7 es la última) y ninguno viene de las dependencias nuevas | Solo herramientas de build, lint y pruebas, con patrones propios; no llega al bundle. No se aplica `npm audit fix --force` (baja versiones mayores). Revisar en cada actualización: cuando salga `picomatch` > 4.0.7, subirlo |
 
 ## 9. Checklist de la constitución
 

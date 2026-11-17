@@ -10,7 +10,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T1 | Instalar `dexie` 4.4.7, `dexie-react-hooks` 4.4.0, `zod` 4.6.7 y `fake-indexeddb` 6.2.8 (dev) con versión exacta; revisar que no pidan scripts de instalación (`allowScripts`) y correr `npm audit` | raíz | `npm ci --strict-allow-scripts`, `npm run lint` y `npm test` pasan; `npm run size` registra la línea base | — | C | ☐ |
+| T1 | Instalar `dexie` 4.4.7, `dexie-react-hooks` 4.4.0, `zod` 4.6.7 y `fake-indexeddb` 6.2.8 (dev) con versión exacta; revisar que no pidan scripts de instalación (`allowScripts`) y correr `npm audit` | raíz | `npm ci --strict-allow-scripts`, `npm run lint` y `npm test` pasan; `npm run size` registra la línea base (102.87 kB) | — | C | ☑ |
 | T2 | Tipos del dominio según el contrato v1.3: `Exercise`, `Program`, `Block` (con `weekRir`), `ScheduleEntry`, `SessionTemplate`, `TemplateItem` (con `alternatives`), `ProgramPosition`, `TodayPlan`, `PlannedItem`, `PlanSeed` y `PlanErrorCode` | `plan/domain` | `npm run typecheck` pasa | — | C | ☐ |
 | T3 | Pruebas de `schedule.ts` con datos pequeños: posición (RN-PLN-01, 02), sesión del día con paridad dentro del bloque (03), factor de volumen (04), series planificadas (05), RIR con `weekRir` y deload (06), semana de lunes a domingo (10) y plantillas de otro bloque (12) | `plan/domain` | Pruebas en rojo | AC-8 a AC-14 (por regla) | C | ☐ |
 | T4 | Implementar `schedule.ts` (puro: recibe `LocalDate` y datos, sin reloj) | `plan/domain` | T3 en verde; cobertura del dominio ≥ 80%; mutaciones de cada regla detectadas | AC-8 a AC-14 (por regla) | C | ☐ |
