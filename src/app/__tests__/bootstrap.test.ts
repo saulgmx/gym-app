@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto';
 import { act, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bootstrap } from '../bootstrap';
@@ -9,9 +10,11 @@ import { useNoticeStore } from '../errors/notice-store';
 let rootElement: HTMLElement;
 let teardown: (() => void) | undefined;
 
-function start(storage: Parameters<typeof bootstrap>[1]['storage']) {
-  act(() => {
+// Awaited act: "Hoy" suspends on use(ready), and React only retries it inside an awaited act.
+async function start(storage: Parameters<typeof bootstrap>[1]['storage']) {
+  await act(async () => {
     teardown = bootstrap(rootElement, { storage });
+    await Promise.resolve();
   });
 }
 
@@ -35,14 +38,14 @@ afterEach(() => {
 
 describe('bootstrap', () => {
   it('renders the app into the root element', async () => {
-    start(undefined);
+    await start(undefined);
     expect(await screen.findByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
     expect(rootElement).toContainElement(screen.getByRole('navigation', { name: 'Principal' }));
   });
 
   it('AC-33: asks for persistent storage once when the API exists', async () => {
     const persist = vi.fn().mockResolvedValue(true);
-    start({ persist });
+    await start({ persist });
     await settle();
     expect(persist).toHaveBeenCalledOnce();
   });
@@ -51,14 +54,14 @@ describe('bootstrap', () => {
     ['there is no navigator.storage', undefined],
     ['storage has no persist()', {}],
   ])('AC-33: starts without a visible error when %s', async (_case, storage) => {
-    start(storage);
+    await start(storage);
     await settle();
     expect(await screen.findByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('AC-33: a denied request shows no error', async () => {
-    start({ persist: vi.fn().mockResolvedValue(false) });
+    await start({ persist: vi.fn().mockResolvedValue(false) });
     await settle();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
@@ -69,7 +72,7 @@ describe('bootstrap', () => {
     // .catch(fn), .then(ok, fn) and await inside try/catch all call then() with a function second.
     const rejected = Promise.reject(new Error('not allowed'));
     const then = vi.spyOn(rejected, 'then');
-    start({ persist: () => rejected });
+    await start({ persist: () => rejected });
     await settle();
 
     expect(then.mock.calls.some(([, onRejected]) => typeof onRejected === 'function')).toBe(true);
@@ -78,7 +81,7 @@ describe('bootstrap', () => {
 
   it('installs the global handlers and mounts AppNotice', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    start(undefined);
+    await start(undefined);
     await screen.findByRole('heading', { level: 1, name: 'Hoy' });
 
     act(() => {
@@ -90,7 +93,7 @@ describe('bootstrap', () => {
 
   it('teardown removes the handlers', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    start(undefined);
+    await start(undefined);
     await screen.findByRole('heading', { level: 1, name: 'Hoy' });
     act(() => teardown?.());
     teardown = undefined;

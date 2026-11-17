@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
 import { systemClock } from '@/shared/kernel';
 import { compose } from './compose';
+import { AppContext } from './context';
 import { openDatabase } from './db';
 import { AppErrorBoundary } from './errors/AppErrorBoundary';
 import { AppNotice } from './errors/AppNotice';
@@ -24,14 +25,17 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
   // Not awaited and never rejects: a refusal must not reach the unhandledrejection handler.
   void storage?.persist?.().catch(() => undefined);
 
-  // Not awaited: `ready` reaches the pages through AppContext in T17 (spec 001, plan §5).
-  compose({ db: openDatabase(), clock: systemClock, seed: planSeed });
+  // Not awaited: pages wait for `ready` with use() (spec 001 plan §5).
+  const app = compose({ db: openDatabase(), clock: systemClock, seed: planSeed });
+  const services = { plan: app.plan, clock: systemClock, ready: app.ready };
 
   const root = createRoot(rootElement);
   root.render(
     <StrictMode>
       <AppErrorBoundary>
-        <RouterProvider router={createAppRouter()} />
+        <AppContext value={services}>
+          <RouterProvider router={createAppRouter()} />
+        </AppContext>
         <NoticeArea>
           <AppNotice />
           <UpdatePrompt />
