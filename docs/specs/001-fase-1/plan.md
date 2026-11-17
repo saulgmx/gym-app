@@ -148,10 +148,10 @@ sequenceDiagram
   participant C as compose.ts
   participant P as plan
   participant T as TodayPage
-  B->>DB: openDatabase() → Dexie v1 con planStores
-  B->>C: compose({ db, clock: systemClock })
+  B->>DB: openDatabase() → Dexie v1 con planStores (se abre en la primera operación)
+  B->>C: compose({ db, clock: systemClock, seed: planSeed })
   C->>P: createPlan({ db, clock })
-  C->>P: ready = ensureSeeded(planSeed) (sin await)
+  C->>P: ready = ensureSeeded(seed) (sin await)
   B->>B: render con AppContext { plan, clock, ready }
   T->>T: use(ready) dentro de Suspense (solo el título mientras tanto)
   T->>T: date = useToday(clock) (se recalcula en visibilitychange)
@@ -159,7 +159,9 @@ sequenceDiagram
 ```
 
 - `ensureSeeded`: el esquema Zod (infraestructura, ADR-0012) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo con `bulkAdd` en una transacción `rw` sobre las 4 tablas solo si las 4 están vacías; si `programs` está vacía y otra no, lanza sin escribir (RN-PLN-14, contrato v1.8). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
-- `ready` rechaza con un `Error` si `ensureSeeded` devuelve `err` o si la base no abre. `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
+- `openDatabase({ indexedDB?, name = 'gym-app' })` es síncrona: Dexie abre la base en la primera operación, así que una base que no abre hace fallar `ensureSeeded` y `ready` rechaza. `indexedDB` se inyecta en las pruebas (decisión del 17-nov, antes de T12).
+- `compose({ db, clock, seed })` recibe el seed como dependencia para que las pruebas pasen uno inválido; `bootstrap` le pasa `plan-seed.json`.
+- `ready` rechaza con un `Error` técnico (el `DomainError` en `cause`) si `ensureSeeded` devuelve `err`, o con el error original si falla el almacenamiento. `compose` le añade un `catch` vacío para que el rechazo no llegue también al manejador global: el error se muestra una sola vez, con `use(ready)` (T17). `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
 - `AppContext` (en `app/context.tsx`) es inyección de dependencias, no estado: el valor nunca cambia. No contradice ADR-0006 (Zustand para estado efímero).
 
 ## 6. Decisiones
