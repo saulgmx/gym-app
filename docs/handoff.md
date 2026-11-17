@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 17-nov-2026 · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 17-nov-2026 (tras el punto de control B de la fase 1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -9,7 +9,7 @@
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
   - `docs/spec.md` v0.4: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5.
   - `docs/architecture.md` v1.1: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
-  - `docs/adr/`: ADR-0001 a 0011 aceptados (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio).
+  - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
 - `docs/plan.md`: plan de entrenamiento de 3 bloques (fuente del seed).
@@ -18,7 +18,7 @@
   - A y B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`).
   - C: tokens y estilos base con stylelint, router con `TabBar` y 4 páginas vacías, manejo de errores (ADR-0010), `bootstrap()`, PWA instalable y offline con aviso de actualización, `vercel.json` con los headers, `size-limit` (102.87 kB de 200 kB) y Playwright en Chromium y WebKit.
   - D: `main` protegida; app en producción en **https://gym.saulgmx.com** (Vercel), verificada con `curl -I` e instalada en el iPhone con modo avión.
-  - Aún no hay datos ni Dexie: "Hoy" y "Progreso" muestran su estado vacío.
+  - Fase 1, puntos A y B (PR #8 y #9): el módulo `plan` completo salvo `ui`, base Dexie `gym-app` v1 y el seed real cargado al arrancar (`compose` expone `ready`). "Hoy" todavía muestra el estado vacío de la fase 0 hasta el punto C.
 
 ## Decisiones tomadas
 
@@ -60,8 +60,14 @@
    `docs/specs/001-fase-1/tasks.md`: T1 a T20 en 4 puntos de control (A dominio, B persistencia y seed, C "Hoy", D verificación y cierre).
    Docs fusionados en el PR #7.
 5. ~~Punto de control A, dominio~~ (T1–T6, PR #8, 17-nov): `plan/domain/types.ts`, `schedule.ts` y `seed-rules.ts` al 100% de cobertura, con 43 mutaciones detectadas. Contrato `plan` v1.5: casos de borde del calendario (RN-PLN-16 a 18) y de la validación del seed (RN-PLN-15 (e)–(h), RN-PLN-19). `npm audit`: aviso nuevo de `picomatch` ≤ 4.0.7 sin versión corregida, solo en herramientas (plan §8).
-6. **Siguiente: punto de control B, T7**, en la rama `feat/001-phase-1-b` (ya creada desde `main` con el merge del PR #8; solo tiene este commit del handoff, sin subir). T7: pruebas del servicio de aplicación con un repositorio en memoria (`ensureSeeded`: falla el parser, fallan las reglas, `startDate` = lunes de la semana de `clock.today()`, no escribe si ya hay programa; y `getPosition`/`getTodayPlan`/`getWeekPlan`). Antes de escribirlas, proponer al usuario los casos que el contrato no define, como en T3 y T5.
-7. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+6. ~~Punto de control B, persistencia y seed~~ (T7–T14, PR #9, 17-nov; orden real T7–T11, T13, T14, T12):
+   - Contrato `plan` v1.6 a v1.8: puertos `SeedParser`/`PlanRepository` (plan §6.9), `ensureSeeded` valida siempre (RN-PLN-20), errores de almacenamiento como rechazo (21), consultas sin programa lanzan (22), sin caché (23), esquema del seed (24), "vacía" son las 4 tablas y solo inserta (14), un solo programa (25). `getExercise(s)` y `listExercises` pasan a la fase 2.
+   - ADR-0012 reemplaza a ADR-0007.
+   - Seed real en `src/app/seed/plan-seed.json`, verificado contra `plan-seed.summary.md` (transcripción a mano de `plan.md`; reglas en plan §4.1). Revisado por el usuario con ayuda de otro modelo: sin errores; Press de banca de Torso A queda solo con barra.
+   - La regla de fronteras deja que el `index.ts` de un módulo importe `shared/kernel` (architecture §5.2).
+   - Bundle inicial 166.76 kB de 200 kB (umbral de `zod/mini`: 170 kB, plan §6.2); se mide otra vez en T18.
+7. **Siguiente: punto de control C, T15**, en la rama `feat/001-phase-1-c` (creada desde `main` con el merge del PR #9; solo tiene este commit del handoff, sin subir). T15: hooks `useTodayPlan` y `useWeekPlan` con `useLiveQuery` en `plan/ui`, con prueba de `fake-indexeddb` que comprueba que se actualizan tras escribir en la tabla (plan §6.4). Antes, proponer los casos que el contrato no define.
+8. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -69,6 +75,13 @@ Notas para retomar:
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
 - Mutaciones: tras cada prueba en verde, romper el código a propósito y ver que falla la prueba correcta. En el bloque C encontraron tres pruebas que pasaban sin probar nada: el `replace` de la redirección (T15), `showNotice` que reemplazaba el aviso (T16) y el rechazo de `persist()` sin capturar (T17: Vitest **no** marcó ese rechazo; la prueba espía `then`). Un mutante que no compila no prueba nada (el build falla antes de las pruebas).
+- Mutantes mal escritos (fase 1, B): uno que no hace el cambio que dice, uno que no compila (variable inexistente) o uno que solo cubre la mitad del cambio sobreviven o "mueren" sin probar nada. Revisar el mutante antes de concluir. El script de mutación debe correr también los `*.test-d.ts` (`--typecheck`) cuando el mutante es de tipos.
+- `rejects.toThrow()` sin patrón acepta cualquier error, también un `TypeError` accidental: exigir el de la regla (`/RN-PLN-22/`). Los mensajes de error del dominio y de la infraestructura citan su regla.
+- `vi.spyOn(Promise.prototype, 'then')` entra en recursión (Vitest usa promesas): reemplazar `then` a mano solo durante la llamada y restaurarlo en `finally` (`src/app/__tests__/compose.test.ts`).
+- Zod 4 bajo la CSP: `z.config({ jitless: true })` antes de definir los esquemas; si no, su prueba de `new Function` es una violación de `eval` en `csp.spec`.
+- `npm run size` mide `dist/` tal como está: construir antes (`npm run build`), o se mide un bundle viejo.
+- `fake-indexeddb`: `import 'fake-indexeddb/auto'` por archivo y una base con nombre propio (`crypto.randomUUID()`); cerrar y `Dexie.delete` en `afterEach`. Un *hook* `creating` que lanza sirve para forzar un fallo a mitad de una transacción.
+- El seed se escribe con el tipo de entrada del esquema (`z.input<typeof planSeedSchema>`) en los fixtures; `plan-seed.summary.md` está en `.prettierignore` para que la comparación sea exacta.
 - Copias de seguridad en scripts de mutación: `cp f bak && { cambio; prueba; cp bak f; }`, con nombre único (`$$.$RANDOM`). Con `a && b; cp bak f` el `cp` corre aunque falle `a` y restaura una copia vieja (pasó en T16).
 - Mutaciones con script: Vitest 5 con `--reporter=json` escribe en `.vitest/json/output.json` (no en stdout); pasar `--outputFile=<ruta fuera del repo>`. Un mutante mal escrito (por ejemplo, que deja un `throw` incondicional) "muere" sin probar nada: revisar que lo mate la prueba de su regla, no todas.
 - Comprobar con Node los valores esperados de las pruebas (contraste WCAG, prefijos UUID) en vez de escribirlos de memoria.
@@ -93,4 +106,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 1. Lee primero docs/README.md, docs/constitution.md, docs/handoff.md y docs/specs/001-fase-1/tasks.md. Estamos en la rama feat/001-phase-1-b; sigue con T7. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 1. Lee primero docs/README.md, docs/constitution.md, docs/handoff.md y docs/specs/001-fase-1/tasks.md. Estamos en la rama feat/001-phase-1-c; sigue con T15. Guíame paso a paso, una tarea a la vez."
