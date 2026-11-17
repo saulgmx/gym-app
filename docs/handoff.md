@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 16-nov-2026 · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 17-nov-2026 · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -14,7 +14,7 @@
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
 - `docs/plan.md`: plan de entrenamiento de 3 bloques (fuente del seed).
 - Prototipo visual (4 pantallas): https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- Carpeta local `~/dev/personal/side-projects/gym-app`: `CLAUDE.md` (actualizado), `docs/`, `src/` vacía, `.gitignore`. Repo git con remoto público `saulgmx/gym-app`. **Aún no hay** `package.json` ni código.
+- Repo `saulgmx/gym-app` (público) en `~/dev/personal/side-projects/gym-app`. Código de la fase 0 hasta el punto de control B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`). Aún no hay UI, router ni PWA.
 
 ## Decisiones tomadas
 
@@ -39,21 +39,27 @@
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
-## Siguiente paso: fase 0, bloque B (kernel y eventos)
+## Siguiente paso: fase 0, bloque C (app, PWA y E2E)
 
 1. ~~Confirmar ADR-0009, ADR-0010 y hosting~~ (hecho, 16-nov).
 2. ~~Spec, plan y tareas en `docs/specs/000-fase-0/`~~ (aprobados y fusionados, PR #1 y #2).
 3. ~~Bloque A, T1–T7: herramientas y fronteras~~ (fusionado, PR #3, 17-nov). CI verde con el job `ci`.
-4. **Siguiente: T8** (pruebas del kernel en rojo) en la rama local `feat/000-phase-0-b`, creada desde `main`. Luego T9–T13. PR del punto de control B al terminar T13.
-5. Pendiente del usuario, sin bloquear hasta el bloque D: comprar el dominio (T24).
+4. ~~Bloque B, T8–T13: kernel y bus de eventos~~ (PR #4, 17-nov, listo para revisión). Fusionarlo con "Create a merge commit".
+5. **Siguiente: T14** (tokens, fuentes y stylelint) en una rama nueva `feat/000-phase-0-c` creada desde `main` **después** de fusionar el PR #4. Luego T15–T22. PR del punto de control C al terminar T22.
+6. Pendiente del usuario, sin bloquear hasta el bloque D: comprar el dominio (T24).
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`.
-- Pruebas primero: en T8, T10 y T12 se hace commit local en rojo **sin push**; se sube junto con la tarea que lo pone en verde.
+- Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. En el bloque C, T14 escribe primero la prueba de stylelint.
+- Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en `docs/modules/*.md` antes del código (así se hizo en T8 y T12).
+- Comprobar con Node los valores esperados de las pruebas (en T10 un prefijo hexadecimal escrito de memoria estaba mal) y hacer una mutación manual para confirmar que las pruebas detectan el fallo.
+- Kernel: las fechas `LocalDate` se calculan con `Date.UTC`; `systemClock` se prueba con `vi.stubEnv('TZ', …)` porque `src/` no tiene tipos de Node (`process`). Las pruebas de tipos (`*.test-d.ts`) no cuentan para la cobertura.
+- Eventos: los de ejemplo (`test/Pinged`, `test/Ponged`) viven en `src/shared/events/__tests__/test-events.ts`; por ampliación global, su tipo es visible en todo `src/`. Nada impide todavía importar `@/shared/events/testing` desde código de producción; si llega a pasar, añadir una regla con su fixture.
+- El reporte de cobertura en texto oculta los archivos al 100%; para verlos, usar `--coverage.reporter=json-summary`.
 - Verificar con `set -o pipefail` cuando se encadenan comandos con `|`: un `| tail` oculta el código de salida.
 - `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
 - Al fusionar PR: "Create a merge commit". Rama remota pendiente de borrar: `origin/feat/000-phase-0`.
 
 ## Prompt sugerido para un chat nuevo
 
-"Vamos a seguir con la fase 0 en docs/specs/000-fase-0/tasks.md, desde la siguiente tarea pendiente (T8). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
+"Vamos a seguir con la fase 0 en docs/specs/000-fase-0/tasks.md, desde la siguiente tarea pendiente (T14). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
