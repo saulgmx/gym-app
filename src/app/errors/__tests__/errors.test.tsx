@@ -56,14 +56,24 @@ describe('render errors', () => {
   it('AC-28: a page that throws inside the router shows the same alert', () => {
     const [root] = routes;
     if (!root) throw new Error('Expected a root route');
+    // The real root errorElement above a page that throws.
     const router = createMemoryRouter(
-      [{ ...root, children: [...(root.children ?? []), { path: 'boom', element: <Boom /> }] }],
+      [{ errorElement: root.errorElement, children: [{ path: 'boom', element: <Boom /> }] }],
       { initialEntries: ['/boom'] },
     );
     render(<RouterProvider router={router} />);
 
     expect(screen.getByRole('alert')).toHaveTextContent(GENERIC_ERROR_MESSAGE);
     expect(screen.getByRole('button', { name: 'Recargar' })).toBeInTheDocument();
+  });
+});
+
+describe('notice store', () => {
+  it('keeps the visible notice when another one arrives', () => {
+    const { showNotice } = useNoticeStore.getState();
+    showNotice({ message: 'first' });
+    showNotice({ message: 'second' });
+    expect(useNoticeStore.getState().notice).toEqual({ message: 'first' });
   });
 });
 

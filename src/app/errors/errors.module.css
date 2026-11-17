@@ -1,0 +1,48 @@
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.panel {
+  max-width: 28rem;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 1.25rem;
+}
+
+.banner {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1;
+  border-bottom: 1px solid var(--warn);
+  background: var(--surface);
+  padding: calc(0.75rem + env(safe-area-inset-top)) 1rem 0.75rem;
+}
+
+.message {
+  margin: 0 0 0.75rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  min-height: var(--touch-min);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  padding: 0 1rem;
+  color: var(--bg);
+  font: inherit;
+  font-weight: 600;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--accent);
+}

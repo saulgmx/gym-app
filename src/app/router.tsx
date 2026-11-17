@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
+import { ErrorFallback } from './errors/ErrorFallback';
 import { AppLayout } from './layout/AppLayout';
 import { ClosePage } from './pages/ClosePage';
 import { ProgressPage } from './pages/ProgressPage';
@@ -9,16 +10,22 @@ import { TodayPage } from './pages/TodayPage';
 // React Router ranks the static `cierre` segment above `:exerciseIndex` (AC-24).
 export const routes: RouteObject[] = [
   {
-    element: <AppLayout />,
+    // Without an errorElement React Router shows its own English error screen (plan §6.11, AC-28).
+    errorElement: <ErrorFallback />,
     children: [
-      { index: true, element: <TodayPage /> },
-      { path: 'progreso', element: <ProgressPage /> },
+      {
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <TodayPage /> },
+          { path: 'progreso', element: <ProgressPage /> },
+        ],
+      },
+      { path: 'sesion/:workoutId/:exerciseIndex', element: <SessionPage /> },
+      { path: 'sesion/:workoutId/cierre', element: <ClosePage /> },
+      // `replace` keeps the broken URL out of the history (AC-25).
+      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
-  { path: 'sesion/:workoutId/:exerciseIndex', element: <SessionPage /> },
-  { path: 'sesion/:workoutId/cierre', element: <ClosePage /> },
-  // `replace` keeps the broken URL out of the history (AC-25).
-  { path: '*', element: <Navigate to="/" replace /> },
 ];
 
 export function createAppRouter() {
