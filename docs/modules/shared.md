@@ -55,7 +55,7 @@ export interface EventBus {
 export function createEventBus(opts?: { onError?: (e: unknown, type: string) => void }): EventBus;
 ```
 
-Reglas: entrega asíncrona (microtarea), un handler que falla no afecta a los demás ni al publicador, `subscribe` devuelve la función para desuscribirse. En pruebas, `createEventBus` más `await flushEvents()` [PROPUESTO].
+Reglas: entrega asíncrona (microtarea), un handler que falla no afecta a los demás ni al publicador, `subscribe` devuelve la función para desuscribirse. En pruebas, `createEventBus` más `await flushEvents()`, exportado solo desde `@/shared/events/testing` (nunca desde la entrada pública).
 
 ## 4. `shared/ui`
 
