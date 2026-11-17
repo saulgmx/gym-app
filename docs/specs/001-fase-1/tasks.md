@@ -15,7 +15,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 | T3 | Pruebas de `schedule.ts` con datos pequeños: posición (RN-PLN-01, 02), sesión del día con paridad dentro del bloque (03), factor de volumen (04), series planificadas (05), RIR con `weekRir` y deload (06), semana de lunes a domingo (10) y plantillas de otro bloque (12), más los casos de borde 16 a 18 del contrato v1.4 | `plan/domain` | Pruebas en rojo | AC-8 a AC-14 (por regla) | C | ☑ |
 | T4 | Implementar `schedule.ts` (puro: recibe `LocalDate` y datos, sin reloj) | `plan/domain` | T3 en verde; cobertura del dominio ≥ 80% (`schedule.ts` 100%); 21 mutaciones detectadas, cada una por la prueba de su regla | AC-8 a AC-14 (por regla) | C | ☑ |
 | T5 | Pruebas de `seed-rules.ts`: `high` como principal y como alternativa (RN-PLN-07); alternativas inexistentes, iguales al principal, repetidas o con otra `metric` (11); referencias rotas, semanas con hueco o solape, días sin entrada o duplicados y paridad incompleta (15), más (e)–(h) y el orden de errores (19) del contrato v1.5 | `plan/domain` | Pruebas en rojo | AC-5, AC-6 | C | ☑ |
-| T6 | Implementar `seed-rules.ts`: devuelve `Result` con `plan/high-risk-exercise` o `plan/invalid-seed` | `plan/domain` | T5 en verde; mutaciones detectadas | AC-5, AC-6 | C | ☐ |
+| T6 | Implementar `seed-rules.ts`: devuelve `Result` con `plan/high-risk-exercise` o `plan/invalid-seed` | `plan/domain` | T5 en verde; `seed-rules.ts` 100%; 22 mutaciones detectadas, cada una por la prueba de su regla | AC-5, AC-6 | C | ☑ |
 
 **Punto de control A:** PR "plan domain: schedule and seed rules".
 

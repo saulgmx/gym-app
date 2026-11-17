@@ -297,13 +297,15 @@ describe('validateSeed', () => {
   });
 
   describe('RN-PLN-11 / RN-PLN-15 (d): alternativas', () => {
-    it('alternativa inexistente → plan/invalid-seed', () => {
-      expectError(
+    it('alternativa inexistente → plan/invalid-seed por referencia rota, con su ID', () => {
+      const error = expectError(
         broken((s) => {
           firstItem(s).alternatives = [id('no-existe')];
         }),
         'plan/invalid-seed',
       );
+      // Reported as a missing reference (a), not as a metric mismatch (d).
+      expect(error?.details).toMatchObject({ templateId: 'tpl-a', exerciseId: 'no-existe' });
     });
 
     it('alternativa igual al principal → plan/invalid-seed', () => {
@@ -412,6 +414,15 @@ describe('validateSeed', () => {
       expectError(
         broken((s) => {
           block1(s).weekRir = { 3: [3, 4] };
+        }),
+        'plan/invalid-seed',
+      );
+    });
+
+    it('weekFactors con una semana anterior al bloque → plan/invalid-seed', () => {
+      expectError(
+        broken((s) => {
+          must(s.blocks[1]).weekFactors = { 1: 0.7 }; // block 2 covers week 3 only
         }),
         'plan/invalid-seed',
       );
