@@ -39,21 +39,25 @@ Ninguno. La fase 0 no crea la base Dexie (fase 1) ni cambia el formato de export
 
 ## 5. Flujo
 
-Arranque (`app/main.tsx`):
+Arranque (`app/main.tsx` llama a `bootstrap(rootElement, { storage: navigator.storage })` de `app/bootstrap.tsx`):
 
 ```mermaid
 sequenceDiagram
-  participant M as main.tsx
+  participant B as bootstrap.tsx
   participant E as errors/
   participant C as compose.ts
   participant R as React
-  M->>E: installGlobalErrorHandlers()
-  M->>M: navigator.storage?.persist() (sin await bloqueante; fallo silencioso)
-  M->>C: compose() → { bus, modules }
-  M->>R: render <AppErrorBoundary><RouterProvider/><UpdatePrompt/><AppNotice/></AppErrorBoundary>
+  B->>E: installGlobalErrorHandlers()
+  B->>B: storage?.persist() (sin await bloqueante; fallo silencioso)
+  B->>C: compose() → módulos
+  B->>R: render <AppErrorBoundary><RouterProvider/><UpdatePrompt/><AppNotice/></AppErrorBoundary>
   Note over R: UpdatePrompt usa useRegisterSW (virtual:pwa-register/react)
   Note over R: errores de render en rutas → errorElement de la ruta raíz (§6.11)
 ```
+
+- `bootstrap` recibe `storage` como parámetro (no lee `navigator`), para probar los casos de AC-33 sin tocar globales. Devuelve una función que desmonta React y quita los handlers.
+- El rechazo de `persist()` se captura: si no, el handler global de `unhandledrejection` mostraría el aviso de error.
+- `compose()` no crea el bus mientras ningún módulo publique o escuche eventos (P-7); entra con el primer evento (fase 2). Su resultado se pasará a React por contexto cuando una página lo necesite (fase 1).
 
 ## 6. Decisiones
 
