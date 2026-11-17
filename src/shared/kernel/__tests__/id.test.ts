@@ -79,13 +79,14 @@ describe('createUuidV7Generator', () => {
   it('AC-12: al desbordarse el contador pasa a lastMs + 1 y sigue ordenado', () => {
     const ids = createUuidV7Generator({ now: () => T, random: fillWith(0xff) });
     // Seed 0x7ff leaves 0x7ff..0xfff: 2049 IDs fit in T.
-    const sameMs = Array.from({ length: 2049 }, () => ids.next());
-    expect(sameMs.every((id) => timestampOf(id) === T)).toBe(true);
-    expect(counterOf(sameMs.at(-1) as ID)).toBe(0xfff);
+    const sameMs = Array.from({ length: 2048 }, () => ids.next());
+    const lastInT = ids.next();
+    expect([...sameMs, lastInT].every((id) => timestampOf(id) === T)).toBe(true);
+    expect(counterOf(lastInT)).toBe(0xfff);
 
     const overflow = ids.next();
     expect(timestampOf(overflow)).toBe(T + 1);
-    expect(overflow > (sameMs.at(-1) as ID)).toBe(true);
+    expect(overflow > lastInT).toBe(true);
   });
 
   it('AC-12: después de adelantarse, no retrocede cuando el reloj real alcanza ese ms', () => {
