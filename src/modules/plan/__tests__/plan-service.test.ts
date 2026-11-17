@@ -265,9 +265,9 @@ describe('consultas sobre el repositorio', () => {
   it('RN-PLN-22: sin programa cargado, las consultas lanzan', async () => {
     const { service } = setup();
 
-    await expect(service.getPosition(monday)).rejects.toThrow();
-    await expect(service.getTodayPlan(monday)).rejects.toThrow();
-    await expect(service.getWeekPlan(monday)).rejects.toThrow();
+    await expect(service.getPosition(monday)).rejects.toThrow(/RN-PLN-22/);
+    await expect(service.getTodayPlan(monday)).rejects.toThrow(/RN-PLN-22/);
+    await expect(service.getWeekPlan(monday)).rejects.toThrow(/RN-PLN-22/);
   });
 
   it('RN-PLN-23: sin caché, la siguiente consulta refleja un cambio en el repositorio', async () => {
