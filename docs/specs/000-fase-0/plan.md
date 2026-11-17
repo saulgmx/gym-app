@@ -52,6 +52,7 @@ sequenceDiagram
   M->>C: compose() → { bus, modules }
   M->>R: render <AppErrorBoundary><RouterProvider/><UpdatePrompt/><AppNotice/></AppErrorBoundary>
   Note over R: UpdatePrompt usa useRegisterSW (virtual:pwa-register/react)
+  Note over R: errores de render en rutas → errorElement de la ruta raíz (§6.11)
 ```
 
 ## 6. Decisiones
@@ -164,6 +165,22 @@ Stylelint (`stylelint-config-standard`) considera color literal:
 En los `*.module.css` las clases van en camelCase (`.backLink`), porque se leen desde TypeScript como `styles.backLink`; el resto sigue la convención kebab-case de `stylelint-config-standard`.
 
 Contraste (calculado el 17-nov-2026): todos los textos superan AA sobre `--bg`, `--surface` y `--surface-2` (el mínimo es `--text-muted` sobre `--surface-2`, 6.68:1). `--border` (1.48:1 sobre `--bg`) es solo decorativo: no puede ser el único límite visible de un control (WCAG 1.4.11).
+
+### 6.11 Errores inesperados (ADR-0010, AC-28, AC-29)
+
+React Router captura los errores de render de sus rutas y, sin `errorElement`, muestra su propia pantalla en inglés: `AppErrorBoundary` nunca los vería. Por eso hay dos capturas con el mismo componente `ErrorFallback`:
+
+- Una ruta raíz sin `path` envuelve todas las rutas con `errorElement: <ErrorFallback />`.
+- `AppErrorBoundary` (componente de clase, sin dependencia) captura lo que queda fuera del router (`UpdatePrompt`, `AppNotice`).
+
+`ErrorFallback`: `role="alert"`, texto genérico de spec 000 §6 y botón "Recargar" (`location.reload()`).
+
+Errores asíncronos, en `src/app/errors/`:
+
+- `installGlobalErrorHandlers(): () => void` escucha `error` y `unhandledrejection` en `window`; devuelve la función que los quita. Cada error se registra con `console.error` sin `preventDefault()`, así el navegador conserva su propio registro.
+- Store de Zustand con un solo aviso (`notice | null`); un error nuevo con un aviso visible no apila otro.
+- `AppNotice`: banner `role="alert"` no bloqueante con "Recargar" y "Cerrar".
+- `messages.ts`: `type ErrorCode = never` y `errorMessages: Record<ErrorCode, string> = {}` hasta que los módulos exporten sus uniones de códigos; ahí también vive el texto genérico.
 
 ## 7. Estrategia de pruebas
 

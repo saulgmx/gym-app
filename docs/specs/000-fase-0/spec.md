@@ -126,6 +126,8 @@ Ninguna regla RN-* de módulo aplica: la fase 0 no tiene lógica de negocio. Apl
 - **Título del documento:** cada página fija `<title>` como "<título de la página> · Gym" (WCAG 2.4.2), por ejemplo "Progreso · Gym".
 - **`TabBar`:** inferior, dos pestañas con texto ("Hoy", "Progreso") e ícono SVG con `aria-hidden`; zona segura inferior de iOS respetada (`env(safe-area-inset-bottom)`).
 - **Aviso de error genérico:** "Algo salió mal. Tus datos guardados no se han perdido. Recarga la app para continuar." (la opción de exportar respaldo llega en fase 3).
+  - Error de render: el aviso sustituye la pantalla, con un botón "Recargar" (la PWA instalada no tiene barra del navegador).
+  - Error asíncrono: banner no bloqueante con "Recargar" y "Cerrar"; un solo aviso a la vez, aunque lleguen varios errores.
 - **Aviso de actualización:** "Hay una versión nueva." con botón "Actualizar".
 - **Visual:** tema oscuro por defecto (RNF-06), tokens de spec §7.4, tipografías autoalojadas, tamaños en `rem` para respetar el tamaño de texto del sistema.
 - **Estados:** sin conexión no requiere UI especial en esta fase (no hay red en tiempo de ejecución).
