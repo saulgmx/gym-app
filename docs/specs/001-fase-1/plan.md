@@ -230,6 +230,14 @@ function createPlanService(deps: { repository: PlanRepository; parser: SeedParse
 - `getExercise(s)` y `listExercises` no entran en esta fase (contrato v1.6, decisión 9).
 - Pruebas de integración (T10): seed válido compartido en `__tests__/fixtures/seed.ts`; cada prueba abre su propia base con `db.version(1).stores(planStores)` e importa solo del `index.ts` del módulo.
 
+### 6.10 Componentes `WeekStrip` y `PlanExerciseList` (antes de T16)
+
+Siguen el prototipo ("Hoy") y la spec 001 §6:
+
+- **`WeekStrip`:** `<ol aria-label="Semana">` con 7 elementos de lunes a domingo, no interactivo. Cada celda muestra la inicial (L M X J V S D) y una palabra que no depende del color: "Pesas", "Cardio", "Libre" (descanso, como en el prototipo) o "—" fuera del programa; el nombre de la sesión no cabe en un séptimo del ancho. Lo visible va con `aria-hidden` y un texto `.visually-hidden` da el nombre accesible: "miércoles, Full body B", "martes, cardio", "jueves, descanso", "lunes, fuera del programa" (días de un arreglo fijo, sin `Intl`). Hoy lleva `aria-current="date"` y el fondo `--accent` con texto `--bg` (14.10:1); la fecha de cada celda es `addDays(weekStart, i)`.
+- **`PlanExerciseList`:** solo el `<ol>`; la tarjeta y el `h2` de la sesión los pone `TodayPage` (T17). Cada fila: nombre y "2 × 8-12" (o "3 × 30-45 s" con `metric: 'time'`), y debajo, en `--text-muted` (7.48:1 sobre `--surface`), "RIR 3-4" y la nota si la hay. Un rango con mínimo igual al máximo se muestra como un número ("RIR 4"). Las alternativas no se muestran en la fase 1 (contrato, decisión 2).
+- **Formato** en `plan/ui/format.ts`, con sus pruebas. Pruebas de componente por rol y nombre accesible, sin *snapshots*.
+
 ## 7. Estrategia de pruebas
 
 Las pruebas del dominio y de `ensureSeeded` se escriben antes que el código, citando su regla (P-5).
