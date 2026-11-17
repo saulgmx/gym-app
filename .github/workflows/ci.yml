@@ -35,3 +35,6 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+      # Initial JS < 200 kB gzip (QS-10, AC-34); measures dist/, so it runs after the build.
+      - run: npm run size

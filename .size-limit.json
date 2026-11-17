@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Initial JS (QS-10, AC-34)",
+    "path": "dist/assets/*.js",
+    "gzip": true,
+    "limit": "200 kB"
+  }
+]
