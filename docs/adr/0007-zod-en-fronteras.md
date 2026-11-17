@@ -1,6 +1,6 @@
 # ADR-0007: Validación con Zod en las fronteras de entrada
 
-- **Estado:** Aceptado
+- **Estado:** Reemplazado por ADR-0012
 - **Fecha:** 16-nov-2026
 - **Relacionado:** RF-01, RF-41, RNF-10, P-8
 

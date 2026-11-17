@@ -51,7 +51,7 @@ flowchart LR
 | Gráficas sin romper el presupuesto de bundle | uPlot detrás de un componente `shared/ui/Chart` | [0004](adr/0004-graficas-uplot.md) |
 | Estilos con los tokens de la spec | CSS Modules + variables CSS | [0005](adr/0005-css-modules-variables.md) |
 | Estado efímero de UI (sesión activa, temporizador) | Zustand; los datos persistentes viven en Dexie | [0006](adr/0006-estado-zustand.md) |
-| Datos externos no confiables | Zod en todas las fronteras de entrada | [0007](adr/0007-zod-en-fronteras.md) |
+| Datos externos no confiables | Zod (forma) y dominio (reglas) en todas las fronteras de entrada | [0012](adr/0012-validacion-del-seed-zod-y-dominio.md) |
 | Que las reglas de módulos no dependan de disciplina | `eslint-plugin-boundaries` + `dependency-cruiser` en CI | [0008](adr/0008-verificacion-de-fronteras.md) |
 | Identificadores y tiempo deterministas y probables | UUIDv7 + fechas locales ISO, con `Clock` e `IdGenerator` inyectados | [0009](adr/0009-ids-y-tiempo.md) |
 | Errores esperados sin excepciones | Tipo `Result<T, E>` en casos de uso | [0010](adr/0010-manejo-de-errores-result.md) |
@@ -119,6 +119,7 @@ flowchart LR
 | `application` | `domain`, `shared/kernel`, `shared/events`, API pública de módulos permitidos | `infrastructure`, `ui`, Dexie |
 | `infrastructure` | `domain`, `application/ports`, Dexie | `ui` |
 | `ui` | `application` (casos de uso), `domain` (tipos), `shared/ui`, `dexie-react-hooks` | `infrastructure` |
+| `index.ts` | Sus propias capas y `shared/kernel` (tipos de `create<Module>(deps)`, como `Clock`), más Dexie | Archivos de otros módulos |
 
 Los hooks reactivos viven en `ui` (`ui/hooks.ts`), porque `useLiveQuery` necesita Dexie y `application` no puede importarlo. Reciben la API pública del módulo como parámetro (spec 001, plan §6.3).
 

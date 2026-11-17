@@ -2,7 +2,7 @@ import { err, ok, type Result } from '@/shared/kernel';
 import type { PlanError, PlanErrorCode, PlanSeed } from './types';
 
 // Seed rules that cross data (docs/modules/plan.md RN-PLN-07, 11, 15, 19). The shape and range
-// of each value is checked before, by the Zod schema (ADR-0007). Pure: no I/O.
+// of each value is checked before, by the Zod schema (RN-PLN-24, ADR-0012). Pure: no I/O.
 
 type Check = (seed: PlanSeed) => PlanError | undefined;
 

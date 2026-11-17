@@ -1,0 +1,1163 @@
+{
+  "exercises": [
+    {
+      "id": "01a1e960-d600-7682-9716-3d427c486ef8",
+      "name": "Prensa de piernas",
+      "muscleGroup": "quads",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "beltRecommended": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d601-738b-b502-f97e041e36f6",
+      "name": "Hack squat",
+      "muscleGroup": "quads",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "medium",
+      "isPrimary": true,
+      "beltRecommended": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d602-73ec-a18b-0c11eba5f2c9",
+      "name": "Prensa a una pierna",
+      "muscleGroup": "quads",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d603-752d-bb5b-bcc4f192ce9d",
+      "name": "Extensión de cuádriceps",
+      "muscleGroup": "quads",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d604-7a1e-9518-47742058fcb6",
+      "name": "Curl femoral",
+      "muscleGroup": "hamstrings",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d605-7760-bb56-778a287d0d1d",
+      "name": "Patada de glúteo en polea",
+      "muscleGroup": "glutes",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d606-71b7-97db-4572900ca726",
+      "name": "Máquina de glúteo",
+      "muscleGroup": "glutes",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d607-7969-9347-e77fcdcf0c77",
+      "name": "Puente de glúteo",
+      "muscleGroup": "glutes",
+      "equipment": "bodyweight",
+      "metric": "weight",
+      "lumbarRisk": "medium",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d608-7806-9e73-d0d986c08267",
+      "name": "Abducción de cadera en máquina",
+      "muscleGroup": "glutes",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d609-7338-80a7-b25c373cd219",
+      "name": "Elevación de talones",
+      "muscleGroup": "calves",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d60a-7fb2-a98b-211ebabed8a7",
+      "name": "Pantorrilla sentado",
+      "muscleGroup": "calves",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d60b-70b0-9bc5-86e186b54b58",
+      "name": "Press de banca con barra",
+      "muscleGroup": "chest",
+      "equipment": "barbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d60c-7d09-a96d-43eca49308f7",
+      "name": "Press de banca con mancuernas",
+      "muscleGroup": "chest",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d60d-76e6-bce2-5f034b73392e",
+      "name": "Press inclinado con mancuernas",
+      "muscleGroup": "chest",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d60e-70b6-99d8-569a3dbb008e",
+      "name": "Press inclinado en máquina",
+      "muscleGroup": "chest",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d60f-7833-bfd8-868f285ad389",
+      "name": "Aperturas en polea",
+      "muscleGroup": "chest",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d610-7cc6-b5c9-7b8214111fa3",
+      "name": "Pec deck",
+      "muscleGroup": "chest",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d611-74e1-a8c1-af4c5fd7437e",
+      "name": "Fondos en paralelas",
+      "muscleGroup": "chest",
+      "equipment": "bodyweight",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d612-7c22-8c83-fd934b7eb862",
+      "name": "Dominadas",
+      "muscleGroup": "back",
+      "equipment": "bodyweight",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d613-7525-bffb-e2bece94fd58",
+      "name": "Jalón al pecho",
+      "muscleGroup": "back",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d614-76df-870e-8f81deb86789",
+      "name": "Remo con apoyo de pecho",
+      "muscleGroup": "back",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": true,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d615-73ae-9056-2aaadf7aaac7",
+      "name": "Remo en polea baja",
+      "muscleGroup": "back",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "medium",
+      "isPrimary": false,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d616-7601-a8ce-b9124298c474",
+      "name": "Pull-over en polea",
+      "muscleGroup": "back",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d617-72a9-98ef-1f12bdfbed26",
+      "name": "Face pull",
+      "muscleGroup": "shoulders",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d618-77eb-9659-2fe6af478a0d",
+      "name": "Press de hombro con mancuernas",
+      "muscleGroup": "shoulders",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d619-76f5-81c9-dc46233bcbee",
+      "name": "Press de hombro en máquina",
+      "muscleGroup": "shoulders",
+      "equipment": "machine",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [120, 180]
+    },
+    {
+      "id": "01a1e960-d61a-790f-b4da-0e213b605875",
+      "name": "Elevaciones laterales",
+      "muscleGroup": "shoulders",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d61b-79c5-ae00-0cab1b88c70f",
+      "name": "Curl con barra Z",
+      "muscleGroup": "biceps",
+      "equipment": "barbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d61c-7dc6-a310-f5b505c39c48",
+      "name": "Curl martillo",
+      "muscleGroup": "biceps",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d61d-7c42-90e0-e49e661f8d45",
+      "name": "Curl en banco inclinado",
+      "muscleGroup": "biceps",
+      "equipment": "dumbbell",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d61e-77c1-a19c-41e1a84faadc",
+      "name": "Extensión de tríceps en polea (cuerda)",
+      "muscleGroup": "triceps",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d61f-79df-95a8-a040b4a14991",
+      "name": "Extensión de tríceps sobre la cabeza en polea",
+      "muscleGroup": "triceps",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d620-7615-bdee-02d866d61be3",
+      "name": "Dead bug",
+      "muscleGroup": "core",
+      "equipment": "bodyweight",
+      "metric": "reps",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d621-748b-8f0c-7a19b5fadecf",
+      "name": "Plancha",
+      "muscleGroup": "core",
+      "equipment": "bodyweight",
+      "metric": "time",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d622-7c55-8100-f24d210e073f",
+      "name": "Pallof press",
+      "muscleGroup": "core",
+      "equipment": "cable",
+      "metric": "weight",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    },
+    {
+      "id": "01a1e960-d623-72c4-bfb7-6be54ce4a13b",
+      "name": "Pallof press isométrico",
+      "muscleGroup": "core",
+      "equipment": "cable",
+      "metric": "time",
+      "lumbarRisk": "low",
+      "isPrimary": false,
+      "restSeconds": [60, 90]
+    }
+  ],
+  "program": {
+    "id": "01a1e960-d624-797e-a5b7-8574f54c2cd1",
+    "name": "Hipertrofia en 3 bloques",
+    "totalWeeks": 15,
+    "blockIds": [
+      "01a1e960-d625-73b6-b05c-208ccc2fd4b2",
+      "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "01a1e960-d628-7dd8-a79d-847493c5987b"
+    ]
+  },
+  "blocks": [
+    {
+      "id": "01a1e960-d625-73b6-b05c-208ccc2fd4b2",
+      "programId": "01a1e960-d624-797e-a5b7-8574f54c2cd1",
+      "name": "Bloque 1 · Full body",
+      "startWeek": 1,
+      "endWeek": 4,
+      "targetRir": [2, 3],
+      "weekRir": {
+        "1": [3, 4]
+      },
+      "weekFactors": {
+        "1": 0.7
+      },
+      "isDeload": false,
+      "schedule": [
+        {
+          "weekday": 1,
+          "kind": "workout",
+          "templateId": "01a1e960-d629-722a-9f5e-b9ae47e25d83",
+          "weekParity": "odd"
+        },
+        {
+          "weekday": 1,
+          "kind": "workout",
+          "templateId": "01a1e960-d62a-7588-8646-97700c7d76c7",
+          "weekParity": "even"
+        },
+        {
+          "weekday": 2,
+          "kind": "cardio",
+          "note": "Cardio suave 30-40 min (bici, elíptica o caminata inclinada)"
+        },
+        {
+          "weekday": 3,
+          "kind": "workout",
+          "templateId": "01a1e960-d62a-7588-8646-97700c7d76c7",
+          "weekParity": "odd"
+        },
+        {
+          "weekday": 3,
+          "kind": "workout",
+          "templateId": "01a1e960-d629-722a-9f5e-b9ae47e25d83",
+          "weekParity": "even"
+        },
+        {
+          "weekday": 4,
+          "kind": "rest"
+        },
+        {
+          "weekday": 5,
+          "kind": "workout",
+          "templateId": "01a1e960-d629-722a-9f5e-b9ae47e25d83",
+          "weekParity": "odd"
+        },
+        {
+          "weekday": 5,
+          "kind": "workout",
+          "templateId": "01a1e960-d62a-7588-8646-97700c7d76c7",
+          "weekParity": "even"
+        },
+        {
+          "weekday": 6,
+          "kind": "cardio",
+          "note": "Cardio moderado 20-30 min (sin impacto)"
+        },
+        {
+          "weekday": 0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "programId": "01a1e960-d624-797e-a5b7-8574f54c2cd1",
+      "name": "Bloque 2 · Torso/Pierna",
+      "startWeek": 5,
+      "endWeek": 8,
+      "targetRir": [2, 3],
+      "weekRir": {
+        "5": [3, 3]
+      },
+      "weekFactors": {
+        "5": 0.7
+      },
+      "isDeload": false,
+      "schedule": [
+        {
+          "weekday": 1,
+          "kind": "workout",
+          "templateId": "01a1e960-d62b-7819-87c9-b9ae76d67e18"
+        },
+        {
+          "weekday": 2,
+          "kind": "workout",
+          "templateId": "01a1e960-d62c-7b26-98e5-9d2a3593ebc1"
+        },
+        {
+          "weekday": 3,
+          "kind": "cardio",
+          "note": "Cardio suave 30-40 min"
+        },
+        {
+          "weekday": 4,
+          "kind": "workout",
+          "templateId": "01a1e960-d62d-7454-89f1-21af046adfb9"
+        },
+        {
+          "weekday": 5,
+          "kind": "workout",
+          "templateId": "01a1e960-d62e-7427-b6dd-0843ae523782"
+        },
+        {
+          "weekday": 6,
+          "kind": "cardio",
+          "note": "Cardio moderado 20-30 min (sin impacto)"
+        },
+        {
+          "weekday": 0,
+          "kind": "rest"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "programId": "01a1e960-d624-797e-a5b7-8574f54c2cd1",
+      "name": "Bloque 3 · PPL + Upper/Lower",
+      "startWeek": 9,
+      "endWeek": 14,
+      "targetRir": [1, 3],
+      "weekRir": {
+        "9": [3, 3]
+      },
+      "weekFactors": {
+        "9": 0.7
+      },
+      "isDeload": false,
+      "schedule": [
+        {
+          "weekday": 1,
+          "kind": "workout",
+          "templateId": "01a1e960-d62f-7241-ba62-f8f12e7e168c"
+        },
+        {
+          "weekday": 2,
+          "kind": "workout",
+          "templateId": "01a1e960-d630-7d44-b84c-38310d4985f2"
+        },
+        {
+          "weekday": 3,
+          "kind": "workout",
+          "templateId": "01a1e960-d631-72f5-9aea-088c4a9dafb1"
+        },
+        {
+          "weekday": 4,
+          "kind": "cardio",
+          "note": "Cardio muy suave 30-40 min"
+        },
+        {
+          "weekday": 5,
+          "kind": "workout",
+          "templateId": "01a1e960-d632-782d-8402-9f22f1e442d6"
+        },
+        {
+          "weekday": 6,
+          "kind": "workout",
+          "templateId": "01a1e960-d633-7330-b651-7ced58058872"
+        },
+        {
+          "weekday": 0,
+          "kind": "cardio",
+          "note": "Cardio moderado o descanso"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d628-7dd8-a79d-847493c5987b",
+      "programId": "01a1e960-d624-797e-a5b7-8574f54c2cd1",
+      "name": "Descarga",
+      "startWeek": 15,
+      "endWeek": 15,
+      "targetRir": [4, 4],
+      "weekFactors": {},
+      "isDeload": true,
+      "schedule": [
+        {
+          "weekday": 1,
+          "kind": "workout",
+          "templateId": "01a1e960-d62f-7241-ba62-f8f12e7e168c"
+        },
+        {
+          "weekday": 2,
+          "kind": "workout",
+          "templateId": "01a1e960-d630-7d44-b84c-38310d4985f2"
+        },
+        {
+          "weekday": 3,
+          "kind": "workout",
+          "templateId": "01a1e960-d631-72f5-9aea-088c4a9dafb1"
+        },
+        {
+          "weekday": 4,
+          "kind": "cardio",
+          "note": "Cardio muy suave 30-40 min"
+        },
+        {
+          "weekday": 5,
+          "kind": "workout",
+          "templateId": "01a1e960-d632-782d-8402-9f22f1e442d6"
+        },
+        {
+          "weekday": 6,
+          "kind": "workout",
+          "templateId": "01a1e960-d633-7330-b651-7ced58058872"
+        },
+        {
+          "weekday": 0,
+          "kind": "cardio",
+          "note": "Cardio moderado o descanso"
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "01a1e960-d629-722a-9f5e-b9ae47e25d83",
+      "blockId": "01a1e960-d625-73b6-b05c-208ccc2fd4b2",
+      "name": "Full body A",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d600-7682-9716-3d427c486ef8",
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Pelvis pegada al respaldo, sin despegar la lumbar"
+        },
+        {
+          "exerciseId": "01a1e960-d60b-70b0-9bc5-86e186b54b58",
+          "alternatives": ["01a1e960-d60c-7d09-a96d-43eca49308f7"],
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "Costillas abajo, sin arco"
+        },
+        {
+          "exerciseId": "01a1e960-d612-7c22-8c83-fd934b7eb862",
+          "alternatives": ["01a1e960-d613-7525-bffb-e2bece94fd58"],
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "O asistidas si aún no llegas. Sin balanceo, costillas abajo, bajada controlada"
+        },
+        {
+          "exerciseId": "01a1e960-d604-7a1e-9518-47742058fcb6",
+          "order": 4,
+          "sets": [2, 3],
+          "reps": [10, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d61a-790f-b4da-0e213b605875",
+          "order": 5,
+          "sets": [2, 2],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d61b-79c5-ae00-0cab1b88c70f",
+          "order": 6,
+          "sets": [2, 2],
+          "reps": [10, 12],
+          "note": "Sin balanceo"
+        },
+        {
+          "exerciseId": "01a1e960-d620-7615-bdee-02d866d61be3",
+          "order": 7,
+          "sets": [2, 2],
+          "reps": [8, 10],
+          "note": "Por lado. Lumbar pegada al suelo"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62a-7588-8646-97700c7d76c7",
+      "blockId": "01a1e960-d625-73b6-b05c-208ccc2fd4b2",
+      "name": "Full body B",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d601-738b-b502-f97e041e36f6",
+          "alternatives": ["01a1e960-d600-7682-9716-3d427c486ef8"],
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Con prensa: pies bajos. Faja solo si la carga es pesada"
+        },
+        {
+          "exerciseId": "01a1e960-d60d-76e6-bce2-5f034b73392e",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Banco con respaldo"
+        },
+        {
+          "exerciseId": "01a1e960-d614-76df-870e-8f81deb86789",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Sin estrés lumbar"
+        },
+        {
+          "exerciseId": "01a1e960-d605-7760-bb56-778a287d0d1d",
+          "alternatives": ["01a1e960-d606-71b7-97db-4572900ca726"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [10, 15],
+          "note": "Sin arquear la lumbar"
+        },
+        {
+          "exerciseId": "01a1e960-d618-77eb-9659-2fe6af478a0d",
+          "order": 5,
+          "sets": [2, 2],
+          "reps": [8, 12],
+          "note": "Sentado, con respaldo"
+        },
+        {
+          "exerciseId": "01a1e960-d611-74e1-a8c1-af4c5fd7437e",
+          "order": 6,
+          "sets": [2, 3],
+          "reps": [6, 10],
+          "note": "O asistidos. Torso ligeramente inclinado, codos a ~90°, sin balancear piernas"
+        },
+        {
+          "exerciseId": "01a1e960-d609-7338-80a7-b25c373cd219",
+          "order": 7,
+          "sets": [3, 3],
+          "reps": [10, 15]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62b-7819-87c9-b9ae76d67e18",
+      "blockId": "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "name": "Torso A",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d60b-70b0-9bc5-86e186b54b58",
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "Compuesto principal"
+        },
+        {
+          "exerciseId": "01a1e960-d614-76df-870e-8f81deb86789",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [6, 10]
+        },
+        {
+          "exerciseId": "01a1e960-d618-77eb-9659-2fe6af478a0d",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Sentado, con respaldo"
+        },
+        {
+          "exerciseId": "01a1e960-d612-7c22-8c83-fd934b7eb862",
+          "alternatives": ["01a1e960-d613-7525-bffb-e2bece94fd58"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "O asistidas si aún no llegas. Sin balanceo, costillas abajo, bajada controlada"
+        },
+        {
+          "exerciseId": "01a1e960-d61b-79c5-ae00-0cab1b88c70f",
+          "order": 5,
+          "sets": [2, 2],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d611-74e1-a8c1-af4c5fd7437e",
+          "order": 6,
+          "sets": [2, 3],
+          "reps": [6, 10],
+          "note": "O asistidos. Torso ligeramente inclinado, codos a ~90°, sin balancear piernas"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62c-7b26-98e5-9d2a3593ebc1",
+      "blockId": "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "name": "Pierna A",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d600-7682-9716-3d427c486ef8",
+          "order": 1,
+          "sets": [3, 4],
+          "reps": [8, 12],
+          "note": "Faja solo si la carga es pesada"
+        },
+        {
+          "exerciseId": "01a1e960-d604-7a1e-9518-47742058fcb6",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d605-7760-bb56-778a287d0d1d",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [10, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d603-752d-bb5b-bcc4f192ce9d",
+          "order": 4,
+          "sets": [2, 2],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d609-7338-80a7-b25c373cd219",
+          "order": 5,
+          "sets": [3, 3],
+          "reps": [10, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d621-748b-8f0c-7a19b5fadecf",
+          "order": 6,
+          "sets": [2, 2],
+          "reps": [30, 45]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62d-7454-89f1-21af046adfb9",
+      "blockId": "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "name": "Torso B",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d60d-76e6-bce2-5f034b73392e",
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d613-7525-bffb-e2bece94fd58",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Agarre neutro"
+        },
+        {
+          "exerciseId": "01a1e960-d615-73ae-9056-2aaadf7aaac7",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [10, 12],
+          "note": "Espalda neutra, sin balanceo"
+        },
+        {
+          "exerciseId": "01a1e960-d60f-7833-bfd8-868f285ad389",
+          "alternatives": ["01a1e960-d610-7cc6-b5c9-7b8214111fa3"],
+          "order": 4,
+          "sets": [2, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d61a-790f-b4da-0e213b605875",
+          "order": 5,
+          "sets": [3, 3],
+          "reps": [12, 15],
+          "note": "Última serie cerca del fallo"
+        },
+        {
+          "exerciseId": "01a1e960-d61c-7dc6-a310-f5b505c39c48",
+          "order": 6,
+          "sets": [2, 2],
+          "reps": [10, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d61f-79df-95a8-a040b4a14991",
+          "order": 7,
+          "sets": [2, 2],
+          "reps": [10, 12]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62e-7427-b6dd-0843ae523782",
+      "blockId": "01a1e960-d626-7282-9fb9-0a5f80d17449",
+      "name": "Pierna B",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d601-738b-b502-f97e041e36f6",
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Faja solo si la carga es pesada"
+        },
+        {
+          "exerciseId": "01a1e960-d602-73ec-a18b-0c11eba5f2c9",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [10, 12],
+          "note": "Por pierna. Peso moderado"
+        },
+        {
+          "exerciseId": "01a1e960-d604-7a1e-9518-47742058fcb6",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [10, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d606-71b7-97db-4572900ca726",
+          "alternatives": ["01a1e960-d607-7969-9347-e77fcdcf0c77"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [10, 15],
+          "note": "Puente: pelvis inclinada atrás"
+        },
+        {
+          "exerciseId": "01a1e960-d608-7806-9e73-d0d986c08267",
+          "order": 5,
+          "sets": [2, 2],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d60a-7fb2-a98b-211ebabed8a7",
+          "order": 6,
+          "sets": [3, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d622-7c55-8100-f24d210e073f",
+          "order": 7,
+          "sets": [2, 2],
+          "reps": [10, 12],
+          "note": "Por lado. Antirrotación"
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d62f-7241-ba62-f8f12e7e168c",
+      "blockId": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "name": "Push",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d60b-70b0-9bc5-86e186b54b58",
+          "alternatives": ["01a1e960-d60c-7d09-a96d-43eca49308f7"],
+          "order": 1,
+          "sets": [3, 4],
+          "reps": [6, 10]
+        },
+        {
+          "exerciseId": "01a1e960-d60d-76e6-bce2-5f034b73392e",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d611-74e1-a8c1-af4c5fd7437e",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "O asistidos. Torso ligeramente inclinado, codos a ~90°"
+        },
+        {
+          "exerciseId": "01a1e960-d618-77eb-9659-2fe6af478a0d",
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Sentado, con respaldo"
+        },
+        {
+          "exerciseId": "01a1e960-d61a-790f-b4da-0e213b605875",
+          "order": 5,
+          "sets": [3, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d60f-7833-bfd8-868f285ad389",
+          "alternatives": ["01a1e960-d610-7cc6-b5c9-7b8214111fa3"],
+          "order": 6,
+          "sets": [2, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d61e-77c1-a19c-41e1a84faadc",
+          "order": 7,
+          "sets": [3, 3],
+          "reps": [10, 15]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d630-7d44-b84c-38310d4985f2",
+      "blockId": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "name": "Pull",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d612-7c22-8c83-fd934b7eb862",
+          "alternatives": ["01a1e960-d613-7525-bffb-e2bece94fd58"],
+          "order": 1,
+          "sets": [3, 4],
+          "reps": [6, 10],
+          "note": "O asistidas. Sin balanceo, bajada controlada"
+        },
+        {
+          "exerciseId": "01a1e960-d614-76df-870e-8f81deb86789",
+          "order": 2,
+          "sets": [3, 4],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d615-73ae-9056-2aaadf7aaac7",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [10, 12],
+          "note": "Agarre neutro. Espalda neutra"
+        },
+        {
+          "exerciseId": "01a1e960-d616-7601-a8ce-b9124298c474",
+          "alternatives": ["01a1e960-d617-72a9-98ef-1f12bdfbed26"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [12, 15],
+          "note": "Dorsal y hombro posterior"
+        },
+        {
+          "exerciseId": "01a1e960-d61b-79c5-ae00-0cab1b88c70f",
+          "order": 5,
+          "sets": [3, 3],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d61c-7dc6-a310-f5b505c39c48",
+          "order": 6,
+          "sets": [2, 3],
+          "reps": [10, 15]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d631-72f5-9aea-088c4a9dafb1",
+      "blockId": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "name": "Legs",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d600-7682-9716-3d427c486ef8",
+          "order": 1,
+          "sets": [3, 4],
+          "reps": [8, 12],
+          "note": "Faja solo si la carga es pesada"
+        },
+        {
+          "exerciseId": "01a1e960-d601-738b-b502-f97e041e36f6",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 12],
+          "note": "Faja solo si la carga es pesada"
+        },
+        {
+          "exerciseId": "01a1e960-d604-7a1e-9518-47742058fcb6",
+          "order": 3,
+          "sets": [3, 4],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d605-7760-bb56-778a287d0d1d",
+          "alternatives": ["01a1e960-d606-71b7-97db-4572900ca726"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [10, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d603-752d-bb5b-bcc4f192ce9d",
+          "order": 5,
+          "sets": [2, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d609-7338-80a7-b25c373cd219",
+          "order": 6,
+          "sets": [3, 4],
+          "reps": [10, 15]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d632-782d-8402-9f22f1e442d6",
+      "blockId": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "name": "Upper",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d60d-76e6-bce2-5f034b73392e",
+          "alternatives": ["01a1e960-d60e-70b6-99d8-569a3dbb008e"],
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [6, 10]
+        },
+        {
+          "exerciseId": "01a1e960-d614-76df-870e-8f81deb86789",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [8, 10],
+          "note": "Agarre distinto al martes"
+        },
+        {
+          "exerciseId": "01a1e960-d619-76f5-81c9-dc46233bcbee",
+          "order": 3,
+          "sets": [2, 3],
+          "reps": [8, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d612-7c22-8c83-fd934b7eb862",
+          "alternatives": ["01a1e960-d613-7525-bffb-e2bece94fd58"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [6, 10],
+          "note": "Agarre neutro"
+        },
+        {
+          "exerciseId": "01a1e960-d61d-7c42-90e0-e49e661f8d45",
+          "order": 5,
+          "sets": [2, 3],
+          "reps": [10, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d61f-79df-95a8-a040b4a14991",
+          "order": 6,
+          "sets": [2, 3],
+          "reps": [10, 12]
+        }
+      ]
+    },
+    {
+      "id": "01a1e960-d633-7330-b651-7ced58058872",
+      "blockId": "01a1e960-d627-73ea-adbf-efed21cb7614",
+      "name": "Lower",
+      "items": [
+        {
+          "exerciseId": "01a1e960-d600-7682-9716-3d427c486ef8",
+          "order": 1,
+          "sets": [3, 3],
+          "reps": [10, 12],
+          "note": "Pies altos o separados"
+        },
+        {
+          "exerciseId": "01a1e960-d602-73ec-a18b-0c11eba5f2c9",
+          "order": 2,
+          "sets": [3, 3],
+          "reps": [10, 12],
+          "note": "Por pierna"
+        },
+        {
+          "exerciseId": "01a1e960-d604-7a1e-9518-47742058fcb6",
+          "order": 3,
+          "sets": [3, 3],
+          "reps": [10, 12]
+        },
+        {
+          "exerciseId": "01a1e960-d606-71b7-97db-4572900ca726",
+          "alternatives": ["01a1e960-d607-7969-9347-e77fcdcf0c77"],
+          "order": 4,
+          "sets": [3, 3],
+          "reps": [10, 15],
+          "note": "Puente: pelvis inclinada atrás"
+        },
+        {
+          "exerciseId": "01a1e960-d608-7806-9e73-d0d986c08267",
+          "order": 5,
+          "sets": [2, 2],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d60a-7fb2-a98b-211ebabed8a7",
+          "order": 6,
+          "sets": [3, 3],
+          "reps": [12, 15]
+        },
+        {
+          "exerciseId": "01a1e960-d621-748b-8f0c-7a19b5fadecf",
+          "alternatives": ["01a1e960-d623-72c4-bfb7-6be54ce4a13b"],
+          "order": 7,
+          "sets": [3, 3],
+          "reps": [30, 45],
+          "note": "Core antiextensión"
+        }
+      ]
+    }
+  ]
+}

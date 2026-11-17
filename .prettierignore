@@ -6,3 +6,4 @@ package-lock.json
 docs/
 CLAUDE.md
 tests/architecture/fixtures/
+src/app/seed/__tests__/plan-seed.summary.md

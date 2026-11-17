@@ -118,6 +118,16 @@ Cómo se traducen los "o" y las variantes de plan.md:
 | "Plancha o pallof press" (30-45 s) | Principal 34, alternativa 36 (misma métrica, RN-PLN-11) |
 | "8-10 por lado", "10-12 por pierna" | Rango de reps en `reps` y "Por lado" o "Por pierna" en la nota |
 
+Reglas de transcripción (aprobadas el 17-nov-2026, antes de T13):
+
+- **Notas:** el texto de la columna "Notas" de plan.md, tal cual. Delante va la indicación de la tabla anterior o del paréntesis del nombre, separada con ". " ("Sentado, con respaldo", "Banco con respaldo", "O asistidas si aún no llegas", "Puente: pelvis inclinada atrás").
+- **Alternativas solo donde plan.md dice "o":** "Press de banca" de Torso A, "Press inclinado con mancuernas" de Torso B y Push, y "Patada de glúteo en polea" de Pierna A van sin alternativa. "(o asistidos)" de los fondos es una forma de hacerlos, no otro ejercicio.
+- **Descansos:** compuestos [120, 180] (1, 2, 3, 12 a 15, 18 a 22, 25 y 26); el resto [60, 90].
+- **Sin `cue` ni `secondaryMuscles`** en el seed v1: las indicaciones van en las notas; `secondaryMuscles` sigue `[PROPUESTO]`.
+- **Cardio:** la nota es el texto de la tabla de días de cada bloque; en el bloque 3, jueves "Cardio muy suave 30-40 min" (§4.2) y domingo "Cardio moderado o descanso".
+- **Nombres:** programa "Hipertrofia en 3 bloques"; plantillas con los títulos de plan.md; bloques como en §4.2.
+- **Verificación:** `src/app/seed/__tests__/plan-seed.summary.md`, escrito a mano desde plan.md, se compara con el resumen que la prueba genera desde el JSON (§6.5).
+
 ### 4.2 Bloques
 
 | Bloque (nombre visible) | Semanas | `targetRir` | `weekRir` | `weekFactors` | Calendario |
@@ -138,18 +148,20 @@ sequenceDiagram
   participant C as compose.ts
   participant P as plan
   participant T as TodayPage
-  B->>DB: openDatabase() → Dexie v1 con planStores
-  B->>C: compose({ db, clock: systemClock })
+  B->>DB: openDatabase() → Dexie v1 con planStores (se abre en la primera operación)
+  B->>C: compose({ db, clock: systemClock, seed: planSeed })
   C->>P: createPlan({ db, clock })
-  C->>P: ready = ensureSeeded(planSeed) (sin await)
+  C->>P: ready = ensureSeeded(seed) (sin await)
   B->>B: render con AppContext { plan, clock, ready }
   T->>T: use(ready) dentro de Suspense (solo el título mientras tanto)
   T->>T: date = useToday(clock) (se recalcula en visibilitychange)
   T->>P: useTodayPlan(plan, date), useWeekPlan(plan, startOfIsoWeek(date))
 ```
 
-- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0007) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo en una transacción `rw` sobre las 4 tablas solo si `programs` está vacía (RN-PLN-14). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
-- `ready` rechaza con un `Error` si `ensureSeeded` devuelve `err` o si la base no abre. `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
+- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0012) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo con `bulkAdd` en una transacción `rw` sobre las 4 tablas solo si las 4 están vacías; si `programs` está vacía y otra no, lanza sin escribir (RN-PLN-14, contrato v1.8). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
+- `openDatabase({ indexedDB?, name = 'gym-app' })` es síncrona: Dexie abre la base en la primera operación, así que una base que no abre hace fallar `ensureSeeded` y `ready` rechaza. `indexedDB` se inyecta en las pruebas (decisión del 17-nov, antes de T12).
+- `compose({ db, clock, seed })` recibe el seed como dependencia para que las pruebas pasen uno inválido; `bootstrap` le pasa `plan-seed.json`.
+- `ready` rechaza con un `Error` técnico (el `DomainError` en `cause`) si `ensureSeeded` devuelve `err`, o con el error original si falla el almacenamiento. `compose` le añade un `catch` vacío para que el rechazo no llegue también al manejador global: el error se muestra una sola vez, con `use(ready)` (T17). `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
 - `AppContext` (en `app/context.tsx`) es inyección de dependencias, no estado: el valor nunca cambia. No contradice ADR-0006 (Zustand para estado efímero).
 
 ## 6. Decisiones
@@ -167,7 +179,10 @@ En la tarea de instalación se revisa que ninguno ejecute scripts de instalació
 
 ### 6.2 Zod clásico, no `zod/mini`
 
-ADR-0007 permite `zod/mini` si el tamaño importa. Se empieza con el clásico, que tiene mejor API y mejores mensajes, y se mide con `size-limit` al integrarlo. Si el JS inicial pasa de 170 KB, se cambia a `zod/mini`; solo afecta a `infrastructure/seed-schema.ts`.
+ADR-0007 (hoy ADR-0012) permite `zod/mini` si el tamaño importa. Se empieza con el clásico, que tiene mejor API y mejores mensajes, y se mide con `size-limit` al integrarlo. Si el JS inicial pasa de 170 KB, se cambia a `zod/mini`; solo afecta a `infrastructure/seed-schema.ts`.
+
+- **`jitless` (T12):** Zod 4 prueba `new Function` para compilar validadores rápidos, y la CSP sin `unsafe-eval` (architecture §7.10) lo reporta como violación aunque Zod capture el error. `seed-schema.ts` llama a `z.config({ jitless: true })` antes de definir los esquemas; lo verifica `csp.spec` en E2E.
+- **Medición (T12, 17-nov):** con Dexie, Zod clásico y el seed en el bundle inicial, 166.76 kB de 200 kB (antes 102.81 kB): por debajo del umbral de 170 kB, pero con poco margen para la UI de "Hoy". Se vuelve a medir en T18. `npm run size` mide `dist/` tal como está: hay que construir antes.
 
 ### 6.3 Hooks en `ui`, no en `application`
 
@@ -193,12 +208,33 @@ Se descartó generar el JSON leyendo `docs/plan.md` con un script: el Markdown n
 
 `messages.ts` incluye `PlanErrorCode` en `ErrorCode`. Los cuatro mensajes son el genérico (spec 001 §6) y se quita el `eslint-disable` justificado de la fase 0, porque el mapa ya no está vacío.
 
+### 6.9 Puertos del servicio de aplicación (contrato v1.6, antes de T7)
+
+```ts
+// application/ports.ts
+type SeedParser = (raw: unknown) => Result<PlanSeed, PlanError>;  // Zod en infrastructure (T9); error plan/invalid-seed
+
+interface PlanRepository {
+  loadSnapshot(): Promise<PlanSnapshot | undefined>;  // undefined si no hay programa
+  seedIfEmpty(snapshot: PlanSnapshot): Promise<void>; // comprueba y escribe en la misma transacción (RN-PLN-14)
+}
+
+// application/service.ts
+function createPlanService(deps: { repository: PlanRepository; parser: SeedParser; clock: Clock }): PlanApi;
+```
+
+- La comprobación de "vacía" vive en el repositorio, dentro de la transacción: es lo único que hace segura la concurrencia (RN-PLN-14). El servicio no lee antes de escribir.
+- `createPlan({ db, clock })` (T11) arma el servicio con el repositorio Dexie y el parser Zod. Las pruebas de T7 usan un repositorio en memoria (QS-08).
+- `getExercise(s)` y `listExercises` no entran en esta fase (contrato v1.6, decisión 9).
+- Pruebas de integración (T10): seed válido compartido en `__tests__/fixtures/seed.ts`; cada prueba abre su propia base con `db.version(1).stores(planStores)` e importa solo del `index.ts` del módulo.
+
 ## 7. Estrategia de pruebas
 
 Las pruebas del dominio y de `ensureSeeded` se escriben antes que el código, citando su regla (P-5).
 
 | Criterio | Tipo de prueba | Archivo |
 |---|---|---|
+| RN-PLN-13, 20 a 23 | Unitaria del servicio con repositorio en memoria (QS-08) | `src/modules/plan/__tests__/plan-service.test.ts` |
 | AC-1 | Integración (`fake-indexeddb`, `fixedClock`) + E2E con `page.clock` | `src/modules/plan/__tests__/ensure-seeded.test.ts`, `tests/e2e/today.spec.ts` |
 | AC-2, AC-3 | Integración (`fake-indexeddb`) | `src/modules/plan/__tests__/ensure-seeded.test.ts` |
 | AC-4 | Unitaria sobre el seed real + resumen legible | `src/app/seed/__tests__/plan-seed.test.ts` |

@@ -23,16 +23,18 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T7 | Pruebas del servicio de aplicación con un repositorio en memoria: `ensureSeeded` (parser que falla, reglas que fallan, `startDate` = lunes de la semana de `clock.today()` (RN-PLN-13), no escribe si ya hay programa) y `getPosition`/`getTodayPlan`/`getWeekPlan` sobre el repositorio | `plan/application` | Pruebas en rojo | AC-1 (fecha), AC-2, QS-08 | C | ☐ |
-| T8 | Implementar `application/ports.ts` (`PlanRepository`, `SeedParser`) y el servicio; el servicio solo espera promesas del repositorio (plan §6.4) | `plan/application` | T7 en verde | AC-1 (fecha), AC-2, QS-08 | C | ☐ |
-| T9 | Esquema Zod del seed (`infrastructure/seed-schema.ts`): forma, enums, `weekday` 0-6, IDs UUIDv7, rangos `[min, max]` con `min ≤ max`, enteros positivos; con sus pruebas | `plan/infrastructure` | Pruebas del esquema pasan (casos válidos e inválidos) | AC-5 (forma), P-8 | C | ☐ |
-| T10 | Pruebas de integración con `fake-indexeddb` a través de `createPlan`: primer arranque (AC-1), reabrir sin cambios (AC-2), dos `ensureSeeded` concurrentes (AC-3) y base vacía tras un seed inválido o con `high` (AC-5, AC-6) | `plan` | Pruebas en rojo | AC-1 a AC-3, AC-5, AC-6 | C | ☐ |
-| T11 | `infrastructure/schema.ts` (`planStores`), repositorio Dexie (`seedIfEmpty` en una transacción `rw` sobre las 4 tablas) y `createPlan({ db, clock })` en `index.ts` | `plan/infrastructure`, `index.ts` | T10 en verde; `npm run lint` (fronteras) pasa | AC-1 a AC-3, AC-5, AC-6 | C | ☐ |
-| T12 | `app/db.ts` (`openDatabase` con `planStores` en la versión 1; `indexedDB` inyectable para pruebas), `compose({ db, clock })` con `ready`, `bootstrap` actualizado y `messages.ts` con `PlanErrorCode` (se quita el `eslint-disable` de la fase 0) | `app` | Pruebas de `bootstrap` y `compose`: `ready` resuelve con un seed válido y rechaza con uno inválido o si la base no abre | AC-21 (arranque) | C | ☐ |
-| T13 | Pruebas del seed real: validación (AC-4), resumen legible por plantilla comparado con `docs/plan.md` y AC-8 a AC-14 con datos reales a través de la API | `app/seed` | Pruebas en rojo (aún no hay JSON) | AC-4, AC-8 a AC-14 | C | ☐ |
-| T14 | Generar los UUIDv7 una vez (script local, no se versiona) y escribir `src/app/seed/plan-seed.json` con el catálogo (plan §4.1), los bloques (§4.2) y las 11 plantillas | `app/seed` | T13 en verde; revisas el resumen legible en el PR | AC-4, AC-8 a AC-14, RF-01 | C + U | ☐ |
+| T7 | Pruebas del servicio de aplicación con un repositorio en memoria: `ensureSeeded` (parser que falla, reglas que fallan, `startDate` = lunes de la semana de `clock.today()` (RN-PLN-13), no escribe si ya hay programa) y `getPosition`/`getTodayPlan`/`getWeekPlan` sobre el repositorio | `plan/application` | Pruebas en rojo | AC-1 (fecha), AC-2, QS-08 | C | ☑ |
+| T8 | Implementar `application/ports.ts` (`PlanRepository`, `SeedParser`) y el servicio; el servicio solo espera promesas del repositorio (plan §6.4) | `plan/application` | T7 en verde | AC-1 (fecha), AC-2, QS-08 | C | ☑ |
+| T9 | Esquema Zod del seed (`infrastructure/seed-schema.ts`): forma, enums, `weekday` 0-6, IDs UUIDv7, rangos `[min, max]` con `min ≤ max`, enteros positivos; con sus pruebas | `plan/infrastructure` | Pruebas del esquema pasan (casos válidos e inválidos) | AC-5 (forma), P-8 | C | ☑ |
+| T10 | Pruebas de integración con `fake-indexeddb` a través de `createPlan`: primer arranque (AC-1), reabrir sin cambios (AC-2), dos `ensureSeeded` concurrentes (AC-3) y base vacía tras un seed inválido o con `high` (AC-5, AC-6) | `plan` | Pruebas en rojo | AC-1 a AC-3, AC-5, AC-6 | C | ☑ |
+| T11 | `infrastructure/schema.ts` (`planStores`), repositorio Dexie (`seedIfEmpty` en una transacción `rw` sobre las 4 tablas) y `createPlan({ db, clock })` en `index.ts` | `plan/infrastructure`, `index.ts` | T10 en verde; `npm run lint` (fronteras) pasa | AC-1 a AC-3, AC-5, AC-6 | C | ☑ |
+| T12 | `app/db.ts` (`openDatabase` con `planStores` en la versión 1; `indexedDB` inyectable para pruebas), `compose({ db, clock, seed })` con `ready`, `bootstrap` actualizado y `messages.ts` con `PlanErrorCode` (se quita el `eslint-disable` de la fase 0) | `app` | Pruebas de `bootstrap` y `compose`: `ready` resuelve con un seed válido y rechaza con uno inválido o si la base no abre | AC-21 (arranque) | C | ☑ |
+| T13 | Pruebas del seed real: validación (AC-4), resumen legible por plantilla comparado con `docs/plan.md` y AC-8 a AC-14 con datos reales a través de la API | `app/seed` | Pruebas en rojo (aún no hay JSON) | AC-4, AC-8 a AC-14 | C | ☑ |
+| T14 | Generar los UUIDv7 una vez (script local, no se versiona) y escribir `src/app/seed/plan-seed.json` con el catálogo (plan §4.1), los bloques (§4.2) y las 11 plantillas | `app/seed` | T13 en verde; revisas el resumen legible en el PR | AC-4, AC-8 a AC-14, RF-01 | C + U | ☑ |
 
 **Punto de control B:** PR "plan persistence and seed".
+
+**Orden de ejecución (17-nov):** T13 → T14 → T12. T12 conecta en `bootstrap` el JSON real, que no existe hasta T14; T13 y T14 solo necesitan `createPlan` (T11). Los números de tarea no cambian.
 
 ## C. Pantalla "Hoy"
 

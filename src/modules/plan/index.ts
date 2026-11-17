@@ -1,12 +1,24 @@
 // Public API of the `plan` module (docs/modules/plan.md). The only file other modules may import.
 // Operations arrive with their tasks in phase 1 (specs/001-fase-1/tasks.md).
 
-export type PlanApi = Record<string, never>;
+import type { Dexie } from 'dexie';
+import type { Clock } from '@/shared/kernel';
+import { createPlanService, type PlanApi } from './application/service';
+import { createDexiePlanRepository } from './infrastructure/dexie-repository';
+import { parseSeed } from './infrastructure/seed-schema';
 
-export function createPlan(): PlanApi {
-  return {};
+// Wires the application service to Dexie and the Zod seed parser (architecture §5.3).
+export function createPlan(deps: { db: Dexie; clock: Clock }): PlanApi {
+  return createPlanService({
+    repository: createDexiePlanRepository(deps.db),
+    parser: parseSeed,
+    clock: deps.clock,
+  });
 }
 
+export { planStores } from './infrastructure/schema';
+
+export type { PlanApi } from './application/service';
 export type {
   Block,
   Equipment,

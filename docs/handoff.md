@@ -58,8 +58,10 @@
 3. ~~Spec 001~~ aprobada (17-nov): `docs/specs/001-fase-1/spec.md`, con sus reglas ya en `modules/plan.md` v1.2 (RN-PLN-06 y 10 a 15).
 4. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/001-fase-1/plan.md`, con el catálogo del seed (36 ejercicios, §4.1), contrato `plan` v1.3 y architecture §5.2 (hooks en `ui`) y §7.3 (v1 solo con tablas de `plan`).
    `docs/specs/001-fase-1/tasks.md`: T1 a T20 en 4 puntos de control (A dominio, B persistencia y seed, C "Hoy", D verificación y cierre).
-   **Siguiente:** fusionar el PR de `docs/001-phase-1-spec` y empezar T1 en `feat/001-phase-1-a`.
-5. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+   Docs fusionados en el PR #7.
+5. ~~Punto de control A, dominio~~ (T1–T6, PR #8, 17-nov): `plan/domain/types.ts`, `schedule.ts` y `seed-rules.ts` al 100% de cobertura, con 43 mutaciones detectadas. Contrato `plan` v1.5: casos de borde del calendario (RN-PLN-16 a 18) y de la validación del seed (RN-PLN-15 (e)–(h), RN-PLN-19). `npm audit`: aviso nuevo de `picomatch` ≤ 4.0.7 sin versión corregida, solo en herramientas (plan §8).
+6. **Siguiente: punto de control B, T7**, en la rama `feat/001-phase-1-b` (ya creada desde `main` con el merge del PR #8; solo tiene este commit del handoff, sin subir). T7: pruebas del servicio de aplicación con un repositorio en memoria (`ensureSeeded`: falla el parser, fallan las reglas, `startDate` = lunes de la semana de `clock.today()`, no escribe si ya hay programa; y `getPosition`/`getTodayPlan`/`getWeekPlan`). Antes de escribirlas, proponer al usuario los casos que el contrato no define, como en T3 y T5.
+7. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -91,4 +93,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Vamos a empezar la fase 1. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Empecemos por las preguntas pendientes 1 a 4 y luego la spec 001. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
+"Seguimos con la fase 1. Lee primero docs/README.md, docs/constitution.md, docs/handoff.md y docs/specs/001-fase-1/tasks.md. Estamos en la rama feat/001-phase-1-b; sigue con T7. Guíame paso a paso, una tarea a la vez."
