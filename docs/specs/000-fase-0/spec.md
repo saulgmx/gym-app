@@ -1,6 +1,6 @@
 # Spec: Fase 0, esqueleto instalable con fronteras verificadas
 
-**ID:** 000 · **Estado:** Aprobada · **Fecha:** 16-nov-2026
+**ID:** 000 · **Estado:** Implementada (17-nov-2026) · **Fecha:** 16-nov-2026
 **Requerimientos cubiertos:** RNF-01 (parcial: app shell offline), RNF-02 (presupuesto de bundle), RNF-03, RNF-05 (base), RNF-06, RNF-07, RNF-08, RNF-10 · CA-1 (parcial), CA-9 · QS-06 (parcial), QS-07, QS-10 · **Fase:** 0 (spec §13)
 **ADRs aplicados:** 0001, 0002, 0003, 0005, 0006, 0008, 0009, 0010, 0011
 

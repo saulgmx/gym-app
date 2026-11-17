@@ -53,11 +53,11 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T23 | Proteger `main`: cambios por PR, check `ci` obligatorio, sin push directo (con `gh api` tras tu confirmación, o desde GitHub) | GitHub | Un push directo a `main` es rechazado | AC-37 | C + U | ☐ |
-| T24 | Comprar el dominio (`.com` en Cloudflare Registrar o Porkbun) | — | Dominio activo en tu cuenta | — | U | ☐ |
-| T25 | Crear el proyecto en Vercel desde `saulgmx/gym-app` (Node 24.x, framework Vite), añadir `gym.<dominio>` y su registro DNS | Vercel, DNS | `https://gym.<dominio>` sirve la app con HTTPS | AC-38 | U (Claude guía) | ☐ |
-| T26 | Verificar producción: `curl -I` de `/`, `/sw.js`, `/assets/*` y `/progreso`; instalar en el iPhone; modo avión | producción | Headers correctos, sin 404 en rutas profundas, la app abre sin conexión en el iPhone | AC-38, AC-39, AC-31 (manual en iOS) | U + C | ☐ |
-| T27 | Actualizar `handoff.md`, la sección de comandos de `CLAUDE.md` y marcar la spec como implementada | docs | Revisión | — | C | ☐ |
+| T23 | Proteger `main`: cambios por PR, check `ci` obligatorio, sin push directo (con `gh api` tras tu confirmación, o desde GitHub) | GitHub | Un push directo a `main` es rechazado | AC-37 | C + U | ☑ |
+| T24 | Comprar el dominio (`.com` en Cloudflare Registrar o Porkbun) | — | Dominio activo en tu cuenta | — | U | ☑ |
+| T25 | Crear el proyecto en Vercel desde `saulgmx/gym-app` (Node 24.x, framework Vite), añadir `gym.<dominio>` y su registro DNS | Vercel, DNS | `https://gym.<dominio>` sirve la app con HTTPS | AC-38 | U (Claude guía) | ☑ |
+| T26 | Verificar producción: `curl -I` de `/`, `/sw.js`, `/assets/*` y `/progreso`; instalar en el iPhone; modo avión | producción | Headers correctos, sin 404 en rutas profundas, la app abre sin conexión en el iPhone | AC-38, AC-39, AC-31 (manual en iOS) | U + C | ☑ |
+| T27 | Actualizar `handoff.md`, la sección de comandos de `CLAUDE.md` y marcar la spec como implementada | docs | Revisión | — | C | ☑ |
 
 **Punto de control D:** PR "deploy and handoff".
 

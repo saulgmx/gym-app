@@ -1,6 +1,6 @@
 # Plan técnico: Fase 0, esqueleto instalable con fronteras verificadas
 
-**Spec:** `specs/000-fase-0/spec.md` · **Estado:** Aprobado · **Fecha:** 16-nov-2026
+**Spec:** `specs/000-fase-0/spec.md` · **Estado:** Implementado (17-nov-2026) · **Fecha:** 16-nov-2026
 
 ## 1. Resumen de la solución
 
@@ -108,6 +108,7 @@ Zod y Dexie no se instalan en esta fase (P-7): todavía no hay datos ni entradas
   - Rewrite `/((?!.*\.).*)` → `/index.html`: solo rutas sin extensión; un `/assets/falta.js` da 404, no HTML.
 - La prueba lee la CSP de architecture §7.10 (no de una copia) y comprueba qué regla cubre cada ruta de ejemplo con un convertidor mínimo de patrones; que Vercel los aplique se comprueba con `curl -I` en T26.
 - En `vite dev` **no** se aplica la CSP, porque Vite inyecta scripts *inline* para HMR.
+- `vercel.json` también fija `installCommand: "npm ci --strict-allow-scripts"`, así la instalación queda versionada en el repo y no solo en el panel de Vercel. Una prueba de arquitectura exige que sea el mismo comando que el `npm ci` de `.github/workflows/ci.yml`. Es configuración de build, no una función exclusiva de Vercel en tiempo de ejecución (ADR-0011).
 
 ### 6.4 Fronteras: una sola configuración, probada contra fixtures
 

@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci --strict-allow-scripts",
   "headers": [
     {
       "source": "/(.*)",
