@@ -4,7 +4,7 @@ import type { PlanError, PlanSeed } from '../domain/types';
 
 // What the application service needs from outside (spec 001, plan §6.9).
 
-// Shape of the raw seed; the Zod schema implements it (ADR-0007). Fails with plan/invalid-seed.
+// Shape of the raw seed; the Zod schema implements it (ADR-0012). Fails with plan/invalid-seed.
 export type SeedParser = (raw: unknown) => Result<PlanSeed, PlanError>;
 
 export interface PlanRepository {
