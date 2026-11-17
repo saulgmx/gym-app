@@ -34,6 +34,8 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 **Punto de control B:** PR "plan persistence and seed".
 
+**Orden de ejecución (17-nov):** T13 → T14 → T12. T12 conecta en `bootstrap` el JSON real, que no existe hasta T14; T13 y T14 solo necesitan `createPlan` (T11). Los números de tarea no cambian.
+
 ## C. Pantalla "Hoy"
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
