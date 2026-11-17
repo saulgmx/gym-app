@@ -42,6 +42,11 @@ export default tseslint.config(
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
   },
+  // CommonJS config files (e.g. .dependency-cruiser.cjs) import with require().
+  {
+    files: ['**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
 
   prettier,
 );

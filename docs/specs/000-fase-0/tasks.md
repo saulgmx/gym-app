@@ -16,7 +16,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 | T4 | Workflow de CI (`.github/workflows/ci.yml`, job `ci`): `setup-node` desde `package.json`, `npm ci`, typecheck, lint, test, build | CI | El PR muestra el check `ci` en verde | AC-36 (parcial) | C | ☑ |
 | T5 | Estructura de carpetas: `shared/{kernel,events,ui}`, los 5 módulos con capas vacías (`.gitkeep`) e `index.ts` con `create<Module>()` → `{}`, `app/compose.ts` | todos | `npm run typecheck` pasa; el árbol coincide con architecture §5 | — | C | ☑ |
 | T6 | Fixtures de fronteras (`tests/architecture/fixtures/src/`) y pruebas: cada violación de AC-4 a AC-9 + AC-3 con su archivo válido | `tests/architecture` | Las pruebas **fallan** (rojo): todavía no hay reglas | AC-3 a AC-9 | C | ☑ |
-| T7 | `eslint-plugin-boundaries` (elementos y reglas de §6.4) + `.dependency-cruiser.cjs`; `npm run lint` incluye `depcruise`; excluir fixtures del lint normal | raíz | T6 en verde; `npm run lint` pasa sobre `src/` real | AC-3 a AC-9, QS-07, CA-9 | C | ☐ |
+| T7 | `eslint-plugin-boundaries` (elementos y reglas de §6.4) + `.dependency-cruiser.cjs`; `npm run lint` incluye `depcruise`; excluir fixtures del lint normal | raíz | T6 en verde; `npm run lint` pasa sobre `src/` real | AC-3 a AC-9, QS-07, CA-9 | C | ☑ |
 
 **Punto de control A:** PR "tooling and boundaries".
 

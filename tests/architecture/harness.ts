@@ -10,7 +10,7 @@ import tseslint from 'typescript-eslint';
 // configuration used by `npm run lint` reports each violation (spec 000, plan §6.4).
 
 export const FIXTURES = fileURLToPath(new URL('./fixtures', import.meta.url));
-const FIXTURES_TSCONFIG = path.join(FIXTURES, 'tsconfig.json');
+export const FIXTURES_TSCONFIG = path.join(FIXTURES, 'tsconfig.json');
 
 const typescriptParsing = {
   files: ['**/*.{ts,tsx}'],

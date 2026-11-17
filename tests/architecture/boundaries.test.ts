@@ -1,8 +1,8 @@
 import type { IViolation } from 'dependency-cruiser';
 import type { Linter } from 'eslint';
 import { beforeAll, describe, expect, it } from 'vitest';
-import boundaries from '../../config/eslint/boundaries.js';
-import { cruiseFixtures, lintFixtures } from './harness';
+import { boundariesConfig } from '../../config/eslint/boundaries.js';
+import { FIXTURES, FIXTURES_TSCONFIG, cruiseFixtures, lintFixtures } from './harness';
 
 // Spec 000 §4.2 (ADR-0008, QS-07, CA-9): each rule reports its violation and accepts its valid case.
 
@@ -14,7 +14,9 @@ describe('eslint-plugin-boundaries', () => {
   let messages: Map<string, Linter.LintMessage[]>;
 
   beforeAll(async () => {
-    messages = await lintFixtures(boundaries);
+    messages = await lintFixtures(
+      boundariesConfig({ rootPath: FIXTURES, tsconfig: FIXTURES_TSCONFIG }),
+    );
   });
 
   // Guards against a vacuous pass: the valid cases mean nothing if no file was linted.
