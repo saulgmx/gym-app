@@ -38,3 +38,7 @@ jobs:
 
       # Initial JS < 200 kB gzip (QS-10, AC-34); measures dist/, so it runs after the build.
       - run: npm run size
+
+      # E2E on vite preview with the production headers (AC-1, AC-23, AC-26, AC-36).
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:e2e

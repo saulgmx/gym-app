@@ -23,7 +23,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "icons": "pwa-assets-generator",
-    "size": "size-limit"
+    "size": "size-limit",
+    "test:e2e": "npm run build && playwright test"
   },
   "volta": {
     "node": "24.22.3",
@@ -40,7 +41,9 @@
     "zustand": "5.1.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
     "@size-limit/file": "14.3.0",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
