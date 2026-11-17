@@ -18,6 +18,8 @@ export function createPlan(deps: { db: Dexie; clock: Clock }): PlanApi {
 
 export { planStores } from './infrastructure/schema';
 export { useTodayPlan, useWeekPlan } from './ui/hooks';
+export { PlanExerciseList } from './ui/PlanExerciseList';
+export { WeekStrip } from './ui/WeekStrip';
 
 export type { PlanApi } from './application/service';
 export type {
