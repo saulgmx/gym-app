@@ -232,7 +232,7 @@ La importación es todo o nada: se ejecuta en una sola transacción Dexie sobre 
 
 ### 7.2 Eventos de dominio
 
-- Bus en memoria en `shared/events`, tipado con un mapa de eventos que cada módulo amplía por *declaration merging* [PROPUESTO]:
+- Bus en memoria en `shared/events`, tipado con un mapa de eventos que cada módulo amplía por *declaration merging*:
 
 ```ts
 // shared/events/types.ts
@@ -350,7 +350,8 @@ El temporizador guarda `endsAt` (instante), no un contador, para sobrevivir a la
 
 - Componentes base en `shared/ui` con mínimo 44 × 44 px y foco visible.
 - Inputs numéricos con `inputmode="decimal"` (peso) o `"numeric"` (reps, RIR) y `<label>` asociado.
-- Tokens de la spec §7.4 en `shared/ui/tokens.css`; ningún color literal fuera de ese archivo (regla de stylelint [PROPUESTO]).
+- Tokens de la spec §7.4 en `shared/ui/tokens.css`; ningún color literal fuera de ese archivo (regla de stylelint en CI).
+- Tipografías autoalojadas con `@fontsource-variable/inter` y `@fontsource-variable/space-grotesk`, solo subconjunto latino y `font-display: swap`.
 
 ## 8. Despliegue
 

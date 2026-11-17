@@ -38,6 +38,13 @@ function lbToKg(lb: number): number;
 // Exportación: contrato que implementa cada módulo con datos (ver modules/data.md §3)
 interface DataPort<T = unknown> { /* name, version, order, tables, exportData, validate, importData, wipe, csv? */ }
 
+// Implementaciones de producción
+const systemClock: Clock;  // now(): Instant con el offset local; today(): LocalDate local
+function createUuidV7Generator(opts?: {
+  now?: () => number;                     // ms desde epoch; por defecto Date.now
+  random?: (bytes: Uint8Array) => void;   // por defecto crypto.getRandomValues
+}): IdGenerator;                          // RFC 9562, monótono por dispositivo (ADR-0009)
+
 // Pruebas
 function fixedClock(now: string): Clock;
 function sequentialIds(prefix?: string): IdGenerator;
@@ -55,7 +62,7 @@ export interface EventBus {
 export function createEventBus(opts?: { onError?: (e: unknown, type: string) => void }): EventBus;
 ```
 
-Reglas: entrega asíncrona (microtarea), un handler que falla no afecta a los demás ni al publicador, `subscribe` devuelve la función para desuscribirse. En pruebas, `createEventBus` más `await flushEvents()` [PROPUESTO].
+Reglas: entrega asíncrona (microtarea), un handler que falla no afecta a los demás ni al publicador, `subscribe` devuelve la función para desuscribirse. En pruebas, `createEventBus` más `await flushEvents()`, exportado solo desde `@/shared/events/testing` (nunca desde la entrada pública). `flushEvents(): Promise<void>` espera a que terminen todos los handlers pendientes de cualquier bus creado en la prueba.
 
 ## 4. `shared/ui`
 
