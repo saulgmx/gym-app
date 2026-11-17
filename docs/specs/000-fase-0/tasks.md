@@ -45,7 +45,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 | T19 | `vercel.json` (headers y rewrite de ADR-0011); `vite.config.ts` aplica sus headers globales a `preview.headers`; prueba de arquitectura de headers | raíz | `tests/architecture/headers.test.ts` pasa: CSP = architecture §7.10 y reglas de caché presentes | AC-38 (parcial) | C | ☑ |
 | T20 | `size-limit` (§6.9) y paso en CI | raíz, CI | `npm run size` pasa; el CI falla si se supera el límite (comprobado bajando el límite temporalmente) | AC-34, QS-10 | C | ☑ |
 | T21 | Playwright contra `vite preview` (proyectos `chromium` Pixel 7 y `webkit` iPhone 13), `shell.spec` y `a11y.spec` con axe; paso en CI | `tests/e2e`, CI | `npm run test:e2e` pasa local y en CI | AC-1, AC-23, AC-26 | C | ☑ |
-| T22 | `pwa.spec` (SW activo, recarga sin conexión) y `csp.spec` (cero `securitypolicyviolation`) | `tests/e2e` | Pasan en CI; si WebKit en Linux no soporta el caso sin conexión, se limita a chromium y se anota aquí | AC-30, AC-31, AC-35, QS-06 (parcial) | C | ☐ |
+| T22 | `pwa.spec` (SW activo, recarga sin conexión) y `csp.spec` (cero `securitypolicyviolation`) | `tests/e2e` | Pasan en CI; si WebKit en Linux no soporta el caso sin conexión, se limita a chromium y se anota aquí | AC-30, AC-31, AC-35, QS-06 (parcial) | C | ☑ |
 
 **Punto de control C:** PR "app shell, PWA and e2e".
 
