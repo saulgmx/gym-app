@@ -24,12 +24,12 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T8 | Pruebas de tipos branded, `Result`, `ok`/`err` (prueba de tipos), fechas (`addDays`, `daysBetween`, `startOfIsoWeek`, `weekdayOf`, `compareInstants`), `fixedClock`, `sequentialIds` y números | `shared/kernel` | Pruebas en rojo | AC-13 a AC-17 | C | ☐ |
-| T9 | Implementar lo anterior + `systemClock` y la interfaz `DataPort` (solo tipo) | `shared/kernel` | T8 en verde; cobertura ≥ 80% | AC-13 a AC-17 | C | ☐ |
-| T10 | Pruebas de `createUuidV7Generator`: formato, versión y variante, timestamp decodificable, 10 000 IDs en el mismo ms, reloj que retrocede, desbordamiento del contador | `shared/kernel` | Pruebas en rojo | AC-10 a AC-12 | C | ☐ |
-| T11 | Implementar UUIDv7 (§6.5) | `shared/kernel` | T10 en verde | AC-10 a AC-12 | C | ☐ |
-| T12 | Pruebas del bus: entrega asíncrona, aislamiento de fallos con `onError`, desuscripción y pruebas de tipos de `DomainEvents` (evento de ejemplo declarado solo en la prueba) | `shared/events` | Pruebas en rojo | AC-18 a AC-21 | C | ☐ |
-| T13 | Implementar `createEventBus` + `@/shared/events/testing` con `flushEvents()` | `shared/events` | T12 en verde; `flushEvents` no se exporta desde `@/shared/events` | AC-18 a AC-21 | C | ☐ |
+| T8 | Pruebas de tipos branded, `Result`, `ok`/`err` (prueba de tipos), fechas (`addDays`, `daysBetween`, `startOfIsoWeek`, `weekdayOf`, `compareInstants`), `fixedClock`, `sequentialIds` y números | `shared/kernel` | Pruebas en rojo | AC-13 a AC-17 | C | ☑ |
+| T9 | Implementar lo anterior + `systemClock` y la interfaz `DataPort` (solo tipo) | `shared/kernel` | T8 en verde; cobertura ≥ 80% | AC-13 a AC-17 | C | ☑ |
+| T10 | Pruebas de `createUuidV7Generator`: formato, versión y variante, timestamp decodificable, 10 000 IDs en el mismo ms, reloj que retrocede, desbordamiento del contador | `shared/kernel` | Pruebas en rojo | AC-10 a AC-12 | C | ☑ |
+| T11 | Implementar UUIDv7 (§6.5) | `shared/kernel` | T10 en verde | AC-10 a AC-12 | C | ☑ |
+| T12 | Pruebas del bus: entrega asíncrona, aislamiento de fallos con `onError`, desuscripción y pruebas de tipos de `DomainEvents` (evento de ejemplo declarado solo en la prueba) | `shared/events` | Pruebas en rojo | AC-18 a AC-21 | C | ☑ |
+| T13 | Implementar `createEventBus` + `@/shared/events/testing` con `flushEvents()` | `shared/events` | T12 en verde; `flushEvents` no se exporta desde `@/shared/events` | AC-18 a AC-21 | C | ☑ |
 
 **Punto de control B:** PR "shared kernel and event bus".
 
