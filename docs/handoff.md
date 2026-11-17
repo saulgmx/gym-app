@@ -39,12 +39,16 @@
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
-## Siguiente paso: fase 0 (spec §13)
+## Siguiente paso: implementar la fase 0
 
 1. ~~Confirmar ADR-0009, ADR-0010 y hosting~~ (hecho, 16-nov).
-2. Crear `docs/specs/000-fase-0/{spec,plan,tasks}.md` con las plantillas.
-3. Implementar siguiendo `tasks.md`: `git init`, Vite + React + TS estricto, ESLint/Prettier, alias `@/`, estructura de carpetas (architecture.md §5), `shared/kernel` y bus de eventos con pruebas, reglas de fronteras, `tokens.css`, router con páginas vacías y TabBar, PWA vacía, CI.
+2. ~~Spec, plan y tareas en `docs/specs/000-fase-0/`~~ (aprobados, 16-nov).
+3. Fusionar las ramas de docs en orden: `docs/phase-0-decisions` → `docs/000-phase-0-spec`.
+4. Implementar en `feat/000-phase-0` siguiendo `docs/specs/000-fase-0/tasks.md`, empezando por **T1**. Un commit por tarea y un PR por punto de control (A–D).
+5. Pendiente del usuario, sin bloquear hasta el bloque D: comprar el dominio (T24).
+
+Entorno: Node se fija con Volta (`24.22.3`); el Node de Homebrew ya se desinstaló.
 
 ## Prompt sugerido para un chat nuevo
 
-"Vamos a escribir la spec, el plan y las tareas de la fase 0 en docs/specs/000-fase-0/ usando las plantillas de docs/templates. Empieza leyendo docs/README.md y docs/handoff.md."
+"Vamos a implementar la fase 0 siguiendo docs/specs/000-fase-0/tasks.md, empezando por la siguiente tarea pendiente. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso."
