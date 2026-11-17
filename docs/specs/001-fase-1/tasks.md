@@ -23,7 +23,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T7 | Pruebas del servicio de aplicación con un repositorio en memoria: `ensureSeeded` (parser que falla, reglas que fallan, `startDate` = lunes de la semana de `clock.today()` (RN-PLN-13), no escribe si ya hay programa) y `getPosition`/`getTodayPlan`/`getWeekPlan` sobre el repositorio | `plan/application` | Pruebas en rojo | AC-1 (fecha), AC-2, QS-08 | C | ☐ |
+| T7 | Pruebas del servicio de aplicación con un repositorio en memoria: `ensureSeeded` (parser que falla, reglas que fallan, `startDate` = lunes de la semana de `clock.today()` (RN-PLN-13), no escribe si ya hay programa) y `getPosition`/`getTodayPlan`/`getWeekPlan` sobre el repositorio | `plan/application` | Pruebas en rojo | AC-1 (fecha), AC-2, QS-08 | C | ☑ |
 | T8 | Implementar `application/ports.ts` (`PlanRepository`, `SeedParser`) y el servicio; el servicio solo espera promesas del repositorio (plan §6.4) | `plan/application` | T7 en verde | AC-1 (fecha), AC-2, QS-08 | C | ☐ |
 | T9 | Esquema Zod del seed (`infrastructure/seed-schema.ts`): forma, enums, `weekday` 0-6, IDs UUIDv7, rangos `[min, max]` con `min ≤ max`, enteros positivos; con sus pruebas | `plan/infrastructure` | Pruebas del esquema pasan (casos válidos e inválidos) | AC-5 (forma), P-8 | C | ☐ |
 | T10 | Pruebas de integración con `fake-indexeddb` a través de `createPlan`: primer arranque (AC-1), reabrir sin cambios (AC-2), dos `ensureSeeded` concurrentes (AC-3) y base vacía tras un seed inválido o con `high` (AC-5, AC-6) | `plan` | Pruebas en rojo | AC-1 a AC-3, AC-5, AC-6 | C | ☐ |
