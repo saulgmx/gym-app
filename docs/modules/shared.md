@@ -89,7 +89,7 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`; `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
 | `fonts.css` | `@font-face` autoalojados, solo subconjunto latino, `font-display: swap` |
 | `cx(...classes)` | Une clases de CSS Modules en un `string`, ignorando `undefined`, `null` y `false` (ver abajo) |
-| `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido |
+| `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido, y la clase global `.visually-hidden` (texto solo para lectores de pantalla; spec 001, T16) |
 
 ```ts
 function cx(...classes: (string | false | null | undefined)[]): string;

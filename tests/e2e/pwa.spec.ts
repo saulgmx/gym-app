@@ -1,17 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { waitForControllingWorker } from './helpers';
 
 // Spec 000 AC-30 and AC-31 (QS-06, partial) on the production build.
-
-/** Waits until a service worker controls the page. The first visit only installs it. */
-async function waitForControllingWorker(page: Page) {
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  if (await page.evaluate(() => navigator.serviceWorker.controller === null)) {
-    await page.reload();
-  }
-  await expect
-    .poll(() => page.evaluate(() => navigator.serviceWorker.controller !== null))
-    .toBe(true);
-}
 
 test('AC-30: the manifest is installable with --bg colors and maskable icons', async ({ page }) => {
   await page.goto('/');

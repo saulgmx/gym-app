@@ -85,6 +85,8 @@ export interface PlanSeed {
 
 export interface ProgramPosition {
   status: 'not_started' | 'active' | 'finished';
+  startDate: LocalDate; // of the program, also outside it (RN-PLN-01)
+  totalWeeks: number;
   week: number | null; // 1..totalWeeks
   block: Block | null;
   isDeloadWeek: boolean;

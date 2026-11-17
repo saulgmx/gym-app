@@ -25,9 +25,18 @@ type Located =
   | { position: ProgramPosition; block: null; week: null }
   | { position: ProgramPosition; block: Block; week: number };
 
-function outside(status: 'not_started' | 'finished'): Located {
+function outside(program: Program, status: 'not_started' | 'finished'): Located {
+  const { startDate, totalWeeks } = program;
   return {
-    position: { status, week: null, block: null, isDeloadWeek: false, volumeFactor: 1 },
+    position: {
+      status,
+      startDate,
+      totalWeeks,
+      week: null,
+      block: null,
+      isDeloadWeek: false,
+      volumeFactor: 1,
+    },
     block: null,
     week: null,
   };
@@ -36,17 +45,25 @@ function outside(status: 'not_started' | 'finished'): Located {
 // RN-PLN-01, 02, 04
 function locate({ program, blocks }: PlanSnapshot, date: LocalDate): Located {
   const days = daysBetween(program.startDate, date);
-  if (days < 0) return outside('not_started');
+  if (days < 0) return outside(program, 'not_started');
 
   const week = Math.floor(days / 7) + 1;
-  if (week > program.totalWeeks) return outside('finished');
+  if (week > program.totalWeeks) return outside(program, 'finished');
 
   const block = blocks.find((b) => b.startWeek <= week && week <= b.endWeek);
   if (!block) throw new Error(`No block covers week ${String(week)} (RN-PLN-02)`);
 
   const volumeFactor = block.isDeload ? DELOAD_FACTOR : (block.weekFactors[week] ?? 1);
   return {
-    position: { status: 'active', week, block, isDeloadWeek: block.isDeload, volumeFactor },
+    position: {
+      status: 'active',
+      startDate: program.startDate,
+      totalWeeks: program.totalWeeks,
+      week,
+      block,
+      isDeloadWeek: block.isDeload,
+      volumeFactor,
+    },
     block,
     week,
   };

@@ -156,6 +156,8 @@ describe('getPosition', () => {
   it('RN-PLN-01: antes del inicio → not_started, sin semana ni bloque, factor 1', () => {
     expect(getPosition(snapshot, date('2026-11-15'))).toEqual({
       status: 'not_started',
+      startDate: '2026-11-16',
+      totalWeeks: 6,
       week: null,
       block: null,
       isDeloadWeek: false,
@@ -173,10 +175,21 @@ describe('getPosition', () => {
     expect(getPosition(snapshot, date('2026-12-27'))).toMatchObject({ status: 'active', week: 6 });
     expect(getPosition(snapshot, date('2026-12-28'))).toEqual({
       status: 'finished',
+      startDate: '2026-11-16',
+      totalWeeks: 6,
       week: null,
       block: null,
       isDeloadWeek: false,
       volumeFactor: 1,
+    });
+  });
+
+  it('RN-PLN-01: dentro del programa también lleva startDate y totalWeeks', () => {
+    expect(getPosition(snapshot, date('2026-11-25'))).toMatchObject({
+      status: 'active',
+      startDate: '2026-11-16',
+      totalWeeks: 6,
+      week: 2,
     });
   });
 

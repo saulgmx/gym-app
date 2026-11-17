@@ -1,0 +1,66 @@
+import 'fake-indexeddb/auto';
+import { act, render } from '@testing-library/react';
+import { Dexie } from 'dexie';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import { fixedClock, type Clock } from '@/shared/kernel';
+import { compose } from '../compose';
+import { AppContext, type AppServices } from '../context';
+import { openDatabase } from '../db';
+import { routes } from '../router';
+import planSeed from '../seed/plan-seed.json';
+
+// Test services with the real plan module and seed over IndexedDB in memory (spec 001 plan
+// §6.11). The seed is loaded with `seedClock` (start date: Monday of that week); pages read
+// `clock`, so a test can look at a day before the program starts.
+
+export const SEEDED_ON = fixedClock('2026-11-18T08:00:00-06:00'); // start date 2026-11-16
+
+const opened: Dexie[] = [];
+
+export function createTestServices({
+  clock = SEEDED_ON,
+  seedClock = SEEDED_ON,
+  seed = planSeed,
+}: { clock?: Clock; seedClock?: Clock; seed?: unknown } = {}): AppServices {
+  const db = openDatabase({ name: crypto.randomUUID() });
+  opened.push(db);
+  const app = compose({ db, clock: seedClock, seed });
+  return { plan: app.plan, clock, ready: app.ready };
+}
+
+/** Call from afterEach in files that use createTestServices. */
+export async function closeTestDatabases() {
+  const dbs = opened.splice(0);
+  for (const db of dbs) db.close();
+  await Promise.all(dbs.map((db) => Dexie.delete(db.name)));
+}
+
+function renderTree(path: string, services: AppServices) {
+  const router = createMemoryRouter(routes, { initialEntries: [path] });
+  render(
+    <AppContext value={services}>
+      <RouterProvider router={router} />
+    </AppContext>,
+  );
+  return router;
+}
+
+/**
+ * Renders a route once `ready` has settled, inside an awaited act(): in the test environment React
+ * only retries a component suspended on use(ready) within an awaited act, and a plain render()
+ * leaves the page on its Suspense fallback forever.
+ */
+export async function renderRoute(path: string, services: AppServices = createTestServices()) {
+  await services.ready.catch(() => undefined);
+  let router!: ReturnType<typeof renderTree>;
+  await act(async () => {
+    router = renderTree(path, services);
+    await Promise.resolve();
+  });
+  return router;
+}
+
+/** Synchronous render, for a page whose `ready` never settles (loading state). */
+export function renderRouteWhileLoading(path: string, services: AppServices) {
+  return renderTree(path, services);
+}

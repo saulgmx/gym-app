@@ -183,6 +183,7 @@ ADR-0007 (hoy ADR-0012) permite `zod/mini` si el tamaño importa. Se empieza con
 
 - **`jitless` (T12):** Zod 4 prueba `new Function` para compilar validadores rápidos, y la CSP sin `unsafe-eval` (architecture §7.10) lo reporta como violación aunque Zod capture el error. `seed-schema.ts` llama a `z.config({ jitless: true })` antes de definir los esquemas; lo verifica `csp.spec` en E2E.
 - **Medición (T12, 17-nov):** con Dexie, Zod clásico y el seed en el bundle inicial, 166.76 kB de 200 kB (antes 102.81 kB): por debajo del umbral de 170 kB, pero con poco margen para la UI de "Hoy". Se vuelve a medir en T18. `npm run size` mide `dist/` tal como está: hay que construir antes.
+- **Medición final (T18, 17-nov):** 168.64 kB de 200 kB con "Hoy" completo (T15–T17). Por debajo de 170 kB, así que se mantiene Zod clásico (AC-23 pasa). **Riesgo:** quedan 1.4 kB hasta el umbral y la fase 2 añade la sesión activa; lo más probable es que el cambio a `zod/mini` (solo `infrastructure/seed-schema.ts`) llegue entonces, decidido con su propia medición.
 
 ### 6.3 Hooks en `ui`, no en `application`
 
@@ -191,6 +192,8 @@ architecture §5.2 pone los hooks en `application`, pero esa capa no puede impor
 ### 6.4 `useLiveQuery` solo con operaciones Dexie dentro
 
 La consulta que observa `useLiveQuery` solo debe esperar promesas de Dexie: una promesa ajena (por ejemplo, un `setTimeout`) rompe el seguimiento de las tablas. El servicio de aplicación no espera nada más que el repositorio, y una prueba de integración comprueba que el hook se actualiza tras escribir en la tabla.
+
+Hallazgo de T15 (17-nov): con Dexie 4.4.7 no se reproduce. Un `setTimeout` en el servicio, con la consulta del hook `async` o sin `async`, no rompe el seguimiento: Dexie mantiene su contexto a través de las esperas nativas. La regla se mantiene como precaución (no cuesta nada), pero ninguna prueba la vigila. Lo que sí vigila `hooks.test.tsx` es la reactividad: un hook de consulta única falla en las 3 pruebas en vivo.
 
 ### 6.5 Seed en JSON escrito a mano, verificado por pruebas
 
@@ -227,6 +230,24 @@ function createPlanService(deps: { repository: PlanRepository; parser: SeedParse
 - `createPlan({ db, clock })` (T11) arma el servicio con el repositorio Dexie y el parser Zod. Las pruebas de T7 usan un repositorio en memoria (QS-08).
 - `getExercise(s)` y `listExercises` no entran en esta fase (contrato v1.6, decisión 9).
 - Pruebas de integración (T10): seed válido compartido en `__tests__/fixtures/seed.ts`; cada prueba abre su propia base con `db.version(1).stores(planStores)` e importa solo del `index.ts` del módulo.
+
+### 6.10 Componentes `WeekStrip` y `PlanExerciseList` (antes de T16)
+
+Siguen el prototipo ("Hoy") y la spec 001 §6:
+
+- **`WeekStrip`:** `<ol aria-label="Semana">` con 7 elementos de lunes a domingo, no interactivo. Cada celda muestra la inicial (L M X J V S D) y una palabra que no depende del color: "Pesas", "Cardio", "Libre" (descanso, como en el prototipo) o "—" fuera del programa; el nombre de la sesión no cabe en un séptimo del ancho. Lo visible va con `aria-hidden` y un texto `.visually-hidden` da el nombre accesible: "miércoles, Full body B", "martes, cardio", "jueves, descanso", "lunes, fuera del programa" (días de un arreglo fijo, sin `Intl`). Hoy lleva `aria-current="date"` y el fondo `--accent` con texto `--bg` (14.10:1); la fecha de cada celda es `addDays(weekStart, i)`.
+- **`PlanExerciseList`:** solo el `<ol>`; la tarjeta y el `h2` de la sesión los pone `TodayPage` (T17). Cada fila: nombre y "2 × 8-12" (o "3 × 30-45 s" con `metric: 'time'`), y debajo, en `--text-muted` (7.48:1 sobre `--surface`), "RIR 3-4" y la nota si la hay. Un rango con mínimo igual al máximo se muestra como un número ("RIR 4"). Las alternativas no se muestran en la fase 1 (contrato, decisión 2).
+- **Formato** en `plan/ui/format.ts`, con sus pruebas. Pruebas de componente por rol y nombre accesible, sin *snapshots*.
+
+### 6.11 Página "Hoy" (antes de T17)
+
+- `app/context.tsx`: `AppContext` con `{ plan, clock, ready }` (lo que devuelve `compose`); `useApp()` lanza sin proveedor; `bootstrap` envuelve el `RouterProvider`.
+- `app/hooks/useToday.ts`: `clock.today()` al montar y en cada `visibilitychange` a `visible` (AC-20).
+- `TodayPage`: el `h1` "Hoy" siempre; debajo, `Suspense` con `use(ready)`. Mientras `ready` no resuelve o los hooks devuelven `undefined`, solo el título. Un rechazo de `ready` llega al `errorElement` (`ErrorFallback`, AC-21).
+- Encabezado: fecha ("Miércoles 18 de noviembre", sin coma, como "lunes 16 de noviembre" en la spec), bloque ("Bloque 1 · Full body") y semana ("Semana 1 de 15"; en descarga "Semana 15 de 15 · Semana de descarga", AC-18), en líneas separadas (spec §6).
+- Cuerpo, tras la tira: pesas → tarjeta con `h2` de la sesión y `PlanExerciseList`; cardio → `h2` "Cardio" y la nota; descanso → `h2` "Descanso" y "Recupera: dormir y comer bien también es entrenar."; fuera del programa → fecha y mensaje de AC-19, sin bloque, tira ni lista.
+- Fechas en `app/format-date.ts` con `Intl` (`es`, `timeZone: 'UTC'` sobre la `LocalDate`, §6.7), armadas por partes para evitar la coma.
+- Pruebas: `src/app/__tests__/today-page.test.tsx` con el seed real, `fake-indexeddb` y relojes fijos (AC-15 a AC-21); `router.test.tsx` y `errors.test.tsx` reciben un proveedor de prueba con un plan real en memoria.
 
 ## 7. Estrategia de pruebas
 
