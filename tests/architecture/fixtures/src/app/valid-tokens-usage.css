@@ -9,3 +9,7 @@
   fill: currentcolor;
   stroke: transparent;
 }
+
+.outline {
+  fill: none;
+}

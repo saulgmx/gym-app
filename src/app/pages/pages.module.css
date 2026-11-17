@@ -1,0 +1,16 @@
+.empty {
+  color: var(--text-muted);
+}
+
+.fullScreen {
+  min-height: 100dvh;
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  color: var(--accent);
+  font-weight: 600;
+}

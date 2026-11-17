@@ -58,6 +58,7 @@ describe('app router', () => {
     const router = renderAt('/no-existe');
     expect(await screen.findByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it.each([

@@ -12,7 +12,7 @@ Proyecto Vite 8 + React 19 + TypeScript 6 con la estructura de architecture §5.
 |---|---|---|
 | `shared/kernel` | Implementación completa de modules/shared.md §2 + `systemClock` y `createUuidV7Generator` | Sí: modules/shared.md §2 (se añaden las implementaciones de producción) |
 | `shared/events` | `createEventBus` + entrada de pruebas `@/shared/events/testing` | No (ya documentado en §3) |
-| `shared/ui` | Solo `tokens.css`, `fonts.css` y `base.css` (§6.10) | Sí: modules/shared.md §4 (nombres de tokens y hojas globales) |
+| `shared/ui` | Solo `tokens.css`, `fonts.css` y `base.css` (§6.10), y el helper `cx` | Sí: modules/shared.md §4 (nombres de tokens, hojas globales y `cx`) |
 | `plan`, `training`, `progression`, `health`, `data` | Carpetas de capas vacías e `index.ts` con `create<Module>()` que devuelve `{}` | No |
 | `app` | `main.tsx`, `compose.ts`, `router.tsx`, `TabBar`, 4 páginas vacías, manejo de errores, aviso de actualización | No (architecture §5.3) |
 
@@ -156,10 +156,12 @@ Tres hojas globales en `shared/ui`, importadas una vez desde `app/main.tsx`:
 
 Stylelint (`stylelint-config-standard`) considera color literal:
 
-- Con `stylelint-declaration-strict-value`, todo valor que no sea `var()` en `/color$/`, `fill` y `stroke`, y en `background`, `border` y `outline` gracias a `expandShorthand`. Se permiten `currentColor`, `transparent`, `inherit`, `initial` y `unset`.
+- Con `stylelint-declaration-strict-value`, todo valor que no sea `var()` en `/color$/`, `fill` y `stroke`, y en `background`, `border` y `outline` gracias a `expandShorthand`. Se permiten `currentcolor`, `transparent`, `none`, `inherit`, `initial` y `unset`.
 - Con `color-no-hex` y `color-named: never`, cualquier hexadecimal o color con nombre en cualquier propiedad (por ejemplo `box-shadow`).
 
 `src/shared/ui/tokens.css` es el único archivo exento. La prueba corre la configuración real sobre fixtures CSS.
+
+En los `*.module.css` las clases van en camelCase (`.backLink`), porque se leen desde TypeScript como `styles.backLink`; el resto sigue la convención kebab-case de `stylelint-config-standard`.
 
 Contraste (calculado el 17-nov-2026): todos los textos superan AA sobre `--bg`, `--surface` y `--surface-2` (el mínimo es `--text-muted` sobre `--surface-2`, 6.68:1). `--border` (1.48:1 sobre `--bg`) es solo decorativo: no puede ser el único límite visible de un control (WCAG 1.4.11).
 

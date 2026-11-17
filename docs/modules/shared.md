@@ -88,7 +88,17 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `SafetyNote` | Caja de aviso con `--warn` |
 | `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`; `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
 | `fonts.css` | `@font-face` autoalojados, solo subconjunto latino, `font-display: swap` |
+| `cx(...classes)` | Une clases de CSS Modules en un `string`, ignorando `undefined`, `null` y `false` (ver abajo) |
 | `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido |
+
+```ts
+function cx(...classes: (string | false | null | undefined)[]): string;
+// cx('a', undefined, false && 'b', 'c') → 'a c'; cx() → ''
+```
+
+Vite tipa cada CSS Module como un índice de strings, así que con `noUncheckedIndexedAccess` cada clase es `string | undefined`, y con `exactOptionalPropertyTypes` no encaja en props que exigen `string` (por ejemplo `NavLink`). `cx` siempre devuelve `string` y sirve también para clases condicionales. No detecta erratas en nombres de clase; eso lo cubren las pruebas de componente y E2E (decisión del 17-nov-2026, T15).
+
+Los componentes se importan desde `@/shared/ui` (su `index.ts`); las hojas globales `.css` se importan una sola vez desde `app/main.tsx`.
 
 ## 5. Dónde vive cada componente de la spec §7.5
 

@@ -1,0 +1,4 @@
+/* Leaves room for the fixed TabBar: icon, label, padding and the iOS safe area. */
+.content {
+  padding: 1.5rem 1rem calc(5rem + env(safe-area-inset-bottom));
+}

@@ -6,7 +6,7 @@ const colorRules = {
     {
       expandShorthand: true,
       ignoreFunctions: false,
-      ignoreValues: ['currentcolor', 'transparent', 'inherit', 'initial', 'unset'],
+      ignoreValues: ['currentcolor', 'transparent', 'none', 'inherit', 'initial', 'unset'],
     },
   ],
   'color-no-hex': true,
@@ -22,6 +22,16 @@ export default {
     {
       files: ['src/shared/ui/tokens.css'],
       rules: Object.fromEntries(Object.keys(colorRules).map((rule) => [rule, null])),
+    },
+    {
+      // CSS Module classes are read from TypeScript as `styles.backLink`, so camelCase.
+      files: ['**/*.module.css'],
+      rules: {
+        'selector-class-pattern': [
+          '^[a-z][a-zA-Z0-9]*$',
+          { message: (selector) => `Expected class selector "${selector}" to be camelCase` },
+        ],
+      },
     },
   ],
 };
