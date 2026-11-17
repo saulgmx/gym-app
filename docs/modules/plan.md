@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.3 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.4 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -139,21 +139,24 @@ No escucha eventos.
 
 | ID | Regla | Origen |
 |---|---|---|
-| RN-PLN-01 | `week = floor(días(startDate, date) / 7) + 1`. Si `date < startDate` → `not_started`; si `week > totalWeeks` → `finished`. | RF-02 |
+| RN-PLN-01 | `week = floor(días(startDate, date) / 7) + 1`. Si `date < startDate` → `not_started`; si `week > totalWeeks` → `finished`. Fuera del programa: `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`. | RF-02 |
 | RN-PLN-02 | El bloque activo es el que cumple `startWeek ≤ week ≤ endWeek`. Siempre hay exactamente uno para cada semana del programa (lo valida el seed). | RF-02, spec §6.4 |
 | RN-PLN-03 | La sesión del día sale de `block.schedule` por `weekday`. Si hay entradas con `weekParity`, se elige la que coincide con la paridad de la semana dentro del bloque (`week − block.startWeek + 1`; alternancia A/B/A – B/A/B del bloque 1). Manda el calendario: una sesión que no se hizo no desplaza a las siguientes. | plan.md bloque 1 |
 | RN-PLN-04 | `volumeFactor = block.weekFactors[week] ?? 1.0`; en semana de deload, `0.5`. | spec §6.3, §6.4 |
-| RN-PLN-05 | `plannedSets = max(1, round(item.sets[0] × volumeFactor))`. Se planifica el mínimo del rango; el usuario puede añadir series hasta el máximo (RF-16). | RF-05, plan.md |
+| RN-PLN-05 | `plannedSets = max(1, round(item.sets[0] × volumeFactor))`, con `Math.round` (un .5 sube: 3 × 0.5 → 2). Se planifica el mínimo del rango; el usuario puede añadir series hasta el máximo (RF-16). | RF-05, plan.md |
 | RN-PLN-06 | `targetRir = [4, 4]` en deload; si no, `block.weekRir[week] ?? block.targetRir` (semana del programa, como `weekFactors`). | spec §6.3, plan.md semanas 1, 5 y 9 |
 | RN-PLN-07 | **Ningún ejercicio `lumbarRisk: 'high'` puede estar en una plantilla**, ni como principal ni como alternativa. Bloqueo total, sin opción de anularlo. `ensureSeeded`, `updateTemplate` y la importación de `dataPort` lo rechazan con `plan/high-risk-exercise`. | P-1, spec §6.5 |
 | RN-PLN-08 | Un ejercicio `medium` se puede añadir a una plantilla con confirmación explícita en la UI. | spec §6.5 |
 | RN-PLN-09 | `jumpToWeek(n)` fija `startDate = lunes de la semana actual − (n − 1) × 7 días`. | RF-03 |
-| RN-PLN-10 | La semana empieza en lunes (ISO 8601). | Spec 001 |
+| RN-PLN-10 | La semana empieza en lunes (ISO 8601). `getWeekPlan` normaliza la fecha recibida con `startOfIsoWeek` y devuelve 7 días, de lunes a domingo. | Spec 001 |
 | RN-PLN-11 | `alternatives` contiene IDs de ejercicios existentes, distintos del principal, sin repetir y con la misma `metric` que el principal. `PlannedItem` muestra el principal; la serie registra el ejercicio que realmente se usó, y cada ejercicio lleva su propia progresión. | plan.md |
 | RN-PLN-12 | Una entrada de `schedule` puede apuntar a una plantilla de cualquier bloque del mismo programa. El bloque Deload (semana 15) reutiliza el calendario y las plantillas del bloque 3. | Spec 001 |
 | RN-PLN-13 | El seed no trae fecha: `ensureSeeded` fija `startDate = startOfIsoWeek(clock.today())`. | Spec 001 |
 | RN-PLN-14 | `ensureSeeded` es atómico e idempotente: valida todo antes de escribir y escribe en una sola transacción, solo si las tablas del plan están vacías. Con llamadas concurrentes, el seed se aplica una vez. | P-2, spec 001 |
 | RN-PLN-15 | Validación del seed, además del esquema Zod: (a) todo ID referenciado existe; (b) los bloques cubren las semanas 1..`totalWeeks` sin huecos ni solapes (RN-PLN-02); (c) cada día de cada bloque tiene una entrada sin `weekParity` o exactamente dos, una `odd` y una `even`; (d) RN-PLN-11. Un fallo devuelve `plan/invalid-seed`. | ADR-0007, spec 001 |
+| RN-PLN-16 | Un día sin entrada en `schedule`, una plantilla o un ejercicio inexistentes al calcular el plan del día son un bug (RN-PLN-15 lo impide): se lanza una excepción, no un `Result`. | ADR-0010 |
+| RN-PLN-17 | Los `plannedItems` se ordenan por `TemplateItem.order`, no por la posición en el arreglo. | Spec 001 |
+| RN-PLN-18 | Notas del día: en cardio, la `note` de la entrada del calendario; en descanso, ninguna (el texto lo pone la UI); en pesas, la `note` de cada `TemplateItem` en su `PlannedItem`. | Spec 001 §6 |
 
 ## 7. Errores
 
@@ -171,6 +174,11 @@ No escucha eventos.
 - RN-PLN-13: primer arranque un miércoles → `startDate` es el lunes de esa semana.
 - RN-PLN-14: dos `ensureSeeded` concurrentes → un solo programa; segunda llamada con datos → no cambia nada.
 - RN-PLN-15: un seed por cada caso (a)–(c) → `plan/invalid-seed` y la base vacía.
+- RN-PLN-01: fuera del programa → `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`.
+- RN-PLN-10: `getWeekPlan` con un jueves → 7 días desde el lunes de esa semana.
+- RN-PLN-16: plantilla o ejercicio inexistentes en el cálculo del día → lanza.
+- RN-PLN-17: ítems guardados en desorden → salen por `order`.
+- RN-PLN-18: cardio con su nota; descanso sin nota; nota del ítem en su `PlannedItem`.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
 
 ## 9. Trazabilidad
@@ -185,3 +193,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 4. **Series planificadas:** el mínimo del rango; se pueden añadir extras hasta el máximo (RN-PLN-05).
 5. **Spec 001 (contrato v1.2):** fecha de inicio al cargar el seed (RN-PLN-13), `Block.weekRir` (RN-PLN-06), deload con las plantillas del bloque 3 (RN-PLN-12), carga atómica (RN-PLN-14) y validación del seed (RN-PLN-15); se confirman RN-PLN-10, `isPrimary` y `metric: 'time'`.
 6. **Plan de la spec 001 (contrato v1.3):** `createPlan({ db, clock })`, `planStores`, `PlanErrorCode`, hooks con la API como parámetro y firmas de `WeekStrip` y `PlanExerciseList`.
+7. **Casos de borde del calendario, antes de T3 (contrato v1.4):** posición fuera del programa (RN-PLN-01), redondeo con `Math.round` (RN-PLN-05), `getWeekPlan` normaliza al lunes (RN-PLN-10), datos inconsistentes lanzan (RN-PLN-16), orden por `order` (RN-PLN-17) y notas del día (RN-PLN-18).
