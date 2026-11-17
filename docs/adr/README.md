@@ -1,0 +1,23 @@
+# Registro de decisiones de arquitectura (ADR)
+
+Un ADR registra una decisión estructural, su contexto y sus consecuencias. Formato: [`../templates/adr.md`](../templates/adr.md).
+
+Reglas:
+
+- Un archivo por decisión: `NNNN-titulo-corto.md`, numeración consecutiva.
+- Estados: `Propuesto` → `Aceptado` → (`Reemplazado por ADR-xxxx` | `Obsoleto`).
+- Un ADR aceptado no se edita (salvo erratas). Para cambiar una decisión se escribe uno nuevo que lo reemplaza.
+- Si un plan de feature introduce una dependencia estructural, un patrón nuevo o cambia una frontera, necesita ADR.
+
+| ADR | Título | Estado |
+|---|---|---|
+| [0001](0001-monolito-modular.md) | Monolito modular con 5 módulos | Aceptado |
+| [0002](0002-pwa-offline-first-dexie.md) | PWA offline-first con Dexie (IndexedDB) | Aceptado |
+| [0003](0003-comunicacion-entre-modulos.md) | Comunicación entre módulos: API pública, puertos y eventos | Aceptado |
+| [0004](0004-graficas-uplot.md) | Gráficas con uPlot | Aceptado |
+| [0005](0005-css-modules-variables.md) | Estilos con CSS Modules y variables CSS | Aceptado |
+| [0006](0006-estado-zustand.md) | Estado de UI con Zustand | Aceptado |
+| [0007](0007-zod-en-fronteras.md) | Validación con Zod en las fronteras de entrada | Aceptado |
+| [0008](0008-verificacion-de-fronteras.md) | Fronteras verificadas con eslint-plugin-boundaries y dependency-cruiser | Aceptado |
+| [0009](0009-ids-y-tiempo.md) | IDs ULID, fechas locales y reloj inyectado | Propuesto |
+| [0010](0010-manejo-de-errores-result.md) | Errores esperados con `Result<T, E>` | Propuesto |
