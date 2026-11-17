@@ -1,5 +1,11 @@
 // Valid raw seed shared by the schema and integration tests (contract v1.8, plan §6.9).
 
+import type { z } from 'zod';
+import type { planSeedSchema } from '../../infrastructure/seed-schema';
+
+// The schema's input type is the JSON shape, so tests can break one field at a time.
+export type SeedJson = z.input<typeof planSeedSchema>;
+
 // Fixed UUIDv7 values (version 7, variant 8), checked with z.uuidv7() in Node.
 export const uuid = (n: number) => `0196a000-0000-7000-8000-${String(n).padStart(12, '0')}`;
 export const PRENSA = uuid(1);
@@ -11,7 +17,7 @@ export const TPL_A = uuid(30);
 export const TPL_B = uuid(31);
 
 // Plain JSON, as it comes from plan-seed.json (weekRir and weekFactors keys are strings).
-export const valid = () => ({
+export const valid = (): SeedJson => ({
   exercises: [
     {
       id: PRENSA,

@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router/dom';
-import { compose } from './compose';
 import { AppErrorBoundary } from './errors/AppErrorBoundary';
 import { AppNotice } from './errors/AppNotice';
 import { installGlobalErrorHandlers } from './errors/global-handlers';
@@ -21,8 +20,7 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
   // Not awaited and never rejects: a refusal must not reach the unhandledrejection handler.
   void storage?.persist?.().catch(() => undefined);
 
-  // Modules are not passed to React until a page needs them (phase 1).
-  compose();
+  // compose() returns here in T12, with the Dexie database and `ready` (spec 001, plan §5).
 
   const root = createRoot(rootElement);
   root.render(

@@ -3,7 +3,10 @@ import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fixedClock, type LocalDate } from '@/shared/kernel';
 import { createPlan, planStores } from '..';
-import { BLOCK, PALLOF, PRENSA, uuid, valid } from './fixtures/seed';
+import type { PlanSnapshot } from '../domain/schedule';
+import { createDexiePlanRepository } from '../infrastructure/dexie-repository';
+import { parseSeed } from '../infrastructure/seed-schema';
+import { BLOCK, PALLOF, PRENSA, uuid, valid, type SeedJson } from './fixtures/seed';
 
 // Integration through the public API with IndexedDB in memory (AC-1 to AC-3, AC-5, AC-6,
 // RN-PLN-14, 25). Each test opens its own database, as app/db.ts will (plan §6.9).
@@ -45,17 +48,15 @@ const seededDump = () => {
   };
 };
 
-type RawSeed = ReturnType<typeof valid>;
-
 function must<T>(value: T | undefined): T {
   if (value === undefined) throw new Error('Fixture element missing');
   return value;
 }
-const block0 = (s: RawSeed) => must(s.blocks[0]);
-const item = (s: RawSeed, i: number) => must(must(s.templates[0]).items[i]);
-const exercise = (s: RawSeed, i: number) => must(s.exercises[i]);
+const block0 = (s: SeedJson) => must(s.blocks[0]);
+const item = (s: SeedJson, i: number) => must(must(s.templates[0]).items[i]);
+const exercise = (s: SeedJson, i: number) => must(s.exercises[i]);
 
-function seedWith(mutate: (seed: RawSeed) => void): RawSeed {
+function seedWith(mutate: (seed: SeedJson) => void): SeedJson {
   const seed = valid();
   mutate(seed);
   return seed;
@@ -116,7 +117,7 @@ describe('ensureSeeded con IndexedDB', () => {
   });
 
   describe('AC-5: seed inválido → plan/invalid-seed y la base vacía', () => {
-    it.each<[string, (seed: RawSeed) => void]>([
+    it.each<[string, (seed: SeedJson) => void]>([
       ['forma inválida (esquema)', (s) => void (item(s, 0).sets = [3, 2])],
       ['referencia inexistente', (s) => void (item(s, 0).exerciseId = uuid(99))],
       ['semanas con hueco', (s) => void (s.program.totalWeeks = 3)],
@@ -149,7 +150,7 @@ describe('ensureSeeded con IndexedDB', () => {
   });
 
   describe('AC-6: ejercicio high → plan/high-risk-exercise y la base vacía', () => {
-    it.each<[string, (seed: RawSeed) => void]>([
+    it.each<[string, (seed: SeedJson) => void]>([
       ['como principal', (s) => void (exercise(s, 0).lumbarRisk = 'high')],
       ['como alternativa', (s) => void (exercise(s, 2).lumbarRisk = 'high')],
     ])('%s', async (_, mutate) => {
@@ -175,6 +176,22 @@ describe('ensureSeeded con IndexedDB', () => {
       expect(await dump(db)).toEqual(emptyDump);
     });
 
+    it('solo inserta: un ID repetido en el snapshot aborta la escritura completa', async () => {
+      const db = openDb();
+      const parsed = parseSeed(valid());
+      if (!parsed.ok) throw new Error('Fixture must parse');
+      const { program, ...rest } = parsed.value;
+      const exercises = [...rest.exercises, must(rest.exercises[0])]; // same id twice
+      const snapshot: PlanSnapshot = {
+        ...rest,
+        exercises,
+        program: { ...program, startDate: date('2026-11-16') },
+      };
+
+      await expect(createDexiePlanRepository(db).seedIfEmpty(snapshot)).rejects.toThrow();
+      expect(await dump(db)).toEqual(emptyDump);
+    });
+
     it('filas sin programa (estado corrupto) → lanza sin escribir', async () => {
       const db = openDb();
       const stray = must(valid().exercises[0]);
@@ -185,6 +202,25 @@ describe('ensureSeeded con IndexedDB', () => {
       );
       expect(await dump(db)).toEqual({ ...emptyDump, exercises: [stray] });
     });
+  });
+
+  it('RN-PLN-22: base vacía → las consultas lanzan', async () => {
+    const plan = createPlan({ db: openDb(), clock: wednesday });
+
+    await expect(plan.getTodayPlan(date('2026-11-18'))).rejects.toThrow(/RN-PLN-22/);
+  });
+
+  it('RN-PLN-25: la lectura toma solo los bloques del programa', async () => {
+    const db = openDb();
+    const plan = createPlan({ db, clock: wednesday });
+    await plan.ensureSeeded(valid());
+    // An orphan block of another program, sorted first by id, covering the same weeks.
+    const orphan = { ...must(valid().blocks[0]), id: uuid(19), programId: uuid(11), name: 'Ajeno' };
+    await db.table('blocks').add(orphan);
+
+    const position = await plan.getPosition(date('2026-11-18'));
+
+    expect(position.block?.name).toBe('Bloque 1 · Full body');
   });
 
   it('RN-PLN-25: más de un programa → las consultas lanzan', async () => {

@@ -49,6 +49,7 @@ describe('eslint-plugin-boundaries', () => {
     ],
     ['AC-9: ui importing application', `${HEALTH}/ui/valid-ui-to-application.ts`],
     ['AC-7: domain importing the shared kernel', `${HEALTH}/domain/valid-pure.ts`],
+    ['a module index.ts importing the shared kernel (create<Module>(deps))', `${HEALTH}/index.ts`],
   ])('%s is allowed', (_name, file) => {
     expect(messages.get(file)).toEqual([]);
   });

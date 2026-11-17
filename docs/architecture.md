@@ -119,6 +119,7 @@ flowchart LR
 | `application` | `domain`, `shared/kernel`, `shared/events`, API pública de módulos permitidos | `infrastructure`, `ui`, Dexie |
 | `infrastructure` | `domain`, `application/ports`, Dexie | `ui` |
 | `ui` | `application` (casos de uso), `domain` (tipos), `shared/ui`, `dexie-react-hooks` | `infrastructure` |
+| `index.ts` | Sus propias capas y `shared/kernel` (tipos de `create<Module>(deps)`, como `Clock`), más Dexie | Archivos de otros módulos |
 
 Los hooks reactivos viven en `ui` (`ui/hooks.ts`), porque `useLiveQuery` necesita Dexie y `application` no puede importarlo. Reciben la API pública del módulo como parámetro (spec 001, plan §6.3).
 

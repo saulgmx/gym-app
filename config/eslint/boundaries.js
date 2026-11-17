@@ -65,10 +65,13 @@ export function boundariesConfig({ rootPath, tsconfig }) {
                 from: { element: { type: 'shared' } },
                 allow: { to: { element: { type: 'shared' } } },
               },
-              // A module's index.ts wires its own layers.
+              // A module's index.ts wires its own layers; create<Module>(deps) takes kernel types
+              // such as Clock (architecture §5.3).
               {
                 from: { element: { type: 'module' } },
-                allow: { to: { element: { type: 'layer', captured: sameModule } } },
+                allow: {
+                  to: [{ element: { type: 'layer', captured: sameModule } }, shared('kernel')],
+                },
               },
               // Layers (architecture §5.2).
               {
