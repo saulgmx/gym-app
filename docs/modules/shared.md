@@ -55,9 +55,9 @@ function sequentialIds(prefix?: string): IdGenerator;    // 'id-0001', 'id-0002'
 ```ts
 export interface DomainEvents {}    // cada módulo lo amplía en su events.ts
 
-export interface EventBus {
-  publish<K extends keyof DomainEvents>(type: K, payload: DomainEvents[K]): void;
-  subscribe<K extends keyof DomainEvents>(type: K, handler: (p: DomainEvents[K]) => void | Promise<void>): () => void;
+export interface EventBus {  // propiedades función: no usan `this`, se pueden pasar sueltas
+  publish: <K extends keyof DomainEvents>(type: K, payload: DomainEvents[K]) => void;
+  subscribe: <K extends keyof DomainEvents>(type: K, handler: (p: DomainEvents[K]) => void | Promise<void>) => () => void;
 }
 export function createEventBus(opts?: { onError?: (e: unknown, type: string) => void }): EventBus;
 ```

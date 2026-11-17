@@ -40,7 +40,7 @@ describe('entrega', () => {
 
   it('un handler async lento no retrasa a los demás', async () => {
     const bus = createEventBus();
-    let release = () => {};
+    let release = (): void => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
@@ -137,7 +137,7 @@ describe('aislamiento de fallos', () => {
   });
 
   it('AC-19: por omisión, el error se registra con console.error', async () => {
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const bus = createEventBus();
     const boom = new Error('boom');
     bus.subscribe('test/Pinged', () => {

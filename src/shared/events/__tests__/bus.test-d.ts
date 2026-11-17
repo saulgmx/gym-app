@@ -33,12 +33,12 @@ describe('DomainEvents', () => {
       expectTypeOf(payload).toEqualTypeOf<{ n: number }>();
     });
     expectTypeOf(unsubscribe).toEqualTypeOf<() => void>();
-    expectTypeOf(bus.subscribe).toBeCallableWith('test/Pinged', async () => {});
+    expectTypeOf(bus.subscribe).toBeCallableWith('test/Pinged', () => Promise.resolve());
   });
 
   it('AC-21: subscribe rechaza un tipo no declarado o un handler incompatible', () => {
     // @ts-expect-error: 'test/Unknown' is not in DomainEvents
-    bus.subscribe('test/Unknown', () => {});
+    bus.subscribe('test/Unknown', () => undefined);
     // @ts-expect-error: the handler expects another payload
     bus.subscribe('test/Pinged', (payload: { text: string }) => payload.text);
   });
