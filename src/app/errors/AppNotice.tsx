@@ -1,5 +1,5 @@
 import { cx } from '@/shared/ui';
-import styles from './errors.module.css';
+import styles from '../layout/notice.module.css';
 import { useNoticeStore } from './notice-store';
 import { reloadApp } from './reload';
 

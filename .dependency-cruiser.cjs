@@ -15,10 +15,12 @@ module.exports = {
     },
     {
       name: 'not-to-unresolvable',
-      comment: 'Every import resolves to a file or package (catches typos in the @/ alias).',
+      comment:
+        'Every import resolves to a file or package (catches typos in the @/ alias). ' +
+        'Vite plugin virtual modules (virtual:*) only exist inside Vite.',
       severity: 'error',
       from: {},
-      to: { couldNotResolve: true },
+      to: { couldNotResolve: true, pathNot: '^virtual:' },
     },
     {
       name: 'shared-no-modules',

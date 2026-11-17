@@ -1,3 +1,4 @@
+import notice from '../layout/notice.module.css';
 import styles from './errors.module.css';
 import { GENERIC_ERROR_MESSAGE } from './messages';
 import { reloadApp } from './reload';
@@ -7,8 +8,8 @@ export function ErrorFallback() {
   return (
     <main className={styles.screen}>
       <div role="alert" className={styles.panel}>
-        <p className={styles.message}>{GENERIC_ERROR_MESSAGE}</p>
-        <button type="button" className={styles.button} onClick={reloadApp}>
+        <p className={notice.message}>{GENERIC_ERROR_MESSAGE}</p>
+        <button type="button" className={notice.button} onClick={reloadApp}>
           Recargar
         </button>
       </div>

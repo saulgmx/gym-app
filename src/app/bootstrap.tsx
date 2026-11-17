@@ -5,6 +5,8 @@ import { compose } from './compose';
 import { AppErrorBoundary } from './errors/AppErrorBoundary';
 import { AppNotice } from './errors/AppNotice';
 import { installGlobalErrorHandlers } from './errors/global-handlers';
+import { NoticeArea } from './layout/NoticeArea';
+import { UpdatePrompt } from './pwa/UpdatePrompt';
 import { createAppRouter } from './router';
 
 interface BootstrapOptions {
@@ -27,7 +29,10 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
     <StrictMode>
       <AppErrorBoundary>
         <RouterProvider router={createAppRouter()} />
-        <AppNotice />
+        <NoticeArea>
+          <AppNotice />
+          <UpdatePrompt />
+        </NoticeArea>
       </AppErrorBoundary>
     </StrictMode>,
   );
