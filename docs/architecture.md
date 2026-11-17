@@ -342,7 +342,8 @@ El temporizador guarda `endsAt` (instante), no un contador, para sobrevivir a la
 
 ### 7.10 Seguridad
 
-- CSP: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'` (fuentes autoalojadas).
+- CSP: `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'` (fuentes autoalojadas; `frame-ancestors` impide meter la app en un iframe). La prueba `tests/architecture/headers.test.ts` lee esta línea y la compara con `vercel.json`.
+- Otros headers: `X-Content-Type-Options: nosniff` y `Referrer-Policy: no-referrer`.
 - Sin `eval`, `new Function` ni `dangerouslySetInnerHTML` (regla de ESLint).
 - Importación: límite de 10 MB [PROPUESTO], validación Zod, vista previa y confirmación.
 
@@ -365,7 +366,7 @@ flowchart LR
 Hosting: Vercel (Hobby) servido desde un subdominio de un dominio propio, para que el origen (y con él IndexedDB y la PWA instalada) sobreviva a un cambio de proveedor ([ADR-0011](adr/0011-hosting-vercel-origen-estable.md)).
 
 - `main` protegida: cambios por PR con CI obligatorio; Vercel despliega producción desde `main` y previews por PR (solo para revisar, no para instalar).
-- Headers, aplicados por `vercel.json`: CSP de §7; `Cache-Control: no-cache` para `index.html`, `sw.js` y `manifest.webmanifest`; `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html`.
+- Headers, aplicados por `vercel.json`: los de §7.10 en todas las rutas; `Cache-Control: no-cache` en toda ruta fuera de `/assets/` (incluye `/`, rutas de la SPA, `sw.js` y `manifest.webmanifest`: Vercel aplica headers por la ruta pedida, no por el archivo servido); `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html` solo para rutas sin extensión.
 - Sin funciones exclusivas de Vercel: el artefacto es solo `dist/`.
 
 ## 9. Escenarios de calidad

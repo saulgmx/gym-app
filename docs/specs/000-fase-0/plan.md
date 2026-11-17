@@ -101,6 +101,12 @@ Zod y Dexie no se instalan en esta fase (P-7): todavía no hay datos ni entradas
 - `vercel.json` contiene los headers y el rewrite de ADR-0011.
 - `vite.config.ts` lee `vercel.json` y aplica sus headers globales (CSP y seguridad) a `preview.headers`. Playwright corre contra `vite preview`, así que las pruebas usan la misma CSP que producción (AC-35).
 - Una prueba de arquitectura verifica que la CSP de `vercel.json` es exactamente la de architecture §7.10 y que existen las reglas de caché de ADR-0011.
+- Reglas de `vercel.json` (cada header lo pone una sola regla, así no depende del orden en que Vercel los combina):
+  - `/(.*)`: CSP, `X-Content-Type-Options` y `Referrer-Policy` (los "globales" que también usa `vite preview`).
+  - `/((?!assets/).*)`: `Cache-Control: no-cache`. Vercel aplica headers por la ruta pedida, así que `/index.html` sola no cubriría `/` ni `/progreso`.
+  - `/assets/(.*)`: `Cache-Control: public, max-age=31536000, immutable`.
+  - Rewrite `/((?!.*\.).*)` → `/index.html`: solo rutas sin extensión; un `/assets/falta.js` da 404, no HTML.
+- La prueba lee la CSP de architecture §7.10 (no de una copia) y comprueba qué regla cubre cada ruta de ejemplo con un convertidor mínimo de patrones; que Vercel los aplique se comprueba con `curl -I` en T26.
 - En `vite dev` **no** se aplica la CSP, porque Vite inyecta scripts *inline* para HMR.
 
 ### 6.4 Fronteras: una sola configuración, probada contra fixtures
