@@ -266,7 +266,7 @@ Movido a los contratos de cada módulo ([`modules/`](modules/)); esquema Dexie c
 - La tabla `settings` se reparte por dueño: `progressionSettings`, `healthSettings`, `uiPreferences` (app).
 - `Block.schedule` reemplaza a `SessionTemplate.weekday` para soportar la alternancia A/B del bloque 1 (RN-PLN-03).
 - `TemplateItem.alternatives` para los ejercicios con alternativa del plan ("dominadas o jalón"); la serie registra el ejercicio usado (RN-PLN-11).
-- `Exercise` añade `isPrimary`, `beltRecommended` y `metric: 'time'` [PROPUESTO].
+- `Exercise` añade `isPrimary`, `beltRecommended` y `metric: 'time'`; `Block` añade `weekRir` (spec 001).
 
 El seed completo se genera a partir de [`plan.md`](plan.md).
 
