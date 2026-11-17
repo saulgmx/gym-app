@@ -128,7 +128,7 @@ Ninguna regla RN-* de módulo aplica: la fase 0 no tiene lógica de negocio. Apl
 - **Aviso de error genérico:** "Algo salió mal. Tus datos guardados no se han perdido. Recarga la app para continuar." (la opción de exportar respaldo llega en fase 3).
   - Error de render: el aviso sustituye la pantalla, con un botón "Recargar" (la PWA instalada no tiene barra del navegador).
   - Error asíncrono: banner no bloqueante con "Recargar" y "Cerrar"; un solo aviso a la vez, aunque lleguen varios errores.
-- **Aviso de actualización:** "Hay una versión nueva." con botón "Actualizar".
+- **Aviso de actualización:** "Hay una versión nueva." con botones "Actualizar" y "Ahora no". "Ahora no" lo oculta hasta el próximo arranque; nunca se recarga sin confirmación (AC-32).
 - **Visual:** tema oscuro por defecto (RNF-06), tokens de spec §7.4, tipografías autoalojadas, tamaños en `rem` para respetar el tamaño de texto del sistema.
 - **Estados:** sin conexión no requiere UI especial en esta fase (no hay red en tiempo de ejecución).
 

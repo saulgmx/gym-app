@@ -186,6 +186,15 @@ Errores asíncronos, en `src/app/errors/`:
 - `AppNotice`: banner `role="alert"` no bloqueante con "Recargar" y "Cerrar".
 - `messages.ts`: `type ErrorCode = never` y `errorMessages: Record<ErrorCode, string> = {}` hasta que los módulos exporten sus uniones de códigos; ahí también vive el texto genérico.
 
+### 6.12 PWA (AC-30, AC-32)
+
+- `vite-plugin-pwa` con `registerType: 'prompt'` e `injectRegister: false`: el registro lo hace `useRegisterSW` (módulo virtual), sin `<script>` en línea que la CSP bloquearía.
+- Manifest: `name` y `short_name` "Gym", `lang: 'es'`, `start_url` y `scope` `/`, `display: 'standalone'`, `theme_color` y `background_color` `#0E1411` (`--bg`).
+- Precache: `globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}']`. El valor por defecto de Workbox omite las fuentes y los íconos, y sin conexión la app se vería con la tipografía del sistema. `navigateFallback` es `index.html` (valor por defecto del plugin), así las rutas profundas abren sin conexión.
+- Íconos: `public/icon.svg` (mancuerna en `--accent` sobre `--bg`, dentro de la zona segura *maskable*) → `npm run icons` (`@vite-pwa/assets-generator`, preset `minimal-2023`) genera los PNG 64, 192, 512, *maskable* 512, `apple-touch-icon` 180 y `favicon.ico`, que se versionan en `public/`.
+- `UpdatePrompt`: "Hay una versión nueva." con "Actualizar" (`updateServiceWorker(true)`) y "Ahora no" (oculta el aviso; la versión nueva se activa al cerrar la app). Los avisos globales (`AppNotice`, `UpdatePrompt`) se apilan en una zona fija superior para no taparse.
+- Pendiente para la fase 2: no ofrecer la actualización durante una sesión activa (architecture §7.9).
+
 ## 7. Estrategia de pruebas
 
 | Criterio | Tipo de prueba | Archivo |
@@ -229,6 +238,7 @@ Errores asíncronos, en `src/app/errors/`:
 | La CSP rompe algo que solo aparece en el build | AC-35 corre contra `vite preview` con los mismos headers |
 | El dominio aún no está comprado | AC-37 a AC-39 son las últimas tareas; el resto de la fase no depende de ellas |
 | Vercel no ofrece Node 24 o cambia su política | `engines.node: "24.x"` lo fija; si cambia, se ajustan juntos `volta` y `engines` en `package.json` |
+| Vulnerabilidades moderadas en `glob` 11 y `minimatch` 10 vía `workbox-build` (npm audit, 17-nov-2026); no existe una 11.x corregida | Solo se usan en el build, con patrones propios; no llegan al bundle. Revisar en cada versión de `vite-plugin-pwa`/`workbox-build`; no forzar `glob` 14 con `overrides` (otra API) |
 | Otra instalación de Node en el `PATH` antes que Volta: se ignora la versión fijada | Verificar con `which node` que resuelve a `~/.volta/bin/node`; T1 comprueba `node -v` = `v24.22.3` dentro del proyecto |
 
 ## 9. Checklist de la constitución
