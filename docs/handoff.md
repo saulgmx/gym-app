@@ -57,7 +57,8 @@
 2. ~~Preguntas 1 a 4~~ (17-nov, `modules/plan.md` v1.1 §10): `high` con bloqueo total, también como alternativa y al importar (RN-PLN-07); `Block.schedule` con `weekParity` por semana dentro del bloque, manda el calendario (RN-PLN-03); `TemplateItem.alternatives` y la serie registra el ejercicio usado (RN-PLN-11); se planifica el mínimo del rango (RN-PLN-05).
 3. ~~Spec 001~~ aprobada (17-nov): `docs/specs/001-fase-1/spec.md`, con sus reglas ya en `modules/plan.md` v1.2 (RN-PLN-06 y 10 a 15).
 4. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/001-fase-1/plan.md`, con el catálogo del seed (36 ejercicios, §4.1), contrato `plan` v1.3 y architecture §5.2 (hooks en `ui`) y §7.3 (v1 solo con tablas de `plan`).
-   **Siguiente:** `docs/specs/001-fase-1/tasks.md` (plantilla `docs/templates/tasks.md`), con la misma puerta de aprobación que la fase 0. Luego subir la rama `docs/001-phase-1-spec` y abrir su PR.
+   `docs/specs/001-fase-1/tasks.md`: T1 a T20 en 4 puntos de control (A dominio, B persistencia y seed, C "Hoy", D verificación y cierre).
+   **Siguiente:** fusionar el PR de `docs/001-phase-1-spec` y empezar T1 en `feat/001-phase-1-a`.
 5. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
