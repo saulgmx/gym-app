@@ -193,12 +193,32 @@ Se descartó generar el JSON leyendo `docs/plan.md` con un script: el Markdown n
 
 `messages.ts` incluye `PlanErrorCode` en `ErrorCode`. Los cuatro mensajes son el genérico (spec 001 §6) y se quita el `eslint-disable` justificado de la fase 0, porque el mapa ya no está vacío.
 
+### 6.9 Puertos del servicio de aplicación (contrato v1.6, antes de T7)
+
+```ts
+// application/ports.ts
+type SeedParser = (raw: unknown) => Result<PlanSeed, PlanError>;  // Zod en infrastructure (T9); error plan/invalid-seed
+
+interface PlanRepository {
+  loadSnapshot(): Promise<PlanSnapshot | undefined>;  // undefined si no hay programa
+  seedIfEmpty(snapshot: PlanSnapshot): Promise<void>; // comprueba y escribe en la misma transacción (RN-PLN-14)
+}
+
+// application/service.ts
+function createPlanService(deps: { repository: PlanRepository; parser: SeedParser; clock: Clock }): PlanApi;
+```
+
+- La comprobación de "vacía" vive en el repositorio, dentro de la transacción: es lo único que hace segura la concurrencia (RN-PLN-14). El servicio no lee antes de escribir.
+- `createPlan({ db, clock })` (T11) arma el servicio con el repositorio Dexie y el parser Zod. Las pruebas de T7 usan un repositorio en memoria (QS-08).
+- `getExercise(s)` y `listExercises` no entran en esta fase (contrato v1.6, decisión 9).
+
 ## 7. Estrategia de pruebas
 
 Las pruebas del dominio y de `ensureSeeded` se escriben antes que el código, citando su regla (P-5).
 
 | Criterio | Tipo de prueba | Archivo |
 |---|---|---|
+| RN-PLN-13, 20 a 23 | Unitaria del servicio con repositorio en memoria (QS-08) | `src/modules/plan/__tests__/plan-service.test.ts` |
 | AC-1 | Integración (`fake-indexeddb`, `fixedClock`) + E2E con `page.clock` | `src/modules/plan/__tests__/ensure-seeded.test.ts`, `tests/e2e/today.spec.ts` |
 | AC-2, AC-3 | Integración (`fake-indexeddb`) | `src/modules/plan/__tests__/ensure-seeded.test.ts` |
 | AC-4 | Unitaria sobre el seed real + resumen legible | `src/app/seed/__tests__/plan-seed.test.ts` |

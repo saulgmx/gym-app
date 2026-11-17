@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.5 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.6 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -99,8 +99,8 @@ export const planStores: Record<'exercises' | 'programs' | 'blocks' | 'templates
 export type PlanErrorCode =
   | 'plan/invalid-seed' | 'plan/high-risk-exercise' | 'plan/template-not-found' | 'plan/week-out-of-range';
 
-// Fase 1 implementa ensureSeeded, getPosition, getTodayPlan, getWeekPlan, getExercise(s) y
-// listExercises. El resto entra en PlanApi cuando se implementa (v1.0: RF-03, RF-04; fase 3: dataPort).
+// Fase 1 implementa ensureSeeded, getPosition, getTodayPlan y getWeekPlan. El resto entra en PlanApi
+// cuando se implementa (fase 2: getExercise(s) y listExercises; v1.0: RF-03, RF-04; fase 3: dataPort).
 
 interface PlanApi {
   ensureSeeded(seed: unknown): Promise<Result<void>>;                // RN-PLN-13 a 15: valida y carga si está vacío
@@ -151,12 +151,16 @@ No escucha eventos.
 | RN-PLN-10 | La semana empieza en lunes (ISO 8601). `getWeekPlan` normaliza la fecha recibida con `startOfIsoWeek` y devuelve 7 días, de lunes a domingo. | Spec 001 |
 | RN-PLN-11 | `alternatives` contiene IDs de ejercicios existentes, distintos del principal, sin repetir y con la misma `metric` que el principal. `PlannedItem` muestra el principal; la serie registra el ejercicio que realmente se usó, y cada ejercicio lleva su propia progresión. | plan.md |
 | RN-PLN-12 | Una entrada de `schedule` puede apuntar a una plantilla de cualquier bloque del mismo programa. El bloque Deload (semana 15) reutiliza el calendario y las plantillas del bloque 3. | Spec 001 |
-| RN-PLN-13 | El seed no trae fecha: `ensureSeeded` fija `startDate = startOfIsoWeek(clock.today())`. | Spec 001 |
+| RN-PLN-13 | El seed no trae fecha: `ensureSeeded` fija `startDate = startOfIsoWeek(clock.today())`, con `clock.today()` leído al llamar a `ensureSeeded`, no al crear el módulo. | Spec 001 |
 | RN-PLN-14 | `ensureSeeded` es atómico e idempotente: valida todo antes de escribir y escribe en una sola transacción, solo si las tablas del plan están vacías. Con llamadas concurrentes, el seed se aplica una vez. | P-2, spec 001 |
 | RN-PLN-15 | Validación del seed, además del esquema Zod: (a) todo ID referenciado existe; (b) los bloques cubren las semanas 1..`totalWeeks` sin huecos ni solapes (RN-PLN-02); (c) cada día de cada bloque tiene una entrada sin `weekParity` o exactamente dos, una `odd` y una `even`; (d) RN-PLN-11; (e) IDs únicos dentro de cada tabla; (f) `block.programId` es el del programa y `program.blockIds` son exactamente los bloques del seed, ordenados por `startWeek`; (g) las claves de `weekRir` y `weekFactors` son semanas del propio bloque; (h) `order` único dentro de cada plantilla. Un fallo devuelve `plan/invalid-seed`. La forma y el rango de cada valor (`min ≤ max`, factores, `weekday`) los valida el esquema Zod (ADR-0007). | ADR-0007, spec 001 |
 | RN-PLN-19 | La validación del seed (`validateSeed`, dominio puro) devuelve el primer error en este orden: RN-PLN-07 (seguridad primero), (a) referencias, (b) semanas, (c) calendario, (d) alternativas, y después (e) a (h). El error lleva un `message` técnico en inglés y `details` con los IDs implicados; el usuario solo ve el mensaje genérico. | P-1, ADR-0010 |
 | RN-PLN-16 | Un día sin entrada en `schedule`, una plantilla o un ejercicio inexistentes al calcular el plan del día son un bug (RN-PLN-15 lo impide): se lanza una excepción, no un `Result`. | ADR-0010 |
 | RN-PLN-17 | Los `plannedItems` se ordenan por `TemplateItem.order`, no por la posición en el arreglo. | Spec 001 |
+| RN-PLN-20 | `ensureSeeded` siempre analiza y valida el seed, también si la base ya tiene programa: primero el parser (esquema Zod), luego `validateSeed` y al final la escritura (`seedIfEmpty`). Devuelve el primer error tal cual y no ejecuta los pasos siguientes. | P-2, ADR-0007 |
+| RN-PLN-21 | Un fallo del almacenamiento (la base lanza) es un error inesperado: la promesa se rechaza, no se devuelve un `Result`. | ADR-0010 |
+| RN-PLN-22 | `getPosition`, `getTodayPlan` y `getWeekPlan` sin programa cargado son un bug (la UI espera a `ready`): lanzan una excepción. | ADR-0010 |
+| RN-PLN-23 | Las consultas no guardan caché: cada llamada lee el almacenamiento, para que `useLiveQuery` vea los cambios (spec 001, plan §6.4). | Spec 001 |
 | RN-PLN-18 | Notas del día: en cardio, la `note` de la entrada del calendario; en descanso, ninguna (el texto lo pone la UI); en pesas, la `note` de cada `TemplateItem` en su `PlannedItem`. | Spec 001 §6 |
 
 ## 7. Errores
@@ -183,6 +187,11 @@ No escucha eventos.
 - RN-PLN-07: ejercicio `high` solo en el catálogo → `plan/high-risk-exercise`.
 - RN-PLN-15: un seed por cada caso (e)–(h) → `plan/invalid-seed`.
 - RN-PLN-19: seed con un `high` y una referencia rota → `plan/high-risk-exercise`; `details` nombra los IDs.
+- RN-PLN-13: primer arranque en lunes → ese lunes; en domingo → el lunes anterior.
+- RN-PLN-20: parser que falla → su error, sin validar ni escribir; reglas que fallan → su error, sin escribir; seed inválido con programa ya cargado → error y la base no cambia.
+- RN-PLN-21: el repositorio rechaza → `ensureSeeded` y las consultas rechazan.
+- RN-PLN-22: consultas sin programa → lanzan.
+- RN-PLN-23: tras un cambio en el repositorio, la siguiente consulta lo refleja.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
 
 ## 9. Trazabilidad
@@ -199,3 +208,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 6. **Plan de la spec 001 (contrato v1.3):** `createPlan({ db, clock })`, `planStores`, `PlanErrorCode`, hooks con la API como parámetro y firmas de `WeekStrip` y `PlanExerciseList`.
 7. **Casos de borde del calendario, antes de T3 (contrato v1.4):** posición fuera del programa (RN-PLN-01), redondeo con `Math.round` (RN-PLN-05), `getWeekPlan` normaliza al lunes (RN-PLN-10), datos inconsistentes lanzan (RN-PLN-16), orden por `order` (RN-PLN-17) y notas del día (RN-PLN-18).
 8. **Validación del seed, antes de T5 (contrato v1.5):** `high` rechazado también en el catálogo (RN-PLN-07); reglas (e)–(h) de RN-PLN-15; orden de errores con seguridad primero y `details` (RN-PLN-19); forma y rangos de cada valor en Zod.
+9. **Servicio de aplicación, antes de T7 (contrato v1.6):** puertos `SeedParser` y `PlanRepository` (spec 001, plan §6.9); `ensureSeeded` valida siempre y se detiene en el primer error (RN-PLN-20); fallos del almacenamiento como rechazo (RN-PLN-21); consultas sin programa lanzan (RN-PLN-22); sin caché (RN-PLN-23); `clock.today()` al llamar (RN-PLN-13). `getExercise(s)` y `listExercises` pasan a la fase 2, cuando `training` las use (P-7).
