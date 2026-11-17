@@ -180,6 +180,11 @@ describe('getPosition', () => {
     });
   });
 
+  it('RN-PLN-02: una semana sin bloque es un bug → lanza', () => {
+    const withGap: PlanSnapshot = { ...snapshot, blocks: [block1, deload] };
+    expect(() => getPosition(withGap, date('2026-12-07'))).toThrow(); // week 4
+  });
+
   it('RN-PLN-02: el bloque activo es el que contiene la semana', () => {
     expect(getPosition(snapshot, date('2026-11-30')).block?.id).toBe('block-1'); // week 3
     expect(getPosition(snapshot, date('2026-12-07')).block?.id).toBe('block-2'); // week 4
@@ -227,6 +232,17 @@ describe('getDayPlan', () => {
 
   it('RN-PLN-05: un .5 sube con Math.round (3 × 0.5 = 1.5 → 2)', () => {
     expect(workoutPlan('2026-12-21').plannedItems[0]?.plannedSets).toBe(2);
+  });
+
+  it('RN-PLN-05: nunca menos de 1 serie, aunque el redondeo dé 0', () => {
+    const lowFactor: PlanSnapshot = {
+      ...snapshot,
+      blocks: [{ ...block1, weekFactors: { 1: 0.2 } }, block2, deload],
+    };
+    const plan = getDayPlan(lowFactor, date('2026-11-16'));
+    if (plan.kind !== 'workout') throw new Error('Expected a workout');
+    // round(3 × 0.2) = 1; round(2 × 0.2) = 0 → 1
+    expect(plan.plannedItems.map((i) => i.plannedSets)).toEqual([1, 1]);
   });
 
   it('RN-PLN-06: RIR de weekRir, si no el del bloque, y [4, 4] en deload', () => {
