@@ -35,7 +35,7 @@ flowchart LR
   U([Usuario en el gym<br/>celular, una mano]) -->|registra series,<br/>dolor, peso| APP[Gym app PWA]
   APP -->|IndexedDB| DB[(Almacenamiento<br/>del navegador)]
   APP -->|archivo JSON/CSV| FS[Archivos del usuario<br/>iCloud, Drive, correo]
-  HOST[Hosting estático<br/>Vercel/Netlify] -->|descarga e<br/>instala la app| APP
+  HOST[Hosting estático<br/>Vercel, dominio propio] -->|descarga e<br/>instala la app| APP
 ```
 
 - No hay llamadas de red en tiempo de ejecución, salvo la descarga de la app y sus actualizaciones (service worker).
@@ -53,7 +53,7 @@ flowchart LR
 | Estado efímero de UI (sesión activa, temporizador) | Zustand; los datos persistentes viven en Dexie | [0006](adr/0006-estado-zustand.md) |
 | Datos externos no confiables | Zod en todas las fronteras de entrada | [0007](adr/0007-zod-en-fronteras.md) |
 | Que las reglas de módulos no dependan de disciplina | `eslint-plugin-boundaries` + `dependency-cruiser` en CI | [0008](adr/0008-verificacion-de-fronteras.md) |
-| Identificadores y tiempo deterministas y probables | ULID + fechas locales ISO, con `Clock` e `IdGenerator` inyectados | [0009](adr/0009-ids-y-tiempo.md) |
+| Identificadores y tiempo deterministas y probables | UUIDv7 + fechas locales ISO, con `Clock` e `IdGenerator` inyectados | [0009](adr/0009-ids-y-tiempo.md) |
 | Errores esperados sin excepciones | Tipo `Result<T, E>` en casos de uso | [0010](adr/0010-manejo-de-errores-result.md) |
 
 ## 5. Vista de bloques
@@ -310,7 +310,7 @@ Cada módulo con datos implementa un `DataPort` (la interfaz vive en `shared/ker
 ### 7.5 Tiempo, fechas e IDs
 
 - `LocalDate` (`'2026-11-16'`) para el día de entrenamiento en la zona horaria del dispositivo; `Instant` (ISO 8601 con offset) para marcas de tiempo. Nunca se compara un `LocalDate` contra UTC ([ADR-0009](adr/0009-ids-y-tiempo.md)).
-- IDs ULID (ordenables por tiempo) generados por `IdGenerator`.
+- IDs UUIDv7 (ordenables por tiempo, monótonos por dispositivo) generados por `IdGenerator`. Un `Instant` nunca se ordena como string; se usa `compareInstants`.
 - `Clock` e `IdGenerator` se inyectan; las pruebas usan versiones fijas.
 
 ### 7.6 Unidades
@@ -319,9 +319,10 @@ El dominio guarda siempre **kilogramos**. `lb` es solo una preferencia de visual
 
 ### 7.7 Manejo de errores
 
-- Errores esperados (validación, sesión inexistente, umbral) → `Result<T, DomainError>` con un `code` estable ([ADR-0010](adr/0010-manejo-de-errores-result.md)).
-- Errores inesperados (IndexedDB lleno, cuota) → excepción capturada por un *error boundary* en `app`, que muestra un mensaje y la opción de exportar un respaldo.
-- `QuotaExceededError` se trata explícitamente: aviso persistente "Almacenamiento lleno, exporta un respaldo".
+- Errores esperados (validación, sesión inexistente, umbral) → `Result<T, DomainError>` con un `code` estable, tipado como unión literal por módulo ([ADR-0010](adr/0010-manejo-de-errores-result.md)).
+- `DomainError.message` es técnico (inglés, logs). El texto al usuario sale solo del mapa `code → español` en `app`, que cubre todos los códigos (lo verifica `tsc`).
+- Errores inesperados → excepción. El *error boundary* de `app` captura errores de render; un handler global de `error`/`unhandledrejection` captura los async (handlers, promesas, Dexie). Ambos muestran un mensaje y la opción de exportar un respaldo.
+- `QuotaExceededError` es un error esperado: la infraestructura lo convierte en `'data/storage-full'`, con aviso persistente "Almacenamiento lleno, exporta un respaldo".
 
 ### 7.8 Estado de UI
 
@@ -356,11 +357,15 @@ El temporizador guarda `endsAt` (instante), no un contador, para sobrevivir a la
 ```mermaid
 flowchart LR
   dev[Push / PR] --> ci[GitHub Actions<br/>tsc · lint · fronteras · vitest · build · bundle size · playwright]
-  ci -->|main| host[Hosting estático<br/>Vercel o Netlify]
+  ci -->|PR verde → main| host[Vercel<br/>gym.&lt;dominio&gt;]
   host --> phone[Celular: Añadir a inicio]
 ```
 
-Hosting: Vercel o Netlify con headers de CSP y `Cache-Control: no-cache` para `index.html` y `sw.js` [POR DEFINIR: elegir proveedor].
+Hosting: Vercel (Hobby) servido desde un subdominio de un dominio propio, para que el origen (y con él IndexedDB y la PWA instalada) sobreviva a un cambio de proveedor ([ADR-0011](adr/0011-hosting-vercel-origen-estable.md)).
+
+- `main` protegida: cambios por PR con CI obligatorio; Vercel despliega producción desde `main` y previews por PR (solo para revisar, no para instalar).
+- Headers, aplicados por `vercel.json`: CSP de §7; `Cache-Control: no-cache` para `index.html`, `sw.js` y `manifest.webmanifest`; `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html`.
+- Sin funciones exclusivas de Vercel: el artefacto es solo `dist/`.
 
 ## 9. Escenarios de calidad
 

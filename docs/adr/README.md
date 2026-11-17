@@ -19,5 +19,6 @@ Reglas:
 | [0006](0006-estado-zustand.md) | Estado de UI con Zustand | Aceptado |
 | [0007](0007-zod-en-fronteras.md) | Validación con Zod en las fronteras de entrada | Aceptado |
 | [0008](0008-verificacion-de-fronteras.md) | Fronteras verificadas con eslint-plugin-boundaries y dependency-cruiser | Aceptado |
-| [0009](0009-ids-y-tiempo.md) | IDs ULID, fechas locales y reloj inyectado | Propuesto |
-| [0010](0010-manejo-de-errores-result.md) | Errores esperados con `Result<T, E>` | Propuesto |
+| [0009](0009-ids-y-tiempo.md) | IDs UUIDv7, fechas locales y reloj inyectado | Aceptado |
+| [0010](0010-manejo-de-errores-result.md) | Errores esperados con `Result<T, E>` | Aceptado |
+| [0011](0011-hosting-vercel-origen-estable.md) | Hosting en Vercel con origen estable en dominio propio | Aceptado |

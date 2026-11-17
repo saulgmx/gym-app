@@ -300,7 +300,7 @@ Casos clave del dominio:
 ## 12. CI/CD y entrega
 
 - **CI (GitHub Actions):** `tsc`, ESLint, Vitest, build, Playwright en cada PR.
-- **CD:** despliegue automático a Vercel/Netlify desde `main`.
+- **CD:** despliegue automático a Vercel desde `main`, servido desde un dominio propio (ADR-0011).
 - **Versionado:** SemVer; el `schemaVersion` de datos va aparte.
 - **Instalación:** "Añadir a pantalla de inicio" en iOS y Android.
 
