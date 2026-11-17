@@ -181,6 +181,9 @@ En la tarea de instalación se revisa que ninguno ejecute scripts de instalació
 
 ADR-0007 (hoy ADR-0012) permite `zod/mini` si el tamaño importa. Se empieza con el clásico, que tiene mejor API y mejores mensajes, y se mide con `size-limit` al integrarlo. Si el JS inicial pasa de 170 KB, se cambia a `zod/mini`; solo afecta a `infrastructure/seed-schema.ts`.
 
+- **`jitless` (T12):** Zod 4 prueba `new Function` para compilar validadores rápidos, y la CSP sin `unsafe-eval` (architecture §7.10) lo reporta como violación aunque Zod capture el error. `seed-schema.ts` llama a `z.config({ jitless: true })` antes de definir los esquemas; lo verifica `csp.spec` en E2E.
+- **Medición (T12, 17-nov):** con Dexie, Zod clásico y el seed en el bundle inicial, 166.76 kB de 200 kB (antes 102.81 kB): por debajo del umbral de 170 kB, pero con poco margen para la UI de "Hoy". Se vuelve a medir en T18. `npm run size` mide `dist/` tal como está: hay que construir antes.
+
 ### 6.3 Hooks en `ui`, no en `application`
 
 architecture §5.2 pone los hooks en `application`, pero esa capa no puede importar Dexie, y `useLiveQuery` sí lo necesita. Los hooks viven en `plan/ui/hooks.ts` y llaman a la API pública. Contra QS-09 (cambiar Dexie por HTTP), el coste es que también cambiarían los hooks, no solo `infrastructure`. Se acepta y se corrige architecture §5.2. La alternativa (un puerto observable propio con `useSyncExternalStore`) añade código sin uso en la v1 (P-7).

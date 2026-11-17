@@ -5,6 +5,10 @@ import type { SeedParser } from '../application/ports';
 // Shape of the plan seed (RN-PLN-24, ADR-0012). Cross-record rules, high risk included,
 // are checked afterwards by validateSeed (RN-PLN-07, 15).
 
+// No eval: the CSP forbids it (architecture §7.10), and Zod's `new Function` probe is reported as
+// a violation even when caught. Read when each object schema is built, so it goes first.
+z.config({ jitless: true });
+
 const id = z
   .uuidv7()
   .refine((v) => v === v.toLowerCase(), 'UUID must be lowercase') // (b) one spelling per ID
