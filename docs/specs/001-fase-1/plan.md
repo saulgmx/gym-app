@@ -148,7 +148,7 @@ sequenceDiagram
   T->>P: useTodayPlan(plan, date), useWeekPlan(plan, startOfIsoWeek(date))
 ```
 
-- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0012) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo en una transacción `rw` sobre las 4 tablas solo si `programs` está vacía (RN-PLN-14). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
+- `ensureSeeded`: el esquema Zod (infraestructura, ADR-0012) valida la forma, las reglas puras de `domain/seed-rules.ts` validan RN-PLN-07, 11 y 15, y el repositorio escribe todo con `bulkAdd` en una transacción `rw` sobre las 4 tablas solo si las 4 están vacías; si `programs` está vacía y otra no, lanza sin escribir (RN-PLN-14, contrato v1.8). IndexedDB serializa las transacciones `rw` sobre las mismas tablas, también entre pestañas: la segunda ve el programa y no escribe.
 - `ready` rechaza con un `Error` si `ensureSeeded` devuelve `err` o si la base no abre. `use(ready)` lanza en el render y lo captura el `errorElement` de la ruta raíz (`ErrorFallback` con "Recargar", AC-21). Así no hay un aviso no bloqueante encima de una pantalla a medias.
 - `AppContext` (en `app/context.tsx`) es inyección de dependencias, no estado: el valor nunca cambia. No contradice ADR-0006 (Zustand para estado efímero).
 
@@ -211,6 +211,7 @@ function createPlanService(deps: { repository: PlanRepository; parser: SeedParse
 - La comprobación de "vacía" vive en el repositorio, dentro de la transacción: es lo único que hace segura la concurrencia (RN-PLN-14). El servicio no lee antes de escribir.
 - `createPlan({ db, clock })` (T11) arma el servicio con el repositorio Dexie y el parser Zod. Las pruebas de T7 usan un repositorio en memoria (QS-08).
 - `getExercise(s)` y `listExercises` no entran en esta fase (contrato v1.6, decisión 9).
+- Pruebas de integración (T10): seed válido compartido en `__tests__/fixtures/seed.ts`; cada prueba abre su propia base con `db.version(1).stores(planStores)` e importa solo del `index.ts` del módulo.
 
 ## 7. Estrategia de pruebas
 
