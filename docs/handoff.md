@@ -39,16 +39,21 @@
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
-## Siguiente paso: implementar la fase 0
+## Siguiente paso: fase 0, bloque B (kernel y eventos)
 
 1. ~~Confirmar ADR-0009, ADR-0010 y hosting~~ (hecho, 16-nov).
-2. ~~Spec, plan y tareas en `docs/specs/000-fase-0/`~~ (aprobados, 16-nov).
-3. Fusionar las ramas de docs en orden: `docs/phase-0-decisions` → `docs/000-phase-0-spec`.
-4. Implementar en `feat/000-phase-0` siguiendo `docs/specs/000-fase-0/tasks.md`, empezando por **T1**. Un commit por tarea y un PR por punto de control (A–D).
+2. ~~Spec, plan y tareas en `docs/specs/000-fase-0/`~~ (aprobados y fusionados, PR #1 y #2).
+3. ~~Bloque A, T1–T7: herramientas y fronteras~~ (fusionado, PR #3, 17-nov). CI verde con el job `ci`.
+4. **Siguiente: T8** (pruebas del kernel en rojo) en la rama local `feat/000-phase-0-b`, creada desde `main`. Luego T9–T13. PR del punto de control B al terminar T13.
 5. Pendiente del usuario, sin bloquear hasta el bloque D: comprar el dominio (T24).
 
-Entorno: Node se fija con Volta (`24.22.3`); el Node de Homebrew ya se desinstaló.
+Notas para retomar:
+- Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`.
+- Pruebas primero: en T8, T10 y T12 se hace commit local en rojo **sin push**; se sube junto con la tarea que lo pone en verde.
+- Verificar con `set -o pipefail` cuando se encadenan comandos con `|`: un `| tail` oculta el código de salida.
+- `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
+- Al fusionar PR: "Create a merge commit". Rama remota pendiente de borrar: `origin/feat/000-phase-0`.
 
 ## Prompt sugerido para un chat nuevo
 
-"Vamos a implementar la fase 0 siguiendo docs/specs/000-fase-0/tasks.md, empezando por la siguiente tarea pendiente. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso."
+"Vamos a seguir con la fase 0 en docs/specs/000-fase-0/tasks.md, desde la siguiente tarea pendiente (T8). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md. Guíame paso a paso y muéstrame los comandos que uses para que vaya aprendiendo."
