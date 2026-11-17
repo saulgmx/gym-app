@@ -1,0 +1,17 @@
+/* Design tokens (spec §7.4). The only file allowed to declare literal colors (AC-27). */
+:root {
+  --bg: #0e1411;
+  --surface: #161e1a;
+  --surface-2: #1e2823;
+  --border: #2a3630;
+  --text: #f1f5f2;
+  --text-muted: #9fb0a6;
+  --accent: #b8f25c;
+  --warn: #ffb547;
+  --font-heading: 'Space Grotesk Variable', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, sans-serif;
+  --radius-input: 0.75rem;
+  --radius-button: 1rem;
+  --radius-card: 1.25rem;
+  --touch-min: 2.75rem;
+}

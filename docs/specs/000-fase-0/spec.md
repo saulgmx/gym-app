@@ -122,16 +122,20 @@ Ninguna regla RN-* de módulo aplica: la fase 0 no tiene lógica de negocio. Apl
 
 - **Hoy (`/`):** título "Hoy" y estado vacío "Aún no hay un plan cargado."
 - **Progreso (`/progreso`):** título "Progreso" y estado vacío "Aún no hay entrenamientos registrados."
-- **Sesión y Cierre:** página vacía a pantalla completa con un enlace "Volver a Hoy".
+- **Sesión y Cierre:** página vacía a pantalla completa con título "Sesión" o "Cierre de sesión" y un enlace "Volver a Hoy".
+- **Título del documento:** cada página fija `<title>` como "<título de la página> · Gym" (WCAG 2.4.2), por ejemplo "Progreso · Gym".
 - **`TabBar`:** inferior, dos pestañas con texto ("Hoy", "Progreso") e ícono SVG con `aria-hidden`; zona segura inferior de iOS respetada (`env(safe-area-inset-bottom)`).
 - **Aviso de error genérico:** "Algo salió mal. Tus datos guardados no se han perdido. Recarga la app para continuar." (la opción de exportar respaldo llega en fase 3).
-- **Aviso de actualización:** "Hay una versión nueva." con botón "Actualizar".
+  - Error de render: el aviso sustituye la pantalla, con un botón "Recargar" (la PWA instalada no tiene barra del navegador).
+  - Error asíncrono: banner no bloqueante con "Recargar" y "Cerrar"; un solo aviso a la vez, aunque lleguen varios errores.
+- **Aviso de actualización:** "Hay una versión nueva." con botones "Actualizar" y "Ahora no". "Ahora no" lo oculta hasta el próximo arranque; nunca se recarga sin confirmación (AC-32).
 - **Visual:** tema oscuro por defecto (RNF-06), tokens de spec §7.4, tipografías autoalojadas, tamaños en `rem` para respetar el tamaño de texto del sistema.
 - **Estados:** sin conexión no requiere UI especial en esta fase (no hay red en tiempo de ejecución).
 
 ## 7. Casos límite
 
 - `cierre` y `:exerciseIndex` comparten prefijo de ruta: la ruta estática debe ganar (AC-24).
+- `:workoutId` o `:exerciseIndex` inválidos (por ejemplo `/sesion/abc/foo`): en esta fase se muestra la página Sesión vacía. Validar que el workout exista y que el índice esté en rango, y redirigir si no, llega en la fase 2, con los datos.
 - Recarga directa en una ruta profunda en producción: la resuelve el fallback de SPA (AC-39).
 - Primera visita sin conexión: no hay service worker todavía; la app no carga. Es el comportamiento esperado de cualquier PWA.
 - Safari iOS 16 (RNF-07): el *target* del build y las APIs usadas (`crypto.getRandomValues`, `<dialog>`, `navigator.storage`) deben existir ahí; `storage.persist()` puede no estar disponible.

@@ -6,7 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client", "@testing-library/jest-dom/vitest", "vite-plugin-pwa/react"],
     "noEmit": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

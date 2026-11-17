@@ -15,10 +15,12 @@ module.exports = {
     },
     {
       name: 'not-to-unresolvable',
-      comment: 'Every import resolves to a file or package (catches typos in the @/ alias).',
+      comment:
+        'Every import resolves to a file or package (catches typos in the @/ alias). ' +
+        'Vite plugin virtual modules (virtual:*) only exist inside Vite.',
       severity: 'error',
       from: {},
-      to: { couldNotResolve: true },
+      to: { couldNotResolve: true, pathNot: '^virtual:' },
     },
     {
       name: 'shared-no-modules',
@@ -47,5 +49,10 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.app.json' },
+    // Exports-only packages (no "main", e.g. react-router 8) resolve through package.json "exports".
+    enhancedResolveOptions: {
+      exportsFields: ['exports'],
+      conditionNames: ['import', 'require', 'node', 'default', 'types'],
+    },
   },
 };

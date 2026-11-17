@@ -1,0 +1,14 @@
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.panel {
+  max-width: 28rem;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 1.25rem;
+}

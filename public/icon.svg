@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App icon: dumbbell in the accent color on the background color (spec §7.4 tokens). Full-bleed background; the figure stays
+       inside the central 80% circle, so maskable crops never cut it. -->
+  <rect width="512" height="512" fill="#0E1411"/>
+  <g fill="#B8F25C">
+    <rect x="136" y="240" width="240" height="32" rx="8"/>
+    <rect x="156" y="176" width="40" height="160" rx="12"/>
+    <rect x="316" y="176" width="40" height="160" rx="12"/>
+    <rect x="116" y="204" width="32" height="104" rx="10"/>
+    <rect x="364" y="204" width="32" height="104" rx="10"/>
+  </g>
+</svg>

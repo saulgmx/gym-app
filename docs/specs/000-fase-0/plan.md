@@ -12,7 +12,7 @@ Proyecto Vite 8 + React 19 + TypeScript 6 con la estructura de architecture §5.
 |---|---|---|
 | `shared/kernel` | Implementación completa de modules/shared.md §2 + `systemClock` y `createUuidV7Generator` | Sí: modules/shared.md §2 (se añaden las implementaciones de producción) |
 | `shared/events` | `createEventBus` + entrada de pruebas `@/shared/events/testing` | No (ya documentado en §3) |
-| `shared/ui` | Solo `tokens.css` y `fonts.css` | No |
+| `shared/ui` | Solo `tokens.css`, `fonts.css` y `base.css` (§6.10), y el helper `cx` | Sí: modules/shared.md §4 (nombres de tokens, hojas globales y `cx`) |
 | `plan`, `training`, `progression`, `health`, `data` | Carpetas de capas vacías e `index.ts` con `create<Module>()` que devuelve `{}` | No |
 | `app` | `main.tsx`, `compose.ts`, `router.tsx`, `TabBar`, 4 páginas vacías, manejo de errores, aviso de actualización | No (architecture §5.3) |
 
@@ -39,20 +39,25 @@ Ninguno. La fase 0 no crea la base Dexie (fase 1) ni cambia el formato de export
 
 ## 5. Flujo
 
-Arranque (`app/main.tsx`):
+Arranque (`app/main.tsx` llama a `bootstrap(rootElement, { storage: navigator.storage })` de `app/bootstrap.tsx`):
 
 ```mermaid
 sequenceDiagram
-  participant M as main.tsx
+  participant B as bootstrap.tsx
   participant E as errors/
   participant C as compose.ts
   participant R as React
-  M->>E: installGlobalErrorHandlers()
-  M->>M: navigator.storage?.persist() (sin await bloqueante; fallo silencioso)
-  M->>C: compose() → { bus, modules }
-  M->>R: render <AppErrorBoundary><RouterProvider/><UpdatePrompt/><AppNotice/></AppErrorBoundary>
+  B->>E: installGlobalErrorHandlers()
+  B->>B: storage?.persist() (sin await bloqueante; fallo silencioso)
+  B->>C: compose() → módulos
+  B->>R: render <AppErrorBoundary><RouterProvider/><UpdatePrompt/><AppNotice/></AppErrorBoundary>
   Note over R: UpdatePrompt usa useRegisterSW (virtual:pwa-register/react)
+  Note over R: errores de render en rutas → errorElement de la ruta raíz (§6.11)
 ```
+
+- `bootstrap` recibe `storage` como parámetro (no lee `navigator`), para probar los casos de AC-33 sin tocar globales. Devuelve una función que desmonta React y quita los handlers.
+- El rechazo de `persist()` se captura: si no, el handler global de `unhandledrejection` mostraría el aviso de error.
+- `compose()` no crea el bus mientras ningún módulo publique o escuche eventos (P-7); entra con el primer evento (fase 2). Su resultado se pasará a React por contexto cuando una página lo necesite (fase 1).
 
 ## 6. Decisiones
 
@@ -96,6 +101,12 @@ Zod y Dexie no se instalan en esta fase (P-7): todavía no hay datos ni entradas
 - `vercel.json` contiene los headers y el rewrite de ADR-0011.
 - `vite.config.ts` lee `vercel.json` y aplica sus headers globales (CSP y seguridad) a `preview.headers`. Playwright corre contra `vite preview`, así que las pruebas usan la misma CSP que producción (AC-35).
 - Una prueba de arquitectura verifica que la CSP de `vercel.json` es exactamente la de architecture §7.10 y que existen las reglas de caché de ADR-0011.
+- Reglas de `vercel.json` (cada header lo pone una sola regla, así no depende del orden en que Vercel los combina):
+  - `/(.*)`: CSP, `X-Content-Type-Options` y `Referrer-Policy` (los "globales" que también usa `vite preview`).
+  - `/((?!assets/).*)`: `Cache-Control: no-cache`. Vercel aplica headers por la ruta pedida, así que `/index.html` sola no cubriría `/` ni `/progreso`.
+  - `/assets/(.*)`: `Cache-Control: public, max-age=31536000, immutable`.
+  - Rewrite `/((?!.*\.).*)` → `/index.html`: solo rutas sin extensión; un `/assets/falta.js` da 404, no HTML.
+- La prueba lee la CSP de architecture §7.10 (no de una copia) y comprueba qué regla cubre cada ruta de ejemplo con un convertidor mínimo de patrones; que Vercel los aplique se comprueba con `curl -I` en T26.
 - En `vite dev` **no** se aplica la CSP, porque Vite inyecta scripts *inline* para HMR.
 
 ### 6.4 Fronteras: una sola configuración, probada contra fixtures
@@ -146,6 +157,50 @@ Importar el CSS de `@fontsource-variable` declara todos los subconjuntos (ciríl
 
 En la fase 0 todo el JS es inicial. Cuando haya rutas diferidas (*lazy*), el patrón se ajustará para medir solo el JS inicial.
 
+### 6.10 Estilos globales y colores literales (AC-27)
+
+Tres hojas globales en `shared/ui`, importadas una vez desde `app/main.tsx`:
+
+- `tokens.css`: variables de spec §7.4 (nombres en modules/shared.md §4). Único archivo con valores de color literales.
+- `fonts.css`: `@font-face` latinos (§6.7).
+- `base.css`: `color-scheme: dark`; `html { font-size: 100% }` para respetar el tamaño de letra del sistema, y medidas en `rem`; fondo y texto con tokens; `:focus-visible` con contorno en `--accent`; `prefers-reduced-motion` reduce animaciones y transiciones.
+
+Stylelint (`stylelint-config-standard`) considera color literal:
+
+- Con `stylelint-declaration-strict-value`, todo valor que no sea `var()` en `/color$/`, `fill` y `stroke`, y en `background`, `border` y `outline` gracias a `expandShorthand`. Se permiten `currentcolor`, `transparent`, `none`, `inherit`, `initial` y `unset`.
+- Con `color-no-hex` y `color-named: never`, cualquier hexadecimal o color con nombre en cualquier propiedad (por ejemplo `box-shadow`).
+
+`src/shared/ui/tokens.css` es el único archivo exento. La prueba corre la configuración real sobre fixtures CSS.
+
+En los `*.module.css` las clases van en camelCase (`.backLink`), porque se leen desde TypeScript como `styles.backLink`; el resto sigue la convención kebab-case de `stylelint-config-standard`.
+
+Contraste (calculado el 17-nov-2026): todos los textos superan AA sobre `--bg`, `--surface` y `--surface-2` (el mínimo es `--text-muted` sobre `--surface-2`, 6.68:1). `--border` (1.48:1 sobre `--bg`) es solo decorativo: no puede ser el único límite visible de un control (WCAG 1.4.11).
+
+### 6.11 Errores inesperados (ADR-0010, AC-28, AC-29)
+
+React Router captura los errores de render de sus rutas y, sin `errorElement`, muestra su propia pantalla en inglés: `AppErrorBoundary` nunca los vería. Por eso hay dos capturas con el mismo componente `ErrorFallback`:
+
+- Una ruta raíz sin `path` envuelve todas las rutas con `errorElement: <ErrorFallback />`.
+- `AppErrorBoundary` (componente de clase, sin dependencia) captura lo que queda fuera del router (`UpdatePrompt`, `AppNotice`).
+
+`ErrorFallback`: `role="alert"`, texto genérico de spec 000 §6 y botón "Recargar" (`location.reload()`).
+
+Errores asíncronos, en `src/app/errors/`:
+
+- `installGlobalErrorHandlers(): () => void` escucha `error` y `unhandledrejection` en `window`; devuelve la función que los quita. Cada error se registra con `console.error` sin `preventDefault()`, así el navegador conserva su propio registro.
+- Store de Zustand con un solo aviso (`notice | null`); un error nuevo con un aviso visible no apila otro.
+- `AppNotice`: banner `role="alert"` no bloqueante con "Recargar" y "Cerrar".
+- `messages.ts`: `type ErrorCode = never` y `errorMessages: Record<ErrorCode, string> = {}` hasta que los módulos exporten sus uniones de códigos; ahí también vive el texto genérico.
+
+### 6.12 PWA (AC-30, AC-32)
+
+- `vite-plugin-pwa` con `registerType: 'prompt'` e `injectRegister: false`: el registro lo hace `useRegisterSW` (módulo virtual), sin `<script>` en línea que la CSP bloquearía.
+- Manifest: `name` y `short_name` "Gym", `lang: 'es'`, `start_url` y `scope` `/`, `display: 'standalone'`, `theme_color` y `background_color` `#0E1411` (`--bg`).
+- Precache: `globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}']`. El valor por defecto de Workbox omite las fuentes y los íconos, y sin conexión la app se vería con la tipografía del sistema. `navigateFallback` es `index.html` (valor por defecto del plugin), así las rutas profundas abren sin conexión.
+- Íconos: `public/icon.svg` (mancuerna en `--accent` sobre `--bg`, dentro de la zona segura *maskable*) → `npm run icons` (`@vite-pwa/assets-generator`, preset `minimal-2023`) genera los PNG 64, 192, 512, *maskable* 512, `apple-touch-icon` 180 y `favicon.ico`, que se versionan en `public/`.
+- `UpdatePrompt`: "Hay una versión nueva." con "Actualizar" (`updateServiceWorker(true)`) y "Ahora no" (oculta el aviso; la versión nueva se activa al cerrar la app). Los avisos globales (`AppNotice`, `UpdatePrompt`) se apilan en una zona fija superior para no taparse.
+- Pendiente para la fase 2: no ofrecer la actualización durante una sesión activa (architecture §7.9).
+
 ## 7. Estrategia de pruebas
 
 | Criterio | Tipo de prueba | Archivo |
@@ -189,6 +244,7 @@ En la fase 0 todo el JS es inicial. Cuando haya rutas diferidas (*lazy*), el pat
 | La CSP rompe algo que solo aparece en el build | AC-35 corre contra `vite preview` con los mismos headers |
 | El dominio aún no está comprado | AC-37 a AC-39 son las últimas tareas; el resto de la fase no depende de ellas |
 | Vercel no ofrece Node 24 o cambia su política | `engines.node: "24.x"` lo fija; si cambia, se ajustan juntos `volta` y `engines` en `package.json` |
+| Vulnerabilidades moderadas en `glob` 11 y `minimatch` 10 vía `workbox-build` (npm audit, 17-nov-2026); no existe una 11.x corregida | Solo se usan en el build, con patrones propios; no llegan al bundle. Revisar en cada versión de `vite-plugin-pwa`/`workbox-build`; no forzar `glob` 14 con `overrides` (otra API) |
 | Otra instalación de Node en el `PATH` antes que Volta: se ignora la versión fijada | Verificar con `which node` que resuelve a `~/.volta/bin/node`; T1 comprueba `node -v` = `v24.22.3` dentro del proyecto |
 
 ## 9. Checklist de la constitución

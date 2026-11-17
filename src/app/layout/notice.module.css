@@ -1,0 +1,38 @@
+/* Global notices (AppNotice, UpdatePrompt) stack in one fixed area so they never overlap. */
+.area {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1;
+  padding-top: env(safe-area-inset-top);
+}
+
+.banner {
+  border-bottom: 1px solid var(--warn);
+  background: var(--surface);
+  padding: 0.75rem 1rem;
+}
+
+.message {
+  margin: 0 0 0.75rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  min-height: var(--touch-min);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  padding: 0 1rem;
+  color: var(--bg);
+  font: inherit;
+  font-weight: 600;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--accent);
+}
