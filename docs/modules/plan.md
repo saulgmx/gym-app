@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.2 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.3 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -90,7 +90,17 @@ interface PlannedItem {
 ## 4. API pública (`index.ts`)
 
 ```ts
-export function createPlan(deps: { db: PlanDb; clock: Clock; ids: IdGenerator; bus: EventBus }): PlanApi;
+// `ids` y `bus` se añaden con la primera operación que los necesite (updateTemplate, PlanChanged) (P-7).
+export function createPlan(deps: { db: Dexie; clock: Clock }): PlanApi;
+
+// Tablas propias, para que app/db.ts componga db.version(n).stores({...}).
+export const planStores: Record<'exercises' | 'programs' | 'blocks' | 'templates', string>;
+
+export type PlanErrorCode =
+  | 'plan/invalid-seed' | 'plan/high-risk-exercise' | 'plan/template-not-found' | 'plan/week-out-of-range';
+
+// Fase 1 implementa ensureSeeded, getPosition, getTodayPlan, getWeekPlan, getExercise(s) y
+// listExercises. El resto entra en PlanApi cuando se implementa (v1.0: RF-03, RF-04; fase 3: dataPort).
 
 interface PlanApi {
   ensureSeeded(seed: unknown): Promise<Result<void>>;                // RN-PLN-13 a 15: valida y carga si está vacío
@@ -106,13 +116,15 @@ interface PlanApi {
   dataPort: DataPort;
 }
 
-// Hooks reactivos (ui)
-export function useTodayPlan(date: LocalDate): TodayPlan | undefined;
-export function useWeekPlan(weekStart: LocalDate): TodayPlan[] | undefined;
+// Hooks reactivos (ui, useLiveQuery). Reciben la API: `ui` no lee el contexto de `app`.
+export function useTodayPlan(plan: PlanApi, date: LocalDate): TodayPlan | undefined;
+export function useWeekPlan(plan: PlanApi, weekStart: LocalDate): TodayPlan[] | undefined;
 
 // Componentes
+function WeekStrip(props: { days: TodayPlan[]; weekStart: LocalDate; today: LocalDate }): JSX.Element;
+function PlanExerciseList(props: { items: PlannedItem[] }): JSX.Element;
 export { WeekStrip, PlanExerciseList } from './ui';
-export type { Exercise, Block, SessionTemplate, TemplateItem, ProgramPosition, TodayPlan, PlannedItem, LumbarRisk, Equipment, MuscleGroup };
+export type { PlanApi, Exercise, Block, SessionTemplate, TemplateItem, ProgramPosition, TodayPlan, PlannedItem, LumbarRisk, Equipment, MuscleGroup };
 ```
 
 ## 5. Eventos
@@ -172,3 +184,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 3. **Alternancia A/B del bloque 1:** `Block.schedule` con `weekParity`, por paridad de la semana dentro del bloque y según el calendario (RN-PLN-03).
 4. **Series planificadas:** el mínimo del rango; se pueden añadir extras hasta el máximo (RN-PLN-05).
 5. **Spec 001 (contrato v1.2):** fecha de inicio al cargar el seed (RN-PLN-13), `Block.weekRir` (RN-PLN-06), deload con las plantillas del bloque 3 (RN-PLN-12), carga atómica (RN-PLN-14) y validación del seed (RN-PLN-15); se confirman RN-PLN-10, `isPrimary` y `metric: 'time'`.
+6. **Plan de la spec 001 (contrato v1.3):** `createPlan({ db, clock })`, `planStores`, `PlanErrorCode`, hooks con la API como parámetro y firmas de `WeekStrip` y `PlanExerciseList`.

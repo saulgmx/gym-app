@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.0 · **Fecha:** 16-nov-2026 · **Basado en:** `spec.md` v0.3 · **Formato:** arc42 reducido
+**Versión:** 1.1 · **Fecha:** 17-nov-2026 · **Basado en:** `spec.md` v0.4 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -118,7 +118,9 @@ flowchart LR
 | `domain` | `shared/kernel` | `application`, `infrastructure`, `ui`, React, Dexie |
 | `application` | `domain`, `shared/kernel`, `shared/events`, API pública de módulos permitidos | `infrastructure`, `ui`, Dexie |
 | `infrastructure` | `domain`, `application/ports`, Dexie | `ui` |
-| `ui` | `application` (casos de uso y hooks), `domain` (tipos), `shared/ui` | `infrastructure` |
+| `ui` | `application` (casos de uso), `domain` (tipos), `shared/ui`, `dexie-react-hooks` | `infrastructure` |
+
+Los hooks reactivos viven en `ui` (`ui/hooks.ts`), porque `useLiveQuery` necesita Dexie y `application` no puede importarlo. Reciben la API pública del módulo como parámetro (spec 001, plan §6.3).
 
 El cableado de `application` con `infrastructure` lo hace cada módulo en su función `create<Module>(deps)` y la invoca `app/compose.ts`.
 
@@ -272,11 +274,11 @@ Catálogo completo en cada contrato de módulo; resumen:
 - Las sugerencias de `progression` son una **caché derivada**: se pueden borrar y reconstruir con `progression.rebuild()`. Por eso no se exportan; sí se exportan sus ajustes (`progressionSettings`) [PROPUESTO].
 - **Ajustes repartidos por dueño** [PROPUESTO]: la tabla única `settings` de spec §9 se divide en `progressionSettings` (incrementos), `healthSettings` (umbral de dolor, meta de peso) y `uiPreferences` en `app` (unidad de visualización, acento), para que ningún módulo lea tablas ajenas.
 
-Tablas e índices: ver el contrato de cada módulo. Esquema compuesto v1:
+Tablas e índices: ver el contrato de cada módulo. La versión 1 de la base solo tiene las tablas de `plan` (spec 001); cada módulo añade las suyas en una versión nueva cuando llega su fase (agregar tablas no requiere `upgrade`). Esquema compuesto objetivo:
 
 ```ts
-db.version(1).stores({
-  // plan
+db.version(n).stores({ // n = versión en la que ya existen todas (fin del MVP)
+  // plan (versión 1)
   exercises: 'id, name, muscleGroup, lumbarRisk',
   programs: 'id',
   blocks: 'id, programId',
