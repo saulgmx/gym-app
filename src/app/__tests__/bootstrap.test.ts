@@ -63,13 +63,16 @@ describe('bootstrap', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('AC-33: a rejected request is swallowed, so no error notice appears', async () => {
-    // Uncaught, it would reach the global unhandledrejection handler in the browser;
-    // Vitest also fails the run on any unhandled rejection.
-    const persist = vi.fn().mockRejectedValue(new Error('not allowed'));
-    start({ persist });
+  it('AC-33: a rejected request is handled, so no error notice appears', async () => {
+    // Uncaught, the rejection would reach the global unhandledrejection handler in the browser.
+    // jsdom never fires that event, so the test checks that a rejection handler is attached:
+    // .catch(fn), .then(ok, fn) and await inside try/catch all call then() with a function second.
+    const rejected = Promise.reject(new Error('not allowed'));
+    const then = vi.spyOn(rejected, 'then');
+    start({ persist: () => rejected });
     await settle();
-    expect(persist).toHaveBeenCalledOnce();
+
+    expect(then.mock.calls.some(([, onRejected]) => typeof onRejected === 'function')).toBe(true);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
