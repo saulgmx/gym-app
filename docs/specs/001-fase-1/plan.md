@@ -238,6 +238,16 @@ Siguen el prototipo ("Hoy") y la spec 001 §6:
 - **`PlanExerciseList`:** solo el `<ol>`; la tarjeta y el `h2` de la sesión los pone `TodayPage` (T17). Cada fila: nombre y "2 × 8-12" (o "3 × 30-45 s" con `metric: 'time'`), y debajo, en `--text-muted` (7.48:1 sobre `--surface`), "RIR 3-4" y la nota si la hay. Un rango con mínimo igual al máximo se muestra como un número ("RIR 4"). Las alternativas no se muestran en la fase 1 (contrato, decisión 2).
 - **Formato** en `plan/ui/format.ts`, con sus pruebas. Pruebas de componente por rol y nombre accesible, sin *snapshots*.
 
+### 6.11 Página "Hoy" (antes de T17)
+
+- `app/context.tsx`: `AppContext` con `{ plan, clock, ready }` (lo que devuelve `compose`); `useApp()` lanza sin proveedor; `bootstrap` envuelve el `RouterProvider`.
+- `app/hooks/useToday.ts`: `clock.today()` al montar y en cada `visibilitychange` a `visible` (AC-20).
+- `TodayPage`: el `h1` "Hoy" siempre; debajo, `Suspense` con `use(ready)`. Mientras `ready` no resuelve o los hooks devuelven `undefined`, solo el título. Un rechazo de `ready` llega al `errorElement` (`ErrorFallback`, AC-21).
+- Encabezado: fecha ("Miércoles 18 de noviembre", sin coma, como "lunes 16 de noviembre" en la spec), bloque ("Bloque 1 · Full body") y semana ("Semana 1 de 15"; en descarga "Semana 15 de 15 · Semana de descarga", AC-18), en líneas separadas (spec §6).
+- Cuerpo, tras la tira: pesas → tarjeta con `h2` de la sesión y `PlanExerciseList`; cardio → `h2` "Cardio" y la nota; descanso → `h2` "Descanso" y "Recupera: dormir y comer bien también es entrenar."; fuera del programa → fecha y mensaje de AC-19, sin bloque, tira ni lista.
+- Fechas en `app/format-date.ts` con `Intl` (`es`, `timeZone: 'UTC'` sobre la `LocalDate`, §6.7), armadas por partes para evitar la coma.
+- Pruebas: `src/app/__tests__/today-page.test.tsx` con el seed real, `fake-indexeddb` y relojes fijos (AC-15 a AC-21); `router.test.tsx` y `errors.test.tsx` reciben un proveedor de prueba con un plan real en memoria.
+
 ## 7. Estrategia de pruebas
 
 Las pruebas del dominio y de `ensureSeeded` se escriben antes que el código, citando su regla (P-5).

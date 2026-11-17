@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.9 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.10 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -67,6 +67,8 @@ interface TemplateItem {
 // Valores de salida
 interface ProgramPosition {
   status: 'not_started' | 'active' | 'finished';
+  startDate: LocalDate;                  // del programa, también fuera de él (RN-PLN-01)
+  totalWeeks: number;
   week: number | null;                   // 1..totalWeeks
   block: Block | null;
   isDeloadWeek: boolean;
@@ -139,7 +141,7 @@ No escucha eventos.
 
 | ID | Regla | Origen |
 |---|---|---|
-| RN-PLN-01 | `week = floor(días(startDate, date) / 7) + 1`. Si `date < startDate` → `not_started`; si `week > totalWeeks` → `finished`. Fuera del programa: `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`. | RF-02 |
+| RN-PLN-01 | `week = floor(días(startDate, date) / 7) + 1`. Si `date < startDate` → `not_started`; si `week > totalWeeks` → `finished`. Fuera del programa: `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`. `startDate` y `totalWeeks` del programa están siempre, dentro y fuera de él ("Semana 1 de 15", "El plan empieza el lunes 16 de noviembre."). | RF-02 |
 | RN-PLN-02 | El bloque activo es el que cumple `startWeek ≤ week ≤ endWeek`. Siempre hay exactamente uno para cada semana del programa (lo valida el seed). | RF-02, spec §6.4 |
 | RN-PLN-03 | La sesión del día sale de `block.schedule` por `weekday`. Si hay entradas con `weekParity`, se elige la que coincide con la paridad de la semana dentro del bloque (`week − block.startWeek + 1`; alternancia A/B/A – B/A/B del bloque 1). Manda el calendario: una sesión que no se hizo no desplaza a las siguientes. | plan.md bloque 1 |
 | RN-PLN-04 | `volumeFactor = block.weekFactors[week] ?? 1.0`; en semana de deload, `0.5`. | spec §6.3, §6.4 |
@@ -182,7 +184,7 @@ No escucha eventos.
 - RN-PLN-13: primer arranque un miércoles → `startDate` es el lunes de esa semana.
 - RN-PLN-14: dos `ensureSeeded` concurrentes → un solo programa; segunda llamada con datos → no cambia nada.
 - RN-PLN-15: un seed por cada caso (a)–(c) → `plan/invalid-seed` y la base vacía.
-- RN-PLN-01: fuera del programa → `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`.
+- RN-PLN-01: fuera del programa → `week: null`, `block: null`, `isDeloadWeek: false`, `volumeFactor: 1`; dentro y fuera, `startDate` y `totalWeeks` del programa.
 - RN-PLN-10: `getWeekPlan` con un jueves → 7 días desde el lunes de esa semana.
 - RN-PLN-16: plantilla o ejercicio inexistentes en el cálculo del día → lanza.
 - RN-PLN-17: ítems guardados en desorden → salen por `order`.
@@ -219,3 +221,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 10. **Esquema del seed, antes de T9 (contrato v1.7):** ADR-0012 reemplaza a ADR-0007 (Zod valida la forma, el dominio las reglas incluido `high`; el seed se valida en cada arranque). Detalle del esquema en RN-PLN-24.
 11. **Persistencia, antes de T10 (contrato v1.8):** "vacía" son las 4 tablas; un estado parcial lanza sin escribir y la escritura usa `bulkAdd` (RN-PLN-14); objetos del dominio tal cual y un solo programa (RN-PLN-25).
 12. **Hooks, antes de T15 (contrato v1.9):** `useLiveQuery` conserva el resultado anterior al cambiar las dependencias, así que cada resultado lleva su fecha y el hook devuelve `undefined` si no coincide; los errores se lanzan en el render, como hace `useLiveQuery`, para el *error boundary* (RN-PLN-26).
+13. **Página "Hoy", antes de T17 (contrato v1.10):** `ProgramPosition` gana `startDate` y `totalWeeks`, siempre presentes, para el encabezado y los mensajes fuera del programa (RN-PLN-01).
