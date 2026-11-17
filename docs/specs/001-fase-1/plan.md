@@ -192,6 +192,8 @@ architecture §5.2 pone los hooks en `application`, pero esa capa no puede impor
 
 La consulta que observa `useLiveQuery` solo debe esperar promesas de Dexie: una promesa ajena (por ejemplo, un `setTimeout`) rompe el seguimiento de las tablas. El servicio de aplicación no espera nada más que el repositorio, y una prueba de integración comprueba que el hook se actualiza tras escribir en la tabla.
 
+Hallazgo de T15 (17-nov): con Dexie 4.4.7 no se reproduce. Un `setTimeout` en el servicio, con la consulta del hook `async` o sin `async`, no rompe el seguimiento: Dexie mantiene su contexto a través de las esperas nativas. La regla se mantiene como precaución (no cuesta nada), pero ninguna prueba la vigila. Lo que sí vigila `hooks.test.tsx` es la reactividad: un hook de consulta única falla en las 3 pruebas en vivo.
+
 ### 6.5 Seed en JSON escrito a mano, verificado por pruebas
 
 Se descartó generar el JSON leyendo `docs/plan.md` con un script: el Markdown no es un formato estable y el script sería más código que el propio seed. Lo protegen la validación (AC-4, AC-5) y un resumen legible del seed que la prueba compara, plantilla por plantilla, con lo que dice plan.md.

@@ -17,6 +17,7 @@ export function createPlan(deps: { db: Dexie; clock: Clock }): PlanApi {
 }
 
 export { planStores } from './infrastructure/schema';
+export { useTodayPlan, useWeekPlan } from './ui/hooks';
 
 export type { PlanApi } from './application/service';
 export type {

@@ -40,7 +40,7 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T15 | Hooks `useTodayPlan` y `useWeekPlan` con `useLiveQuery` | `plan/ui` | Prueba con `fake-indexeddb`: el hook devuelve el plan y se actualiza tras escribir en la tabla (plan §6.4) | — | C | ☐ |
+| T15 | Hooks `useTodayPlan` y `useWeekPlan` con `useLiveQuery` | `plan/ui` | Prueba con `fake-indexeddb`: el hook devuelve el plan y se actualiza tras escribir en la tabla (plan §6.4) | — | C | ☑ |
 | T16 | `PlanExerciseList` y `WeekStrip` con CSS Modules y tokens: "2 × 8-12" y "3 × 30-45 s", "RIR 3-4", nota; 7 días con inicial, indicador que no depende solo del color, nombre accesible "miércoles, Full body B" y `aria-current="date"` | `plan/ui` | Pruebas de componente; `npm run lint` (stylelint) pasa | AC-15 (lista), AC-17 | C | ☐ |
 | T17 | `AppContext` (`plan`, `clock`, `ready`), `useToday(clock)` con `visibilitychange` y `TodayPage`: `Suspense` con `use(ready)`, encabezado, días de pesas, cardio y descanso, fuera del programa y semana de descarga; se quita el estado vacío de la fase 0 | `app` | Pruebas de componente con `createPlan`, `fake-indexeddb` y `fixedClock` | AC-15 a AC-21 | C | ☐ |
 | T18 | E2E `today.spec` (`page.clock` en el miércoles 18-nov-2026 → "Full body B"; recarga sin conexión), `a11y.spec` en un día de pesas y uno de descanso, y `size-limit` (si pasa de 170 KB, cambiar a `zod/mini`, plan §6.2) | `tests/e2e`, raíz | `npm run test:e2e` y `npm run size` pasan, local y en CI | AC-1, AC-7, AC-22, AC-23, QS-06 (parcial) | C | ☐ |
