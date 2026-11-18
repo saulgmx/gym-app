@@ -24,10 +24,6 @@ export function ExitSheet({ open, summary, counts, onClose, onDiscard }: ExitShe
   const keep = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const summaryId = useId();
-  const leaveId = useId();
-  const leaveHintId = useId();
-  const discardId = useId();
-  const discardHintId = useId();
 
   return (
     <>
@@ -50,35 +46,20 @@ export function ExitSheet({ open, summary, counts, onClose, onDiscard }: ExitShe
           <button ref={keep} type="button" className={styles.keep} onClick={onClose}>
             Seguir entrenando
           </button>
-          {/* Named by the main text; the subtitle is the description (spec 004 §6.3). */}
-          <Link
-            to="/"
-            className={styles.option}
-            aria-labelledby={leaveId}
-            aria-describedby={leaveHintId}
-          >
-            <span id={leaveId} className={styles.optionTitle}>
-              Salir y continuar después
-            </span>
-            <span id={leaveHintId} className={styles.optionHint}>
-              Hoy mostrará &quot;Continuar sesión&quot;
-            </span>
+          {/* Named by all its visible text, title and subtitle (WCAG 2.5.3, spec 004 §6.3). */}
+          <Link to="/" className={styles.option}>
+            <span className={styles.optionTitle}>Salir y continuar después</span>{' '}
+            <span className={styles.optionHint}>Hoy mostrará &quot;Continuar sesión&quot;</span>
           </Link>
           <button
             type="button"
             className={styles.discard}
-            aria-labelledby={discardId}
-            aria-describedby={discardHintId}
             onClick={() => {
               setConfirming(true);
             }}
           >
-            <span id={discardId} className={styles.optionTitle}>
-              Descartar sesión
-            </span>
-            <span id={discardHintId} className={styles.optionHint}>
-              Las series no contarán en tu historial
-            </span>
+            <span className={styles.optionTitle}>Descartar sesión</span>{' '}
+            <span className={styles.optionHint}>Las series no contarán en tu historial</span>
           </button>
         </div>
       </Dialog>

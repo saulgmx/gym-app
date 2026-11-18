@@ -53,7 +53,7 @@ const arrow = () => screen.getByRole('button', { name: 'Salir de la sesión' });
 const exitSheet = () => screen.getByRole('dialog', { name: '¿Salir de la sesión?' });
 const confirmation = () => screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
 const keepTraining = () => within(exitSheet()).getByRole('button', { name: 'Seguir entrenando' });
-const discardOption = () => within(exitSheet()).getByRole('button', { name: 'Descartar sesión' });
+const discardOption = () => within(exitSheet()).getByRole('button', { name: /^Descartar sesión/ });
 
 function withTraining(services: AppServices, overrides: Partial<TrainingApi>): AppServices {
   return { ...services, training: { ...services.training, ...overrides } };
@@ -68,7 +68,7 @@ describe('el aviso de salida', () => {
       'Llevas 1 de 7 ejercicios y 18:42 de entrenamiento.',
     );
     // Each option found by its accessible name, and the three of them in this order.
-    const leave = within(exitSheet()).getByRole('link', { name: 'Salir y continuar después' });
+    const leave = within(exitSheet()).getByRole('link', { name: /^Salir y continuar después/ });
     expect([...exitSheet().querySelectorAll('a, button')]).toEqual([
       keepTraining(),
       leave,
@@ -77,14 +77,17 @@ describe('el aviso de salida', () => {
     expect(screen.queryByText(/Terminar y guardar/)).not.toBeInTheDocument();
   });
 
-  it('AC-12: el nombre de cada opción es su texto principal y el subtítulo su descripción', async () => {
+  it('AC-12, AC-35: el nombre de cada opción es todo su texto visible (WCAG 2.5.3)', async () => {
     const { services, workout } = await example();
     await openExit(services, workout);
 
-    const leave = within(exitSheet()).getByRole('link', { name: 'Salir y continuar después' });
+    const leave = within(exitSheet()).getByRole('link', { name: /^Salir y continuar después/ });
     expect(leave).toHaveAttribute('href', '/');
-    expect(leave).toHaveAccessibleDescription('Hoy mostrará "Continuar sesión"');
-    expect(discardOption()).toHaveAccessibleDescription('Las series no contarán en tu historial');
+    expect(leave).toHaveAccessibleName('Salir y continuar después Hoy mostrará "Continuar sesión"');
+    expect(discardOption()).toHaveAccessibleName(
+      'Descartar sesión Las series no contarán en tu historial',
+    );
+    expect(leave).not.toHaveAttribute('aria-describedby');
   });
 
   it('al abrir, el foco va a "Seguir entrenando"', async () => {
@@ -137,7 +140,7 @@ describe('el aviso de salida', () => {
 
     await tapToNavigate(
       user,
-      within(exitSheet()).getByRole('link', { name: 'Salir y continuar después' }),
+      within(exitSheet()).getByRole('link', { name: /^Salir y continuar después/ }),
     );
 
     expect(router.state.location.pathname).toBe('/');

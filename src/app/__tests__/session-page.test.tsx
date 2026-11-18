@@ -631,7 +631,7 @@ describe('Descartar sesión', () => {
     await heading();
     // Through the exit sheet (spec 004 AC-15).
     await opened.user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
-    await opened.user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
+    await opened.user.click(screen.getByRole('button', { name: /^Descartar sesión/ }));
     return { ...opened, services, workout };
   }
 
@@ -659,7 +659,7 @@ describe('Descartar sesión', () => {
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
     await user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
-    await user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
+    await user.click(screen.getByRole('button', { name: /^Descartar sesión/ }));
 
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
     expect(dialog).toHaveAccessibleDescription(
