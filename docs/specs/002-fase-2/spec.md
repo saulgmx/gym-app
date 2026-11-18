@@ -1,6 +1,6 @@
 # Spec: Fase 2, sesión activa
 
-**ID:** 002 · **Estado:** Aprobada · **Fecha:** 17-nov-2026
+**ID:** 002 · **Estado:** Implementada (17-nov-2026) · **Fecha:** 17-nov-2026
 **Requerimientos cubiertos:** RF-10, RF-11, RF-12 (parcial: la columna "anterior"; la sugerencia de peso llega con `progression` en la fase 4), RF-13, RF-14, RF-16, RF-17, RF-19, RNF-01, RNF-02, RNF-05, RNF-09 (versión 2 del esquema) · CA-3 · QS-03, QS-05 · **Fase:** 2 (spec §13)
 **ADRs aplicados:** 0006, 0009, 0010, 0012
 
