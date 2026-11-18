@@ -1,0 +1,53 @@
+.dialog {
+  width: min(100% - 2rem, 24rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  padding: 1.25rem;
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background: var(--backdrop);
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+}
+
+.message {
+  margin: 0 0 1.25rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.button {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-button);
+  background: transparent;
+  padding: 0 1rem;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+}
+
+.confirm {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.destructive {
+  border-color: var(--warn);
+  background: var(--warn);
+  color: var(--bg);
+}
