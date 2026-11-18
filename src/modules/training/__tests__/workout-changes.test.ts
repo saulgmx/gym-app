@@ -58,6 +58,7 @@ function state(status: WorkoutStatus = 'in_progress', sets?: SetLog[]): WorkoutS
   const workout: Workout = {
     id: id('w'),
     templateId: id('tpl-a'),
+    name: 'Full body A',
     programWeek: 1,
     date: '2026-11-21' as LocalDate,
     plannedFor: '2026-11-21' as LocalDate,

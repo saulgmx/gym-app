@@ -23,6 +23,7 @@ const exercises: ExerciseFacts[] = [
 
 const session = (): PlannedSession => ({
   templateId: id('tpl-a'),
+  name: 'Full body A',
   programWeek: 1,
   items: [
     {
@@ -103,6 +104,7 @@ describe('createWorkout', () => {
     expect(workout).toEqual({
       id: 'id-0001',
       templateId: 'tpl-a',
+      name: 'Full body A',
       programWeek: 1,
       date: '2026-11-21',
       plannedFor: '2026-11-20',

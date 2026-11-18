@@ -86,7 +86,7 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `Chart` | Envoltorio de uPlot (ADR-0004) con tabla alternativa accesible |
 | `StatCard` | Valor + etiqueta |
 | `SafetyNote` | Caja de aviso con `--warn` |
-| `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`; `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
+| `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`, `--backdrop` (fondo de los diálogos modales, spec 002); `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
 | `fonts.css` | `@font-face` autoalojados, solo subconjunto latino, `font-display: swap` |
 | `cx(...classes)` | Une clases de CSS Modules en un `string`, ignorando `undefined`, `null` y `false` (ver abajo) |
 | `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido, y la clase global `.visually-hidden` (texto solo para lectores de pantalla; spec 001, T16) |
@@ -99,6 +99,28 @@ function cx(...classes: (string | false | null | undefined)[]): string;
 Vite tipa cada CSS Module como un índice de strings, así que con `noUncheckedIndexedAccess` cada clase es `string | undefined`, y con `exactOptionalPropertyTypes` no encaja en props que exigen `string` (por ejemplo `NavLink`). `cx` siempre devuelve `string` y sirve también para clases condicionales. No detecta erratas en nombres de clase; eso lo cubren las pruebas de componente y E2E (decisión del 17-nov-2026, T15).
 
 Los componentes se importan desde `@/shared/ui` (su `index.ts`); las hojas globales `.css` se importan una sola vez desde `app/main.tsx`.
+
+### `ConfirmDialog` (spec 002, T17)
+
+```ts
+function ConfirmDialog(props: {
+  open: boolean;                 // controlado: true → showModal(), false → close()
+  title: string;                 // h2, nombre accesible (aria-labelledby)
+  message: string;               // descripción (aria-describedby)
+  confirmLabel: string;
+  cancelLabel?: string;          // 'Cancelar' por defecto
+  destructive?: boolean;         // confirmar con --warn y texto --bg (10.61:1)
+  onConfirm: () => void;
+  onCancel: () => void;
+}): JSX.Element;
+```
+
+- `<dialog>` nativo con `showModal()`: el resto de la página queda inerte.
+- El foco inicial va a "Cancelar", nunca a la acción: un Enter o un toque accidental no confirma (P-2).
+- Escape (evento `cancel`) llama a `onCancel`; tocar fuera del diálogo no lo cierra.
+- Al cerrarse, el foco vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace).
+- Botones ≥ 44 px; confirmar es `--accent` con texto `--bg` (14.10:1), o `--warn` en `destructive`.
+- jsdom no implementa `showModal` ni `close`: `tests/setup/unit.ts` añade un relleno mínimo solo para pruebas; el comportamiento real lo cubre el E2E en Chromium y WebKit.
 
 ## 5. Dónde vive cada componente de la spec §7.5
 

@@ -40,11 +40,12 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
       <AppErrorBoundary>
         <AppContext value={services}>
           <RouterProvider router={createAppRouter()} />
+          {/* Inside the provider: UpdatePrompt reads the active session (spec 002 plan §6.8). */}
+          <NoticeArea>
+            <AppNotice />
+            <UpdatePrompt />
+          </NoticeArea>
         </AppContext>
-        <NoticeArea>
-          <AppNotice />
-          <UpdatePrompt />
-        </NoticeArea>
       </AppErrorBoundary>
     </StrictMode>,
   );

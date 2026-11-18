@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { ErrorFallback } from './errors/ErrorFallback';
 import { AppLayout } from './layout/AppLayout';
 import { ClosePage } from './pages/ClosePage';
+import { DayPreviewPage } from './pages/DayPreviewPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SessionPage } from './pages/SessionPage';
 import { TodayPage } from './pages/TodayPage';
@@ -17,9 +18,12 @@ export const routes: RouteObject[] = [
         element: <AppLayout />,
         children: [
           { index: true, element: <TodayPage /> },
+          { path: 'dia/:date', element: <DayPreviewPage /> },
           { path: 'progreso', element: <ProgressPage /> },
         ],
       },
+      // Without an index, SessionPage picks the first exercise with pending sets (spec 002 plan §6.7).
+      { path: 'sesion/:workoutId', element: <SessionPage /> },
       { path: 'sesion/:workoutId/:exerciseIndex', element: <SessionPage /> },
       { path: 'sesion/:workoutId/cierre', element: <ClosePage /> },
       // `replace` keeps the broken URL out of the history (AC-25).

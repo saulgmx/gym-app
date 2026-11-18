@@ -8,6 +8,7 @@
   --text-muted: #9fb0a6;
   --accent: #b8f25c;
   --warn: #ffb547;
+  --backdrop: rgb(0 0 0 / 60%); /* behind modal dialogs (ConfirmDialog) */
   --font-heading: 'Space Grotesk Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, sans-serif;
   --radius-input: 0.75rem;

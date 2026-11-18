@@ -178,22 +178,27 @@ El contrato tenía `configureTraining(ports)` para romper el ciclo `training` �
 | Ruta | Página | Notas |
 |---|---|---|
 | `/` | `TodayPage` | Con `useActiveWorkout`: "Continuar sesión" (con fecha si es de otro día) y "Descartar sesión"; si no, "Iniciar sesión" en días de pesas y la sección "Otra sesión de esta semana" |
-| `/dia/:date` (nueva, dentro de `AppLayout`) | `DayPreviewPage` | Vista previa de otro día de la semana con `PlanExerciseList` e "Iniciar sesión". Si la fecha no es válida, es de otra semana, es hoy o no es día de pesas, redirige a `/` con `replace` |
+| `/dia/:date` (nueva, dentro de `AppLayout`) | `DayPreviewPage` | Vista previa de otro día de la semana con `PlanExerciseList` e "Iniciar sesión". Si la fecha no es válida, es de otra semana, es hoy, no es día de pesas o ya hay una sesión activa al abrirla, redirige a `/` con `replace`. `h1` con la fecha y "Volver a Hoy"; mientras carga, solo el enlace. "Hoy" sigue marcada en la barra inferior |
+| `/sesion/:workoutId` (nueva) | `SessionPage` | Destino de "Continuar sesión": sin `exerciseIndex`, redirige como un índice inválido |
 | `/sesion/:workoutId/:exerciseIndex` | `SessionPage` | `exerciseIndex` empieza en 1. Si no es un entero de 1 a n, redirige con `replace` al primer ejercicio con series pendientes (o al último si no hay pendientes). Un workout inexistente o cerrado muestra "Esta sesión ya no está disponible." (AC-28) |
 
 - `AppServices` gana `training`. `TodayPage` y `DayPreviewPage` comparten un componente `StartWorkoutButton` en `app/pages`.
+- **"Hoy" con sesión activa (T20):** arriba, un bloque "Sesión en curso" con el nombre, "Continuar sesión" (con la fecha si `date` no es hoy) y "Descartar sesión"; el resto de "Hoy" sigue igual, sin "Iniciar sesión" ni "Otra sesión de esta semana". Mientras `useActiveWorkout` carga no hay botones. El diálogo usa los textos de spec §6 ("¿Descartar la sesión?" / "Las series registradas no contarán en tu historial.", "Descartar" y "Cancelar"); si falla, el texto de `errorMessages` aparece bajo los botones.
+- **`StartWorkoutButton({ date, plannedFor })`:** deshabilitado mientras crea; si sale bien navega a `/sesion/<id>/1`; con `workout-already-active` navega a `/sesion/<workoutId>`; con otro error muestra su texto bajo el botón.
+- **"Otra sesión de esta semana":** `<section>` con `h2` y un enlace por día de pesas de la semana distinto de hoy, pasado o futuro ("Lun 16 · Full body A" → `/dia/2026-11-16`). Se oculta con sesión activa, sin otros días o fuera del programa.
 - **"Ver ejercicios"** es una lista desplegable dentro de `SessionHeader` (`<button aria-expanded>` y `<ol>`), no un diálogo. Cada fila es un enlace al ejercicio con su avance ("1 de 2 series"), y al final está "Descartar sesión".
 - **`ConfirmDialog`** en `shared/ui`: `<dialog>` nativo con `showModal()` (el resto de la página queda inerte y Escape cancela), y el foco vuelve al botón que lo abrió. Si jsdom no implementa `showModal`, se añade un relleno mínimo solo en la configuración de las pruebas; el comportamiento real lo cubre el E2E en Chromium y WebKit.
 
 ### 6.8 Aviso de actualización aplazado (AC-37)
 
-`UpdatePrompt` lee `useActiveWorkout(training)` y no muestra nada mientras haya una sesión activa. `needRefresh` sigue en `true`, así que el aviso aparece solo al descartar (o, en la fase 3, al cerrar). Como vive fuera del router, recibe `training` por `AppContext`.
+`UpdatePrompt` lee `useActiveWorkout(training)` y no muestra nada mientras haya una sesión activa. `needRefresh` sigue en `true`, así que el aviso aparece solo al descartar (o, en la fase 3, al cerrar). Como vive fuera del router, recibe `training` por `AppContext`, así que la zona de avisos se monta dentro del proveedor. Mientras se consulta la sesión activa tampoco se muestra, y si la consulta falla, un límite propio lo oculta en vez de llevar la app entera a `AppErrorBoundary` (la página ya muestra su error).
 
 ### 6.9 Presupuesto del bundle
 
 Estamos en 168.64 kB de 200 kB y el umbral para cambiar a `zod/mini` es 170 kB (plan 001 §6.2). `training` no usa Zod, pero la sesión activa añade código propio y lo más probable es que se pase del umbral. Se mide al terminar el punto de control C (la UI). Si pasa de 170 kB, se cambia `plan/infrastructure/seed-schema.ts` a `zod/mini` en su propia tarea, con las pruebas del esquema sin cambios. No se dividen rutas con `lazy`, porque `.size-limit.json` mide todos los JS de `dist/assets` y la PWA los precachea igual.
 
 - **Medición al cerrar el punto de control B (T16, 17-nov):** 172.32 kB de 200 kB con `training` en el bundle, sin UI todavía. Ya pasa el umbral de 170 kB; la decisión sobre `zod/mini` se mantiene en T24, con la UI medida.
+- **T24 (17-nov):** con la UI de la sesión, 177.22 kB. Con `seed-schema.ts` en `zod/mini`, **160.08 kB** de 200 kB, con las pruebas del esquema sin cambios y el E2E (CSP incluida) en verde en Chromium y WebKit. Las pruebas siguen importando tipos de `zod`, que no entran en el bundle.
 
 ### 6.10 Prellenado y "anterior"
 

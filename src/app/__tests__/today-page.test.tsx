@@ -31,8 +31,10 @@ async function openToday(clock: Clock = at('2026-11-18')) {
   expect(screen.getByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
 }
 
+// The day card comes first; "Otra sesión de esta semana" (spec 002) adds a second h2 below it.
 function card(): HTMLElement {
-  const section = screen.getByRole('heading', { level: 2 }).closest('section');
+  const [heading] = screen.getAllByRole('heading', { level: 2 });
+  const section = heading?.closest('section');
   if (!section) throw new Error('The day heading is inside a section');
   return section;
 }

@@ -11,6 +11,7 @@ const state = (key: string, status: WorkoutStatus): WorkoutState => ({
   workout: {
     id: id(key),
     templateId: id('tpl'),
+    name: 'Full body A',
     programWeek: 1,
     date: '2026-11-09' as LocalDate,
     plannedFor: '2026-11-09' as LocalDate,

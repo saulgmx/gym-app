@@ -1,0 +1,75 @@
+/* Session header (docs/modules/training.md §4, SessionHeader). */
+.header {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.position {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.toggle,
+.discard {
+  justify-self: start;
+  min-height: var(--touch-min);
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+}
+
+.panel {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+  padding: 0.5rem;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  width: 100%;
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: var(--radius-input);
+  background: transparent;
+  padding: 0 0.5rem;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.row[aria-current='step'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.progress {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.discard {
+  color: var(--warn);
+}
