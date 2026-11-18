@@ -168,6 +168,7 @@ describe('startWorkout', () => {
 
     expect(workout).toMatchObject({
       templateId: 'tpl-a',
+      name: 'Full body A',
       programWeek: 1,
       date: '2026-11-16',
       plannedFor: '2026-11-16',
@@ -431,6 +432,7 @@ function stored(key: string, status: Workout['status'], d: string, exerciseIds =
   return {
     id: id(key),
     templateId: id('tpl-a'),
+    name: 'Full body A',
     programWeek: 1,
     date: date(d),
     plannedFor: date(d),

@@ -87,6 +87,7 @@ export function createWorkout(input: {
   const workout: Workout = {
     id: ids.next(),
     templateId: session.templateId,
+    name: session.name,
     programWeek: session.programWeek,
     date: input.date,
     plannedFor: input.plannedFor,

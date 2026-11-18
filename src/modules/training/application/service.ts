@@ -83,6 +83,7 @@ function plannedSession(today: Extract<TodayPlan, { kind: 'workout' }>): Planned
   if (position.week === null) throw new Error('A workout day has a program week (RN-PLN-01)');
   return {
     templateId: template.id,
+    name: template.name,
     programWeek: position.week,
     items: plannedItems.map((item) => {
       const templateItem = template.items.find((t) => t.order === item.order);

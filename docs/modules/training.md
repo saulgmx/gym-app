@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.11 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.12 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -21,6 +21,7 @@ Llegan en la versión 2 de la base (spec 002).
 interface Workout {
   id: ID;
   templateId: ID | null;            // null = sesión libre (RF-06)
+  name: string;                     // nombre de la plantilla al iniciar ("Full body A"), parte de la instantánea
   programWeek: number | null;
   date: LocalDate;                  // día local al iniciar (RN-TRN-09)
   plannedFor: LocalDate;            // día del plan cuya sesión se hace; = date salvo "otra sesión de la semana" (RN-TRN-14)
@@ -132,7 +133,10 @@ function SetTable(props: {
   training: TrainingApi; view: WorkoutView; exerciseId: ID;
   describeError: (error: TrainingError, context: SetErrorContext) => string;
 }): JSX.Element;
-function SessionHeader(props: { view: WorkoutView; index: number; onNavigate: (index: number) => void }): JSX.Element;
+function SessionHeader(props: {
+  view: WorkoutView; index: number;                 // index empieza en 1
+  onNavigate: (index: number) => void; onDiscard: () => void;
+}): JSX.Element;
 export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fase 4
 ```
 
@@ -145,6 +149,12 @@ export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fas
 - **Errores:** el texto sale de `describeError(error, { metric, assisted })` (ADR-0010).
 - **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, cada campo muestra `−peso` y guarda `−escrito`; al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
 - **"Añadir serie"** hasta `maxSets` (deshabilitado con "Máximo N series"); **"Quitar serie"** quita la última si no está hecha y se deshabilita si está hecha o es la única. Las series extra llevan "extra".
+
+### `SessionHeader` (spec 002 §6, T19)
+
+- Muestra `workout.name` como título y "Ejercicio 2 de 7". No sabe de rutas: `onNavigate(index)` y `onDiscard()` los cablea `app`. "Anterior" y "Siguiente" van en el pie de `SessionPage`, al alcance del pulgar, no aquí.
+- **"Ver ejercicios":** `<button aria-expanded>` que despliega un `<ol>` con un botón por ejercicio, en el orden de los ítems: nombre y avance ("Prensa de piernas · 1 de 2 series"; "1 de 1 serie" con una sola). El actual lleva `aria-current="step"`; uno con todas sus series hechas añade "hecho". Elegir uno llama a `onNavigate` y cierra la lista.
+- Al final de la lista, "Descartar sesión" llama a `onDiscard`; el `ConfirmDialog` lo pone la página.
 
 ### Puertos que requiere (`application/ports.ts`)
 
@@ -178,7 +188,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 | ID | Regla | Origen |
 |---|---|---|
 | RN-TRN-01 | Solo puede haber un workout `in_progress`. `startWorkout` con uno activo devuelve `training/workout-already-active` y su id. Se comprueba en la misma transacción que crea el workout. Si aun así hubiera más de uno (dato roto), `getActiveWorkout` devuelve el de `startedAt` más reciente en lugar de lanzar, para que se puedan descartar uno por uno (P-2). | RF-19, decisión 9 |
-| RN-TRN-02 | `startWorkout` crea `items` desde `plan.getTodayPlan(plannedFor)` y `plannedSets` series por ejercicio, con `weightKg` = prellenado de `SuggestionProvider` (o `null`), `reps` y `rir` en `null`, `done: false` e `isExtra: false`. El prellenado es defensivo: en `metric` `reps` o `time` el peso empieza en `null`, y una sugerencia que no cumple RN-TRN-04 se ignora (`null`), sin error, porque un fallo del proveedor nunca impide entrenar. IDs: primero el del workout y luego los de las series, en el orden de los ítems y de `setNumber`. | RF-10, RF-12, spec 002, decisión 7 |
+| RN-TRN-02 | `startWorkout` crea `items` desde `plan.getTodayPlan(plannedFor)` y `plannedSets` series por ejercicio, con `weightKg` = prellenado de `SuggestionProvider` (o `null`), `reps` y `rir` en `null`, `done: false` e `isExtra: false`. `name` es el nombre de la plantilla. El prellenado es defensivo: en `metric` `reps` o `time` el peso empieza en `null`, y una sugerencia que no cumple RN-TRN-04 se ignora (`null`), sin error, porque un fallo del proveedor nunca impide entrenar. IDs: primero el del workout y luego los de las series, en el orden de los ítems y de `setNumber`. | RF-10, RF-12, spec 002, decisión 7 |
 | RN-TRN-03 | Cada cambio de una serie se persiste en una sola escritura antes de devolver (sin guardado global). | RF-13 |
 | RN-TRN-04 | Para marcar `done`: `reps` no nulo; `weightKg` no nulo si `metric = 'weight'` (0 = peso corporal sin lastre). Con `metric: 'reps'` o `'time'`, `weightKg` es siempre `null`. Rangos: `0 ≤ reps ≤ 100` (`0 ≤ reps ≤ 600` segundos si `metric = 'time'`), `0 ≤ rir ≤ 10`, `0 ≤ weightKg ≤ 500`, salvo asistencia: en ejercicios `equipment: 'bodyweight'` con `metric: 'weight'` (Dominadas, Fondos), `−100 ≤ weightKg ≤ 500`, y un valor negativo es la ayuda de la máquina o la banda. `weightKg` múltiplo de 0.25; `reps` y `rir`, enteros. Valores no finitos se rechazan y `-0` se guarda como 0. `rir` puede quedar `null` al marcar. Al registrar (`logSet`), un campo omitido no cambia y `null` lo borra; se revisan los rangos de los valores no nulos y, si la serie ya está hecha, también lo obligatorio, para que una serie `done` siempre sea válida. Un fallo es `training/invalid-set-values` con `details: { field, reason }` del primer campo en el orden kg → reps → RIR, y no cambia lo guardado: `missing` (falta para marcar), `not-a-number`, `out-of-range` (fuera de los límites), `step` (peso no múltiplo de 0.25, o reps o RIR no enteros) y `not-allowed` (peso en `reps` o `time`, o negativo sin asistencia). | RF-11, spec 002, decisión 6 |
 | RN-TRN-05 | Al marcar `done` se fija `completedAt = clock.now()`; al desmarcar se borra y los valores se conservan. | RF-11 |
@@ -236,3 +246,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 11. **Hooks, antes de T14 (contrato v1.9):** RN-TRN-19, el mismo patrón que RN-PLN-26 con `null` para "no existe".
 12. **Textos de error, T15 (contrato v1.10):** `describeError` recibe `SetErrorContext` (métrica y asistencia) para que `app` elija el texto de `invalid-set-values`; los textos viven en `app/errors/messages.ts` (ADR-0010).
 13. **`SetTable`, antes de T18 (contrato v1.11):** formato de "anterior", check nativo, interruptor de asistencia que invierte el signo de las series no hechas, "Quitar serie" sobre la última y borradores que conservan lo escrito con foco o error.
+14. **`SessionHeader`, antes de T19 (contrato v1.12):** `Workout.name` guarda el nombre de la plantilla en la instantánea (RN-TRN-02), sin migración porque `workouts` aún no está en producción; el encabezado recibe callbacks en vez de rutas, y "Anterior"/"Siguiente" viven en el pie de la página.

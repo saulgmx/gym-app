@@ -9,6 +9,7 @@ export type WorkoutStatus = 'in_progress' | 'completed' | 'discarded';
 export interface Workout {
   id: ID;
   templateId: ID | null; // null = free session (RF-06, not in v1)
+  name: string; // template name at start, part of the snapshot
   programWeek: number | null;
   date: LocalDate; // local day it started (RN-TRN-09)
   plannedFor: LocalDate; // plan day whose session is done; = date unless another day (RN-TRN-14)
@@ -73,6 +74,7 @@ export interface ExerciseFacts {
 /** Input to create a workout: the plan of the day, already mapped by the application. */
 export interface PlannedSession {
   templateId: ID;
+  name: string;
   programWeek: number;
   items: PlannedSessionItem[]; // in order (RN-PLN-17)
 }
