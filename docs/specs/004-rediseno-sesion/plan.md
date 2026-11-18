@@ -137,6 +137,8 @@ Sin tokens nuevos (ADR-0005): `--surface`, `--surface-2`, `--border`, `--accent`
 ### 6.11 Presupuesto del bundle
 Bundle inicial actual: 161.91 kB de 200 kB. El cambio son componentes y textos, sin dependencias nuevas; se mide en la tarea de cierre del punto de control C.
 
+**Medición (T12, 18-nov, con T1 a T11):** 163.58 kB de 200 kB gzip (`npm run build` y `npm run size`), +1.67 kB. AC-37 se cumple con 36 kB de margen.
+
 ## 7. Estrategia de pruebas
 
 Sin dominio nuevo, así que no hay pruebas de dominio primero; las de componente se escriben antes que el componente cuando el comportamiento es nuevo (menú, aviso, tarjeta). Los nombres citan el AC.
