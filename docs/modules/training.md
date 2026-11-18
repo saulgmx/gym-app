@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.17 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.18 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -150,26 +150,36 @@ function SetTable(props: {
 }): JSX.Element;
 function SessionHeader(props: {
   view: WorkoutView; index: number;                 // index empieza en 1
-  onNavigate: (index: number) => void; onDiscard: () => void;
+  elapsed: ReactNode;                               // el tiempo lo pone app (usa Clock); null en una sesión de otro día
+  onNavigate: (index: number) => void;
+  onExit: () => void;                               // la flecha; el aviso de salida lo pone app
 }): JSX.Element;
 export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fase 4
+
+// Textos de la sesión (ui/format.ts), para que app no los repita (spec 004 plan §6.6)
+export function formatRange(range: [number, number]): string;   // [6, 10] → "6-10"; [4, 4] → "4"
+export function formatTarget(item: Pick<WorkoutItem, 'plannedSets' | 'repRange'>, metric: ExerciseFacts['metric']): string; // "2 × 6-10", "2 × 30-45 s"
+export function formatSetCount(n: number): string;              // "1 serie", "2 series"
 ```
 
 ### `SetTable` y `SetRow` (spec 002 §6, T18)
 
-- Tabla con columnas Serie, Anterior, kg (o "Asist. kg"), Reps (o "s" si `metric = 'time'`), RIR y el check; sin columna de kg en `reps` y `time`. Números con coma decimal (`62,5`).
+- Tabla con columnas Serie, Anterior, kg (o "Asist. kg"), Reps (o "Seg" si `metric = 'time'`, spec 004), RIR y el check; sin columna de kg en `reps` y `time`. Números con coma decimal (`62,5`).
 - **Anterior:** la serie con el mismo `setNumber` de `useLastSession(training, exerciseId, workout.date)`: `"60 × 10"`, `"Asist. 20 × 8"`, `"10"` en `reps`, `"40 s"` en `time`; `"—"` sin dato.
-- **Campos:** `<input type="text">` con `inputmode` (`decimal` en kg, `numeric` en reps y RIR) y nombre por fila ("Serie 1, kilos"). Se envían al confirmar (`change` o Enter), solo si cambiaron. Mientras un campo tiene el foco, tiene un error o espera a que la vista traiga lo recién guardado, conserva lo escrito (sin parpadeo: `useLiveQuery` responde después de la escritura); si no, muestra lo guardado (cambios de otra pestaña, peso heredado). Cualquier cambio del valor guardado termina la espera.
+- **Campos:** `<input type="text">` con `inputmode` (`decimal` en kg, `numeric` en reps y RIR) y nombre por fila ("Serie 1, kilos"). Reps y RIR llevan como `placeholder` el rango del ítem (`formatRange(repRange)`, `formatRange(targetRir)`); kg no lleva pista (spec 004 AC-27). Se envían al confirmar (`change` o Enter), solo si cambiaron. Mientras un campo tiene el foco, tiene un error o espera a que la vista traiga lo recién guardado, conserva lo escrito (sin parpadeo: `useLiveQuery` responde después de la escritura); si no, muestra lo guardado (cambios de otra pestaña, peso heredado). Cualquier cambio del valor guardado termina la espera.
 - **Check:** `<input type="checkbox">` con nombre "Serie 1 hecha", ≥ 44 px. Si marcar falla, el motivo aparece bajo la fila (`aria-live="polite"`) y el foco va al campo del error (AC-16).
 - **Errores:** el texto sale de `describeError(error, { metric, assisted })` (ADR-0010).
 - **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, el campo de peso muestra `−peso` y guarda `−escrito` (las reps y el RIR nunca cambian de signo); al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
+- **Serie actual:** la de menor `setNumber` sin hacer del ejercicio que se ve lleva la clase `current` (número y borde de sus campos en `--accent`); sin series pendientes, ninguna. Señal solo visual (spec 004 AC-28 a AC-30). `SetRow` recibe `hints: { reps; rir }` y `current`.
 - **"Añadir serie"** hasta `maxSets` (deshabilitado con "Máximo N series"); **"Quitar serie"** quita la última si no está hecha y se deshabilita si está hecha o es la única. Las series extra llevan "extra".
 
-### `SessionHeader` (spec 002 §6, T19)
+### `SessionHeader` (spec 004 §6.1 y §6.2)
 
-- Muestra `workout.name` como texto (no encabezado: el `h1` de la página es el ejercicio, spec 002 §6) y "Ejercicio 2 de 7". No sabe de rutas: `onNavigate(index)` y `onDiscard()` los cablea `app`. "Anterior" y "Siguiente" van en el pie de `SessionPage`, al alcance del pulgar, no aquí.
-- **"Ver ejercicios":** `<button aria-expanded>` que despliega un `<ol>` con un botón por ejercicio, en el orden de los ítems: nombre y avance ("Prensa de piernas · 1 de 2 series"; "1 de 1 serie" con una sola). El actual lleva `aria-current="step"`; uno con todas sus series hechas añade "hecho". Elegir uno llama a `onNavigate` y cierra la lista.
-- Al final de la lista, "Descartar sesión" llama a `onDiscard`; el `ConfirmDialog` lo pone la página.
+- Una fila: la flecha (botón de 44 × 44, nombre "Salir de la sesión", llama a `onExit`), el botón "Ejercicio 2 de 7" con chevron decorativo (`aria-expanded`, `aria-haspopup="dialog"`, sin `aria-label`: su nombre es el texto visible, WCAG 2.5.3) y `elapsed` tal cual llega. No sabe de rutas ni de `Clock`: `onNavigate`, `onExit` y el tiempo los cablea `app`. "Anterior" y "Siguiente" van en el pie de `SessionPage`.
+- **Menú:** el botón abre un `Dialog` de `shared` con `placement="top"` y `dismissOnBackdrop`. Título `h2` y nombre accesible: `workout.name`. Resumen "N de M hechos" y, si hay ítem actual, "· 1 en curso" (`workoutProgress`, RN-TRN-21).
+- Un botón por ítem, en orden: marca decorativa (✓ hecho, anillo en curso, número pendiente), nombre del ejercicio elegido y subtítulo: pendiente `formatTarget(item, metric)` ("2 × 6-10"), en curso "En curso · serie N", hecho "N de N series" (con las extra; "1 de 1 serie"). El nombre accesible incluye el estado ("Prensa de piernas, hecho, 2 de 2 series"). El ejercicio que se ve lleva `aria-current="step"` y su propio resaltado.
+- Elegir un ítem cierra el menú y llama a `onNavigate`. Fondo o Escape lo cierran sin navegar; el foco vuelve al botón.
+- Ya no tiene "Descartar sesión": el descarte vive en el aviso de salida de `app` (spec 004 §6.3).
 
 ### Puertos que requiere (`application/ports.ts`)
 
@@ -271,3 +281,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 17. **Spec 003, rediseño de "Hoy" (contrato v1.15):** tiempo restante (RN-TRN-20) y avance de la sesión en curso (RN-TRN-21), que pasa al dominio desde `app/pages` (hoy `firstPending` en `SessionPage`). La forma exacta de la API la fija el plan técnico.
 18. **Plan de la spec 003 (contrato v1.16):** `getActiveWorkoutView` y `useActiveWorkoutView` para D2; `workoutProgress(view)` exportado, con `progressOf` puro en el dominio que recibe el tiempo por serie (el dominio no importa `plan`, architecture §5.2); `SessionPage` usa `current` en lugar de su `firstPending`. `useActiveWorkout` se queda para `UpdatePrompt` y `DayPreviewPage`.
 19. **Review del punto A de la spec 003 (contrato v1.17):** RN-TRN-21 dice explícitamente que un ítem sin series cuenta como hecho, como ya pedía spec 003 §7; antes solo lo decía la spec.
+20. **Plan de la spec 004, rediseño de la sesión activa (contrato v1.18):** `SessionHeader` en una fila con menú flotante (`Dialog` de `shared`), `elapsed` y `onExit` en lugar de `onDiscard`; `SetTable` con "Seg", pistas de reps y RIR y serie actual; `formatRange`, `formatTarget` y `formatSetCount` exportados porque `training/ui` no puede importar `plan` (architecture §5.2). Sin reglas nuevas.
