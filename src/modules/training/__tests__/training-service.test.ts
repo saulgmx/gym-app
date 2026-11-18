@@ -507,6 +507,51 @@ describe('getWorkout y getWorkoutView', () => {
   });
 });
 
+describe('getActiveWorkoutView (spec 003)', () => {
+  it('RN-TRN-01: sin sesión activa → undefined, aunque haya completadas o descartadas', async () => {
+    const { service } = setup({
+      initial: [
+        { workout: stored('c', 'completed', '2026-11-20'), sets: [] },
+        { workout: stored('d', 'discarded', '2026-11-19'), sets: [] },
+      ],
+    });
+    expect(await service.getActiveWorkoutView()).toBeUndefined();
+  });
+
+  it('RN-TRN-17: la vista del activo es la misma que da getWorkoutView', async () => {
+    const { service, workout } = await started();
+    const view = await service.getActiveWorkoutView();
+    expect(view?.workout.id).toBe(workout.id);
+    expect(view).toEqual(await service.getWorkoutView(workout.id));
+  });
+
+  it('RN-TRN-17: armada como getWorkoutView, con las series ordenadas y todas las options', async () => {
+    const workout = stored('w', 'in_progress', '2026-11-21', ['prensa', 'dominadas']);
+    const sets = [doneSet('d1', 'w', 'dominadas', 1), doneSet('p1', 'w', 'prensa', 1)];
+    const { service } = setup({ initial: [{ workout, sets }] });
+
+    const view = await service.getActiveWorkoutView();
+
+    expect(view?.sets.map((s) => s.id)).toEqual(['p1', 'd1']);
+    expect(Object.keys(view?.exercises ?? {}).sort()).toEqual(['dominadas', 'jalon', 'prensa']);
+  });
+
+  it('RN-TRN-01: con varias in_progress (dato roto) → la vista de la de startedAt más reciente', async () => {
+    const at = (key: string, startedAt: string): WorkoutState => ({
+      workout: { ...stored(key, 'in_progress', '2026-11-20'), startedAt: instant(startedAt) },
+      sets: [],
+    });
+    const { service } = setup({
+      initial: [
+        at('a', '2026-11-20T08:00:00-06:00'),
+        at('b', '2026-11-20T18:00:00-06:00'),
+        at('c', '2026-11-20T10:00:00-06:00'),
+      ],
+    });
+    expect((await service.getActiveWorkoutView())?.workout.id).toBe('b');
+  });
+});
+
 describe('datos inconsistentes (bugs, no errores esperados)', () => {
   it('un día de pesas sin semana del programa → startWorkout lanza', async () => {
     const { service, plan } = setup();
