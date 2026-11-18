@@ -26,6 +26,7 @@ export function createTraining(deps: {
 
 export { workoutProgress } from './application/progress';
 export { trainingStores } from './infrastructure/schema';
+export { formatRange, formatSetCount, formatTarget } from './ui/format';
 export { useActiveWorkout, useActiveWorkoutView, useLastSession, useWorkoutView } from './ui/hooks';
 export { SetRow } from './ui/SetRow';
 export { SessionHeader } from './ui/SessionHeader';

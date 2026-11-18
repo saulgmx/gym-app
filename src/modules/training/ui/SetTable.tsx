@@ -3,7 +3,7 @@ import type { ID } from '@/shared/kernel';
 import type { WorkoutView } from '../application/ports';
 import type { TrainingApi } from '../application/service';
 import type { SetErrorContext, SetField, SetLog, TrainingError } from '../domain/types';
-import { formatPrevious } from './format';
+import { formatPrevious, formatRange } from './format';
 import { useLastSession } from './hooks';
 import { fieldId, SetRow, type RowProblem } from './SetRow';
 import styles from './SetTable.module.css';
@@ -88,6 +88,10 @@ export function SetTable({ training, view, exerciseId, describeError }: SetTable
   }
 
   const full = sets.length >= item.maxSets;
+  // Hints of the empty fields and the next set to do (spec 004 AC-27 to AC-30).
+  const hints = { reps: formatRange(item.repRange), rir: formatRange(item.targetRir) };
+  // The view orders sets by setNumber (RN-TRN-17), as `sets.at(-1)` below relies on too.
+  const currentId = sets.find((s) => !s.done)?.id;
   return (
     <div className={styles.wrapper}>
       {canAssist && (
@@ -107,7 +111,7 @@ export function SetTable({ training, view, exerciseId, describeError }: SetTable
             <th scope="col">Serie</th>
             <th scope="col">Anterior</th>
             {metric === 'weight' && <th scope="col">{assisted ? 'Asist. kg' : 'kg'}</th>}
-            <th scope="col">{metric === 'time' ? 's' : 'Reps'}</th>
+            <th scope="col">{metric === 'time' ? 'Seg' : 'Reps'}</th>
             <th scope="col">RIR</th>
             <th scope="col">
               <span className="visually-hidden">Hecha</span>
@@ -121,6 +125,8 @@ export function SetTable({ training, view, exerciseId, describeError }: SetTable
               set={set}
               metric={metric}
               assisted={assisted}
+              hints={hints}
+              current={set.id === currentId}
               previous={formatPrevious(
                 last?.sets.find((s) => s.setNumber === set.setNumber),
                 metric,

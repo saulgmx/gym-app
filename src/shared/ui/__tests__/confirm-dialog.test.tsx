@@ -108,6 +108,30 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
+  it('AC-16 (spec 004): con dismissOnBackdrop, tocar el fondo llama a onCancel', async () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog {...props} open dismissOnBackdrop onConfirm={onConfirm} onCancel={onCancel} />,
+    );
+
+    await userEvent.click(await screen.findByRole('dialog'));
+
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it('con dismissOnBackdrop, un toque en el texto no cancela', async () => {
+    const onCancel = vi.fn();
+    render(
+      <ConfirmDialog {...props} open dismissOnBackdrop onConfirm={vi.fn()} onCancel={onCancel} />,
+    );
+
+    await userEvent.click(await screen.findByText(props.message));
+
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   it('al cerrarse, el foco vuelve al botón que lo abrió', async () => {
     render(<Page />);
     await userEvent.click(opener());

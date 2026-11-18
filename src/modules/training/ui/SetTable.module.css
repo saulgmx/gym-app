@@ -99,6 +99,21 @@
   border-color: var(--accent);
 }
 
+/* The next set to do (spec 004 §6.5): its number and fields in the accent color. */
+[data-current] .number {
+  color: var(--accent);
+}
+
+[data-current] .field {
+  border-width: 2px;
+  border-color: var(--accent);
+}
+
+.field::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
 .problemRow td {
   padding: 0;
 }

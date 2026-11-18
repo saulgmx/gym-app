@@ -63,7 +63,7 @@ export function formatSetCount(n: number): string;                       // "1 s
 ```
 
 - **`SessionHeader`:** una fila con la flecha ("Salir de la sesión", 44 × 44), el botón "Ejercicio N de M" (`aria-expanded`, `aria-haspopup="dialog"`, sin `aria-label`) y `elapsed`. El botón abre un `Dialog` con `placement="top"`, `dismissOnBackdrop`, título `h2` con `workout.name`, el resumen "N de M hechos · 1 en curso" y un botón por ítem con marca, nombre y subtítulo (spec §6.2). Elegir llama a `onNavigate` y cierra. Ya no tiene "Descartar sesión" ni `onDiscard`.
-- **`SetTable`:** columna "Seg" en `metric: 'time'`; `placeholder` de reps (`formatRange(item.repRange)`) y de RIR (`formatRange(item.targetRir)`), sin pista en kg; la serie de menor `setNumber` sin hacer lleva la clase `current`. Firma igual.
+- **`SetTable`:** columna "Seg" en `metric: 'time'`; `placeholder` de reps (`formatRange(item.repRange)`) y de RIR (`formatRange(item.targetRir)`), sin pista en kg; la serie de menor `setNumber` sin hacer lleva `data-current` en su fila (como `data-state` en "Hoy": las pruebas no dependen de los nombres de clase). Firma igual.
 - `SetRow` gana `hints: { reps: string; rir: string }` y `current: boolean`. Es interno (lo usa `SetTable`), aunque `index.ts` lo exporta.
 
 **`spec.md` v0.8 (§7.2, fila "Sesión activa"):** "Encabezado con salida, 'Ejercicio N de M' (menú de ejercicios) y tiempo; aviso de salida (seguir, salir y continuar después, descartar); tarjeta del ejercicio compacta o completa (series, rango, RIR, consejo, alternativa); tabla de series (anterior, kg, reps, RIR, check); pie con 'Siguiente: …', 'Anterior' y 'Siguiente' (spec 004). Fase 3: 'Terminar y guardar'. Fase 4: sugerencia y temporizador."

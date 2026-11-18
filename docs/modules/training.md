@@ -170,7 +170,7 @@ export function formatSetCount(n: number): string;              // "1 serie", "2
 - **Check:** `<input type="checkbox">` con nombre "Serie 1 hecha", ≥ 44 px. Si marcar falla, el motivo aparece bajo la fila (`aria-live="polite"`) y el foco va al campo del error (AC-16).
 - **Errores:** el texto sale de `describeError(error, { metric, assisted })` (ADR-0010).
 - **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, el campo de peso muestra `−peso` y guarda `−escrito` (las reps y el RIR nunca cambian de signo); al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
-- **Serie actual:** la de menor `setNumber` sin hacer del ejercicio que se ve lleva la clase `current` (número y borde de sus campos en `--accent`); sin series pendientes, ninguna. Señal solo visual (spec 004 AC-28 a AC-30). `SetRow` recibe `hints: { reps; rir }` y `current`.
+- **Serie actual:** la de menor `setNumber` sin hacer del ejercicio que se ve lleva `data-current` en su fila (número y borde de sus campos en `--accent`, por CSS sobre ese atributo); sin series pendientes, ninguna. Señal solo visual (spec 004 AC-28 a AC-30). `SetRow` recibe `hints: { reps; rir }` y `current`.
 - **"Añadir serie"** hasta `maxSets` (deshabilitado con "Máximo N series"); **"Quitar serie"** quita la última si no está hecha y se deshabilita si está hecha o es la única. Las series extra llevan "extra".
 
 ### `SessionHeader` (spec 004 §6.1 y §6.2)
