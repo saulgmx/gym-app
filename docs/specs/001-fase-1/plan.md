@@ -1,6 +1,6 @@
 # Plan técnico: Fase 1, plan cargado y "Hoy" con la sesión correcta
 
-**Spec:** `specs/001-fase-1/spec.md` · **Estado:** Aprobado (17-nov-2026) · **Fecha:** 17-nov-2026
+**Spec:** `specs/001-fase-1/spec.md` · **Estado:** Implementado (17-nov-2026) · **Fecha:** 17-nov-2026
 
 ## 1. Resumen de la solución
 

@@ -1,6 +1,6 @@
 # Spec: Fase 1, plan cargado y "Hoy" con la sesión correcta
 
-**ID:** 001 · **Estado:** Aprobada (17-nov-2026) · **Fecha:** 17-nov-2026
+**ID:** 001 · **Estado:** Implementada (17-nov-2026) · **Fecha:** 17-nov-2026
 **Requerimientos cubiertos:** RF-01, RF-02, RF-05 (parcial: aplica los factores y el deload del seed; marcar semanas a mano es v1.0), RNF-01 (datos locales sin conexión), RNF-09 (primera versión del esquema) · CA-2 · QS-06 (parcial) · **Fase:** 1 (spec §13)
 **ADRs aplicados:** 0002, 0007, 0009, 0010
 
