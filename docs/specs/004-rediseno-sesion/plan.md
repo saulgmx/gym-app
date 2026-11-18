@@ -1,6 +1,6 @@
 # Plan técnico: Rediseño de la sesión activa
 
-**Spec:** `specs/004-rediseno-sesion/spec.md` · **Estado:** Aprobado (18-nov-2026)
+**Spec:** `specs/004-rediseno-sesion/spec.md` · **Estado:** Implementado (18-nov-2026)
 
 ## 1. Resumen de la solución
 

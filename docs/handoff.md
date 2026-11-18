@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 18-nov-2026 (fase 2 y rediseño de "Hoy", spec 003, completos) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 18-nov-2026 (fase 2 y rediseños de "Hoy" y de la sesión activa, specs 003 y 004, completos) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -37,6 +37,12 @@
   - "Hoy" en `app/pages/today/`: estado D (pesas, cardio, descanso, fuera del programa) y D2 ("Sesión en curso", con `Elapsed` como único reloj de 1 s).
   - Bundle inicial **161.91 kB** de 200 kB.
   - E2E con `page.clock` para D y D2, axe, 44 px y 320 px (T16). Verificado en el iPhone (T17); el día de descanso solo en E2E.
+- **Rediseño de la sesión activa completo** (spec 004 implementada, PR #27 a #30 y el de cierre):
+  - `shared`: `Dialog` nativo (foco a mano, Escape y fondo opcional con `pointerdown` y `click` en el `<dialog>`, `data-placement`) y `ConfirmDialog` encima con `dismissOnBackdrop`; "Hoy" no cambia.
+  - `training`: `SessionHeader` en una fila (flecha, "Ejercicio N de M" con menú flotante, tiempo por props); `SetTable` con "Seg", pistas de reps y RIR y `data-current`; `formatRange`, `formatTarget` y `formatSetCount`. Contrato `training` v1.18.
+  - `app/pages/session/`: `ExerciseCard` (compacta o completa, la elección se conserva entre ejercicios), `ExitSheet` (seguir, salir y continuar después, descartar con la confirmación que vuelve al aviso) y `SessionFooter` ("Siguiente: …" o "Último ejercicio de hoy"). `Elapsed` en `app/pages/` y `formatElapsed` en `app/format-time.ts`, compartidos con "Hoy".
+  - Bundle inicial **163.58 kB** de 200 kB.
+  - E2E y axe de la sesión nueva, estables en 5 repeticiones (T13); verificado en el iPhone (T14).
 
 ## Decisiones tomadas
 
@@ -102,14 +108,15 @@
    5. ~~Punto de control B, consulta y componentes~~ (T5–T10, PR #23): `getActiveWorkoutView`, `workoutProgress`, `SessionPage` con `current`, `PlanExerciseList`, `WeekStrip` y `ConfirmDialog`.
    6. ~~Punto de control C, página~~ (T11–T15, PR #24): formatos, `Elapsed`, estados D y D2; bundle 161.91 kB.
    7. ~~Punto de control D, verificación y cierre~~ (T16–T18, PR de cierre): E2E, iPhone y este cierre. Spec y plan 003 marcados como implementados.
-11. **Siguiente: rediseño de la sesión activa** (spec 004, fase 2.5, desde `docs/design-sesion-activa.md`). Pasos:
+11. ~~Rediseño de la sesión activa~~ (spec 004, fase 2.5, desde `docs/design-sesion-activa.md`). Pasos:
    1. **Spec 004 aprobada** (18-nov): `docs/specs/004-rediseno-sesion/spec.md` (AC-1 a AC-38). Encabezado en una fila (flecha, "Ejercicio N de M ▾", tiempo), aviso de salida con "Seguir entrenando", "Salir y continuar después" y "Descartar sesión" (Cancelar vuelve al aviso), menú flotante con el nombre de la sesión como título, tarjeta compacta/completa (empieza compacta y recuerda la elección sin guardarla), "Seg", pistas de reps y RIR, serie actual resaltada y línea "Siguiente: …" / "Último ejercicio de hoy" en el pie. Sin base de datos ni reglas nuevas (RN-TRN-21). Fuera: "Terminar y guardar" (spec 005), descanso y sugerencias (fase 4). El tiempo no se muestra en una sesión de otro día, como en "Hoy" (§8, decisión 9).
    2. **Plan técnico aprobado** (18-nov): `docs/specs/004-rediseno-sesion/plan.md`. `Dialog` nuevo en `shared` (con `ConfirmDialog` encima y `dismissOnBackdrop` solo en la sesión; "Hoy" no cambia); `SessionHeader` con `elapsed` y `onExit`; `formatRange`, `formatTarget` y `formatSetCount` en `training`; `SessionPage` repartida en `app/pages/session/`; `Elapsed` pasa a `app/pages/`. Contratos `training` v1.18 y `shared` §4 (`Dialog`), spec v0.8 (§7.2).
    3. ~~Tareas~~ (18-nov): `docs/specs/004-rediseno-sesion/tasks.md`, T1 a T15 en 4 puntos de control (A piezas de `shared` y `training`, B encabezado y menú, C página, D verificación y cierre). En T6 la flecha abre la confirmación de descarte hasta que T10 traiga el aviso de salida.
    4. ~~Punto de control A, piezas de los módulos~~ (T1–T4, PR #27): `Dialog` en `shared` con `ConfirmDialog` encima (`dismissOnBackdrop`), textos de la sesión en `training` y `SetTable` con "Seg", pistas y `data-current`.
    5. ~~Punto de control B, encabezado y menú~~ (T5–T6, PR #28): `SessionHeader` en una fila con el menú flotante; `Elapsed` en `app/pages/` y `formatElapsed` en `app/format-time.ts`.
-   6. **Punto de control C, página** (T7–T12, rama `feat/004-session-redesign-c`): textos, `ExerciseCard`, `ExitSheet`, `SessionFooter`; bundle 163.58 kB. Siguiente: su PR y luego el punto de control D (T13 E2E y axe, T14 iPhone, T15 cierre).
-12. **Fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 005** (la 004 es el rediseño de la sesión activa). Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión", el aviso y el chip de espalda en "Hoy" (spec 003 §6.6) y "Terminar y guardar lo hecho" en el aviso de salida de la sesión (spec 004).
+   6. ~~Punto de control C, página~~ (T7–T12, PR #29): textos, `ExerciseCard`, `ExitSheet`, `SessionFooter`; bundle 163.58 kB.
+   7. ~~Punto de control D, verificación y cierre~~ (T13 en el PR #30, T14 en el iPhone, T15 en el PR de cierre): E2E y axe; axe obligó a nombrar las opciones del aviso con todo su texto visible (spec §6.3). Spec y plan 004 marcados como implementados.
+12. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 005** (la 004 es el rediseño de la sesión activa). Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión", el aviso y el chip de espalda en "Hoy" (spec 003 §6.6) y "Terminar y guardar lo hecho" en el aviso de salida de la sesión (spec 004).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -170,4 +177,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con el rediseño de la sesión activa (spec 004). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y docs/specs/004-rediseno-sesion/spec.md. La spec, el plan y las tareas están aprobados, con los contratos ya actualizados: sigue con el punto de control A (T1, docs/specs/004-rediseno-sesion/tasks.md). Después viene la fase 3 (spec 005), que empieza por la pregunta pendiente 8 (health.md §10). Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3 (MVP usable en el gym). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y docs/modules/health.md. Empieza por la pregunta pendiente 8 (bandas de dolor, health.md §10), que bloquea la fase, y luego la spec 005 (la 004 fue el rediseño de la sesión activa). Guíame paso a paso, una tarea a la vez."

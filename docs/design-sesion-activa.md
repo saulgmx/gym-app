@@ -1,6 +1,6 @@
 # Diseño de la sesión activa (para evaluar contra la spec)
 
-Estado: **diseño elegido**. La spec 002 (sesión activa) ya está implementada. Los cambios de este diseño van en la **spec 004**; el Cierre y "Terminar y guardar" pasan a la **spec 005** (fase 3). Fuente visual: lienzo "App de seguimiento de entrenamiento: diseño" (https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk), tablero **"Sesión activa A3"** (`SesionA3.dc.html`). A y A2 están descartadas.
+Estado: **diseño elegido e implementado** (spec 004, 18-nov-2026, PR #27 a #30 y el de cierre). Los cambios de este diseño están en la **spec 004**; el Cierre y "Terminar y guardar" pasan a la **spec 005** (fase 3). Fuente visual: lienzo "App de seguimiento de entrenamiento: diseño" (https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk), tablero **"Sesión activa A3"** (`SesionA3.dc.html`). A y A2 están descartadas.
 
 Documento hermano: `docs/design-hoy.md`. Flujo del prototipo: Hoy → "Empezar sesión" → Sesión activa → Cierre (spec 005).
 
