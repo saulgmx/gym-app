@@ -20,8 +20,8 @@ describe('formatShortDateTitle', () => {
     expect(formatShortDateTitle(date('2026-11-16'))).toBe('Lunes 16 nov');
   });
 
-  // Node prints the short month without a period, so the period removal for WebKit ("nov.") is
-  // checked by the E2E in WebKit (T16), not here.
+  // Node prints the short month without a period; the period of Safari ("nov.") is checked in
+  // format-date-period.test.ts, which makes Intl write it.
   it('otros meses, incluido "sept"', () => {
     expect(formatShortDateTitle(date('2027-02-22'))).toBe('Lunes 22 feb');
     expect(formatShortDateTitle(date('2026-12-31'))).toBe('Jueves 31 dic');
