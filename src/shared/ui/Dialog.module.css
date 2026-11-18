@@ -1,0 +1,45 @@
+/* Native modal dialog (modules/shared.md §4, Dialog). No padding on the dialog itself: the content
+   fills it, so a tap whose target is the dialog landed on the backdrop. */
+.dialog {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0;
+  color: var(--text);
+}
+
+.dialog::backdrop {
+  background: var(--backdrop);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+/* Bottom sheet: full width, flush with the bottom edge and clear of the iPhone home indicator
+   (spec 003 plan §6.12). */
+.dialog[data-placement='bottom'] {
+  width: 100%;
+  max-width: 100%;
+  margin: auto 0 0;
+  border-bottom: 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.dialog[data-placement='bottom'] .content {
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+/* Panel under the session header (spec 004 §6.2): page gutters, own scroll when it does not fit. */
+.dialog[data-placement='top'] {
+  width: calc(100% - 2rem);
+  max-width: 32rem;
+  max-height: 70dvh;
+  margin: calc(4.75rem + env(safe-area-inset-top)) auto auto;
+  border-radius: var(--radius-card);
+  overflow-y: auto;
+}
+
+.dialog[data-placement='top'] .content {
+  padding: 0.5rem 1rem;
+}

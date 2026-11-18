@@ -224,7 +224,7 @@ describe('Dialog', () => {
     expect(screen.getByRole('heading', { name: 'Ejercicio 2' })).toBeInTheDocument();
   });
 
-  it('Escape (evento cancel) llama a onClose y evita el cierre nativo', async () => {
+  it('Escape (evento cancel) llama a onClose y evita el cierre nativo', () => {
     const onClose = vi.fn();
     render(
       <Dialog open placement="bottom" labelledBy="t" onClose={onClose}>
@@ -268,6 +268,31 @@ describe('Dialog', () => {
     await userEvent.click(screen.getByText('Llevas 1 de 7 ejercicios.'));
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('un clic en un control de dentro tras tocar el fondo sin soltar ahí no cierra', async () => {
+    const onClose = vi.fn();
+    await openPage({ onClose, dismissOnBackdrop: true });
+
+    // A press on the backdrop that is cancelled (no click), then Enter on a button inside.
+    fireEvent.pointerDown(dialog());
+    fireEvent.click(screen.getByRole('button', { name: 'Primero' }));
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('tras cerrar por el fondo, un clic sin pointerdown sobre el dialog no cierra', async () => {
+    const onClose = vi.fn();
+    await openPage({ onClose, dismissOnBackdrop: true });
+    fireEvent.pointerDown(dialog());
+    fireEvent.click(dialog());
+    expect(onClose).toHaveBeenCalledOnce();
+
+    // Opened again; a click with no press first (a screen reader activating it) is not a tap.
+    await userEvent.click(opener());
+    fireEvent.click(dialog());
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('un arrastre que empieza dentro y se suelta en el fondo no cierra', async () => {

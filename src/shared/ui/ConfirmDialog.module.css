@@ -1,22 +1,5 @@
-/* Bottom sheet for every use (spec 003 plan §6.12): full width, flush with the bottom edge and
-   clear of the iPhone home indicator. */
-.dialog {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  margin: auto 0 0;
-  border: 1px solid var(--border);
-  border-bottom: 0;
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
-  background: var(--surface);
-  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
-  color: var(--text);
-}
-
-.dialog::backdrop {
-  background: var(--backdrop);
-}
-
+/* Confirmation content (modules/shared.md §4). The sheet itself (position, backdrop, safe area)
+   is Dialog's. */
 .title {
   margin: 0 0 0.5rem;
   font-family: var(--font-heading);

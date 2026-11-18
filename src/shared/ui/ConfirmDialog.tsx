@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { cx } from './cx';
+import { Dialog } from './Dialog';
 import styles from './ConfirmDialog.module.css';
 
 interface ConfirmDialogProps {
@@ -9,13 +10,14 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   cancelLabel?: string;
   destructive?: boolean;
+  dismissOnBackdrop?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-// Native modal dialog (modules/shared.md §4, ConfirmDialog). Controlled: the page owns `open`.
-// Focus starts on Cancel so a stray Enter or tap never confirms (P-2), and returns to whatever
-// had it when the dialog opened.
+// Confirmation sheet (modules/shared.md §4, ConfirmDialog), built on Dialog. Controlled: the page
+// owns `open`. Focus starts on Cancel so a stray Enter or tap never confirms (P-2). Escape, and
+// the backdrop only with dismissOnBackdrop, cancel.
 export function ConfirmDialog({
   open,
   title,
@@ -23,37 +25,23 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel = 'Cancelar',
   destructive = false,
+  dismissOnBackdrop = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const messageId = useId();
 
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element || !open) return;
-    const previous = document.activeElement;
-    element.showModal();
-    cancel.current?.focus();
-    return () => {
-      element.close();
-      if (previous instanceof HTMLElement) previous.focus();
-    };
-  }, [open]);
-
   return (
-    <dialog
-      ref={dialog}
-      className={styles.dialog}
-      aria-labelledby={titleId}
-      aria-describedby={messageId}
-      // Escape fires `cancel`: the page decides, instead of the browser closing it alone.
-      onCancel={(event) => {
-        event.preventDefault();
-        onCancel();
-      }}
+    <Dialog
+      open={open}
+      placement="bottom"
+      dismissOnBackdrop={dismissOnBackdrop}
+      labelledBy={titleId}
+      describedBy={messageId}
+      initialFocus={cancel}
+      onClose={onCancel}
     >
       <h2 id={titleId} className={styles.title}>
         {title}
@@ -73,6 +61,6 @@ export function ConfirmDialog({
           {confirmLabel}
         </button>
       </div>
-    </dialog>
+    </Dialog>
   );
 }
