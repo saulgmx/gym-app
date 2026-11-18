@@ -132,6 +132,8 @@ training/
   ui/hooks.ts, format.ts, SetRow.tsx, SetTable.tsx, SessionHeader.tsx (+ .module.css)
 ```
 
+**Fronteras (hallazgo de T3):** solo `application` puede importar `@/modules/plan`; `domain`, `ui`, `index.ts` y las pruebas de `training`, no. Por eso el dominio declara sus tipos mínimos: `ExerciseFacts` (`id`, `metric`, `equipment`; el `Exercise` de `plan` encaja por estructura) y `PlannedSession` (entrada de la creación, con `maxSets` ya calculado). `WorkoutView` y los tipos de `plan` que usan `ui` y las pruebas se reexportan desde `application/ports.ts`. El servicio traduce `TodayPlan` → `PlannedSession`; `maxSets` sale de `template.items[].sets[1]`, porque `PlannedItem` no trae el máximo.
+
 Las funciones de `domain/workout.ts` reciben el estado (`{ workout, sets }`), los ejercicios y `now`, y devuelven `Result<{ changes, value }>`. `changes` dice qué series poner o borrar y si el workout cambia. Se prueban sin Dexie (P-5, QS-08) y el servicio, con un repositorio en memoria que implementa `mutate` igual que el de Dexie.
 
 ```ts
