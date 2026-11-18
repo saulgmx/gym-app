@@ -1,4 +1,11 @@
-import { addDays, daysBetween, startOfIsoWeek, weekdayOf, type LocalDate } from '@/shared/kernel';
+import {
+  addDays,
+  daysBetween,
+  startOfIsoWeek,
+  weekdayOf,
+  type ID,
+  type LocalDate,
+} from '@/shared/kernel';
 import type {
   Block,
   Exercise,
@@ -99,21 +106,24 @@ export function getDayPlan(snapshot: PlanSnapshot, date: LocalDate): TodayPlan {
     ? [DELOAD_RIR, DELOAD_RIR]
     : (block.weekRir?.[week] ?? block.targetRir);
 
+  const exerciseById = (exerciseId: ID): Exercise => {
+    const exercise = snapshot.exercises.find((e) => e.id === exerciseId);
+    if (!exercise) throw new Error(`Exercise ${exerciseId} not found (RN-PLN-16)`);
+    return exercise;
+  };
+
   const plannedItems = [...template.items]
     .sort((a, b) => a.order - b.order) // RN-PLN-17
-    .map((item): PlannedItem => {
-      const exercise = snapshot.exercises.find((e) => e.id === item.exerciseId);
-      if (!exercise) throw new Error(`Exercise ${item.exerciseId} not found (RN-PLN-16)`);
-      return {
-        exercise,
-        order: item.order,
-        // RN-PLN-05: minimum of the range; Math.round rounds .5 up.
-        plannedSets: Math.max(1, Math.round(item.sets[0] * position.volumeFactor)),
-        repRange: item.reps,
-        targetRir,
-        ...(item.note === undefined ? {} : { note: item.note }),
-      };
-    });
+    .map((item): PlannedItem => ({
+      exercise: exerciseById(item.exerciseId),
+      alternatives: (item.alternatives ?? []).map(exerciseById), // RN-PLN-11
+      order: item.order,
+      // RN-PLN-05: minimum of the range; Math.round rounds .5 up.
+      plannedSets: Math.max(1, Math.round(item.sets[0] * position.volumeFactor)),
+      repRange: item.reps,
+      targetRir,
+      ...(item.note === undefined ? {} : { note: item.note }),
+    }));
 
   return { kind: 'workout', position, template, plannedItems };
 }

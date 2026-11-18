@@ -184,7 +184,27 @@ const uniqueOrder: Check = ({ templates }) => {
   return undefined;
 };
 
-// RN-PLN-19: safety first, then (a) to (h).
+// (i) An exercise appears in one item per template, as main or alternative (RN-TRN-12).
+const oneItemPerExercise: Check = ({ templates }) => {
+  for (const template of templates) {
+    const seen = new Set<string>();
+    for (const item of template.items) {
+      for (const exerciseId of [item.exerciseId, ...(item.alternatives ?? [])]) {
+        if (seen.has(exerciseId)) {
+          return invalid('Exercise in more than one item of a template', {
+            templateId: template.id,
+            exerciseId,
+          });
+        }
+      }
+      for (const exerciseId of [item.exerciseId, ...(item.alternatives ?? [])])
+        seen.add(exerciseId);
+    }
+  }
+  return undefined;
+};
+
+// RN-PLN-19: safety first, then (a) to (i).
 const CHECKS: Check[] = [
   noHighRisk,
   references,
@@ -195,6 +215,7 @@ const CHECKS: Check[] = [
   programBlocks,
   weekKeys,
   uniqueOrder,
+  oneItemPerExercise,
 ];
 
 export function validateSeed(seed: PlanSeed): Result<void, PlanError> {
