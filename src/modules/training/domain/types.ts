@@ -50,6 +50,19 @@ export interface ExerciseSession {
   sets: SetLog[]; // done sets only, in order (RN-TRN-08)
 }
 
+/** A workout with all its sets, as the repository reads it inside a transaction. */
+export interface WorkoutState {
+  workout: Workout;
+  sets: SetLog[];
+}
+
+/** What a change writes: the workout if it changed, sets to put and set IDs to remove. */
+export interface WorkoutChanges {
+  workout?: Workout;
+  put: SetLog[];
+  remove: ID[];
+}
+
 /** What RN-TRN-04 needs from an exercise; plan's Exercise satisfies it. */
 export interface ExerciseFacts {
   id: ID;

@@ -247,11 +247,13 @@ describe('toggleSetDone', () => {
       expect(changes.put.map((x) => x.id)).toEqual(['p2', 'p3']);
     });
 
-    it('la última serie no afecta a ninguna otra', () => {
+    it('la última serie no afecta a ninguna otra, aunque otro ejercicio tenga la serie n + 1', () => {
       const s = withValues([
         set('p1', 'prensa', 1),
         set('p2', 'prensa', 2, { weightKg: 60, reps: 10 }),
         set('d1', 'dominadas', 1),
+        set('d2', 'dominadas', 2),
+        set('d3', 'dominadas', 3),
       ]);
       expect(changesOf(toggleSetDone(s, id('p2'), exercises, now)).changes.put).toHaveLength(1);
     });
