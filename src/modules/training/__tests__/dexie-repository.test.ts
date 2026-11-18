@@ -1,79 +1,17 @@
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixedClock, sequentialIds, type ID, type Instant, type LocalDate } from '@/shared/kernel';
+import { fixedClock, sequentialIds, type Instant, type LocalDate } from '@/shared/kernel';
 import { createTraining, trainingStores } from '..';
-import type { Exercise, PlanReader, TodayPlan } from '../application/ports';
 import type { SetLog, Workout } from '../domain/types';
+import { dominadas, jalon, plan, prensa } from './fixtures/plan';
 
 // Integration through the public API with IndexedDB in memory (AC-2, AC-4, AC-12, RN-TRN-03,
 // RN-TRN-18, QS-03). Each test opens its own database, as app/db.ts will (plan §4).
 
 const date = (s: string) => s as LocalDate;
-const id = (s: string) => s as ID;
 const saturday = fixedClock('2026-11-21T09:30:00-06:00');
 
-const exercise = (key: string, overrides: Partial<Exercise> = {}): Exercise => ({
-  id: id(key),
-  name: key,
-  muscleGroup: 'quads',
-  equipment: 'machine',
-  metric: 'weight',
-  lumbarRisk: 'low',
-  isPrimary: false,
-  restSeconds: [60, 90],
-  ...overrides,
-});
-const prensa = exercise('prensa');
-const dominadas = exercise('dominadas', { muscleGroup: 'back', equipment: 'bodyweight' });
-const jalon = exercise('jalon', { muscleGroup: 'back', equipment: 'cable' });
-
-// Saturday 2026-11-21 is a workout day with Prensa (2 of 3 sets) and Dominadas or Jalón (1 of 2).
-const workoutDay: TodayPlan = {
-  kind: 'workout',
-  position: {
-    status: 'active',
-    startDate: date('2026-11-16'),
-    totalWeeks: 15,
-    week: 1,
-    block: null,
-    isDeloadWeek: false,
-    volumeFactor: 0.7,
-  },
-  template: {
-    id: id('tpl-a'),
-    blockId: id('block-1'),
-    name: 'Full body A',
-    items: [
-      { exerciseId: prensa.id, order: 1, sets: [3, 3], reps: [8, 12] },
-      { exerciseId: dominadas.id, alternatives: [jalon.id], order: 2, sets: [2, 2], reps: [6, 10] },
-    ],
-  },
-  plannedItems: [
-    {
-      exercise: prensa,
-      alternatives: [],
-      order: 1,
-      plannedSets: 2,
-      repRange: [8, 12],
-      targetRir: [3, 4],
-    },
-    {
-      exercise: dominadas,
-      alternatives: [jalon],
-      order: 2,
-      plannedSets: 1,
-      repRange: [6, 10],
-      targetRir: [3, 4],
-    },
-  ],
-};
-
-const plan: PlanReader = {
-  getTodayPlan: () => Promise.resolve(workoutDay),
-  getExercises: (ids) =>
-    Promise.resolve([prensa, dominadas, jalon].filter((e) => ids.includes(e.id))),
-};
 const noSuggestions = { getPrefill: () => Promise.resolve(null) };
 
 const opened: Dexie[] = [];
