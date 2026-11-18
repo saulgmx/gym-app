@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   freezeClockAt,
+  installClockAt,
   USER_TIME_ZONE,
   waitForControllingWorker,
   waitForStoredSet,
@@ -185,4 +186,100 @@ test('AC-21, QS-05: marcar una serie se ve en menos de 100 ms', async ({ page, b
   console.log(`AC-21 ${browserName}: ${ms.toFixed(1)} ms`);
   // WebKit only logs: CI timing varies too much there (plan §7).
   if (browserName === 'chromium') expect(ms).toBeLessThan(100);
+});
+
+// Spec 003, state D2 ("Sesión en curso") on the production build. The example of §4.5: Full body A
+// started on Monday 2026-11-16 at 18:00 with both sets of Prensa and the first of Press de banca
+// done.
+
+/** Starts Full body A and logs the example: Prensa (2 sets) and the first set of Press de banca. */
+async function logExampleSets(page: Page) {
+  await page.goto('/');
+  await startFromToday(page);
+  await logSet(page, 1, { kg: '60', reps: '10', rir: '3' });
+  await markDone(page, 1);
+  await logSet(page, 2, { kg: '60', reps: '9', rir: '2' });
+  await markDone(page, 2);
+  await page.getByRole('link', { name: 'Siguiente' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Press de banca con barra');
+  await logSet(page, 1, { kg: '40', reps: '8', rir: '3' });
+  await markDone(page, 1);
+  await waitForStoredSet(page, (s) => s.weightKg === 40);
+  // The session has no tab bar: leaving is a reload, which rebuilds "Hoy" from IndexedDB.
+  await page.goto('/');
+}
+
+test('AC-16, AC-17, AC-18: la tarjeta de sesión en curso, el tiempo y "Continuar sesión"', async ({
+  page,
+}) => {
+  // Timers are faked from 18:00 and keep flowing while the page loads: with the clock paused from
+  // the start, "Hoy" never left its loading state (only the hidden h1), in both browsers. It is
+  // paused at 18:18:42 only once the card is on screen, and from then on only runFor moves it.
+  await installClockAt(page, '2026-11-16T18:00:00-06:00');
+  await logExampleSets(page);
+  const card = page.getByRole('region', { name: 'Sesión en curso' });
+  await expect(card.getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
+
+  await page.clock.pauseAt(new Date('2026-11-16T18:18:42-06:00'));
+
+  await expect(card.getByText('18:42', { exact: true })).toBeVisible();
+  await expect(card.getByText('1 de 7 ejercicios hechos', { exact: true })).toBeVisible();
+  await expect(card.getByText('Faltan ~25 min', { exact: true })).toBeVisible();
+  await expect(
+    card.getByText('Vas en: Press de banca con barra · serie 2', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('Tu sesión de hoy')).toHaveCount(0);
+  await expect(page.getByText('Otra sesión de esta semana')).toHaveCount(0);
+
+  await page.clock.runFor(1000);
+  await expect(card.getByText('18:43', { exact: true })).toBeVisible();
+
+  await card.getByRole('link', { name: 'Continuar sesión' }).click();
+  await expect(page).toHaveURL(/\/sesion\/[^/]+\/2$/);
+});
+
+test('AC-25: descartar desde "Hoy" vuelve al estado D; cancelar no cambia nada', async ({
+  page,
+}) => {
+  await freezeClockAt(page, MONDAY);
+  await logExampleSets(page);
+  const card = page.getByRole('region', { name: 'Sesión en curso' });
+  await card.getByRole('button', { name: 'Descartar sesión' }).click();
+  const dialog = page.getByRole('dialog', { name: '¿Descartar la sesión?' });
+  await expect(
+    dialog.getByText(
+      'Las 3 series que registraste en 2 ejercicios no contarán en tu historial. No se puede deshacer.',
+    ),
+  ).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(card.getByText('1 de 7 ejercicios hechos', { exact: true })).toBeVisible();
+
+  await card.getByRole('button', { name: 'Descartar sesión' }).click();
+  await dialog.getByRole('button', { name: 'Sí, descartar' }).click();
+
+  await expect(page.getByRole('region', { name: 'Tu sesión de hoy' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Sesión en curso' })).toHaveCount(0);
+});
+
+test('AC-29: sin conexión, la sesión en curso se ve igual en "Hoy"', async ({ page, context }) => {
+  await freezeClockAt(page, MONDAY);
+  await page.goto('/');
+  await startFromToday(page);
+  await logSet(page, 1, { kg: '60', reps: '10', rir: '3' });
+  await markDone(page, 1);
+  await waitForStoredSet(page, (s) => s.weightKg === 60);
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: 'Continuar sesión' })).toBeVisible();
+  await waitForControllingWorker(page);
+
+  await context.setOffline(true);
+  await page.reload();
+
+  const card = page.getByRole('region', { name: 'Sesión en curso' });
+  await expect(card.getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
+  await expect(card.getByText('0 de 7 ejercicios hechos', { exact: true })).toBeVisible();
+  await expect(card.getByRole('link', { name: 'Continuar sesión' })).toBeVisible();
 });

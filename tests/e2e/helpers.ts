@@ -22,6 +22,15 @@ export async function freezeClockAt(page: Page, isoWithOffset: string) {
 }
 
 /**
+ * Fakes the page's timers from `isoWithOffset` (spec 003 AC-17). Unlike freezeClockAt, time keeps
+ * flowing until the test calls `page.clock.pauseAt`, and then only `runFor` moves it. Only the
+ * tests that need to see the elapsed time change use it; the others keep real timers.
+ */
+export async function installClockAt(page: Page, isoWithOffset: string) {
+  await page.clock.install({ time: new Date(isoWithOffset) });
+}
+
+/**
  * Interactive elements smaller than 44 × 44 px (spec 002 AC-39). A checkbox or switch is tapped
  * through its <label>, so the label is what gets measured.
  */
