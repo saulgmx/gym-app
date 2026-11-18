@@ -145,9 +145,11 @@ async function started(options: Parameters<typeof setup>[0] = {}) {
   const workout = expectOk(
     await ctx.service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
   );
-  const sets = [...ctx.store.sets.values()];
+  // Reads the store each time: chooseExercise changes the exerciseId of the sets.
   const setOf = (exerciseId: string, n = 1) => {
-    const found = sets.find((s) => s.exerciseId === exerciseId && s.setNumber === n);
+    const found = [...ctx.store.sets.values()].find(
+      (s) => s.exerciseId === exerciseId && s.setNumber === n,
+    );
     if (!found) throw new Error(`${exerciseId} ${String(n)}`);
     return found.id;
   };
@@ -280,6 +282,36 @@ describe('operaciones sobre las series', () => {
     expect((await service.logSet(setOf('dominadas'), { weightKg: -20 })).ok).toBe(true);
     expectOk(await service.chooseExercise(workout.id, id('dominadas'), id('jalon')));
     expect(await service.logSet(setOf('jalon'), { weightKg: -20 })).toMatchObject({
+      error: { details: { field: 'weightKg', reason: 'not-allowed' } },
+    });
+  });
+
+  it('si otra pestaña elige la alternativa entre las dos lecturas, valida con el ejercicio nuevo', async () => {
+    const { service, store, workout, setOf } = await started();
+    const dominadas = setOf('dominadas');
+    const load = store.repository.load.bind(store.repository);
+    // The other tab switches the item right after this tab reads the workout.
+    vi.spyOn(store.repository, 'load').mockImplementationOnce(async (workoutId) => {
+      const state = await load(workoutId);
+      await store.repository.mutate(workout.id, (st) => {
+        const item = st.workout.items[1];
+        if (!item) throw new Error('item');
+        const switched = {
+          ...st.workout,
+          items: st.workout.items.map((i) => (i === item ? { ...i, exerciseId: id('jalon') } : i)),
+        };
+        const put = st.sets
+          .filter((x) => x.exerciseId === 'dominadas')
+          .map((x) => ({ ...x, exerciseId: id('jalon') }));
+        return {
+          ok: true,
+          value: { changes: { workout: switched, put, remove: [] }, value: undefined },
+        };
+      });
+      return state;
+    });
+
+    expect(await service.logSet(dominadas, { weightKg: -20 })).toMatchObject({
       error: { details: { field: 'weightKg', reason: 'not-allowed' } },
     });
   });
@@ -473,6 +505,42 @@ describe('getWorkout y getWorkoutView', () => {
   });
 });
 
+describe('datos inconsistentes (bugs, no errores esperados)', () => {
+  it('un día de pesas sin semana del programa → startWorkout lanza', async () => {
+    const { service, plan } = setup();
+    plan.getTodayPlan.mockResolvedValueOnce({
+      ...workoutDay,
+      position: { ...position, week: null },
+    });
+    await expect(service.startWorkout(date('2026-11-16'))).rejects.toThrow(/RN-PLN-01/);
+  });
+
+  it('un ítem del plan sin su ítem de plantilla → startWorkout lanza', async () => {
+    const { service, plan } = setup();
+    plan.getTodayPlan.mockResolvedValueOnce({
+      ...workoutDay,
+      template: { ...template, items: template.items.slice(0, 2) },
+    });
+    await expect(service.startWorkout(date('2026-11-16'))).rejects.toThrow(/order 3/);
+  });
+
+  it('una serie cuyo workout no existe → training/workout-not-found', async () => {
+    const { service, store } = setup();
+    store.sets.set(id('huerfana'), doneSet('huerfana', 'no-existe', 'prensa', 1));
+    expect(await service.logSet(id('huerfana'), { reps: 1 })).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-not-found' },
+    });
+  });
+
+  it('RN-TRN-17: una serie de un ejercicio que no está en los ítems va al final', async () => {
+    const workout = stored('w', 'in_progress', '2026-11-21', ['prensa']);
+    const sets = [doneSet('x1', 'w', 'jalon', 1), doneSet('p1', 'w', 'prensa', 1)];
+    const { service } = setup({ initial: [{ workout, sets }] });
+    expect((await service.getWorkoutView(id('w')))?.sets.map((s) => s.id)).toEqual(['p1', 'x1']);
+  });
+});
+
 describe('getExerciseHistory (RN-TRN-08)', () => {
   const history = () =>
     setup({
@@ -494,16 +562,17 @@ describe('getExerciseHistory (RN-TRN-08)', () => {
           workout: stored('w14', 'discarded', '2026-11-14'),
           sets: [doneSet('c1', 'w14', 'prensa', 1)],
         },
+        // Inserted before the later one, so only sorting by startedAt puts it second.
+        {
+          workout: stored('w16-early', 'completed', '2026-11-16'),
+          sets: [doneSet('e1', 'w16-early', 'prensa', 1, { weightKg: 62.5 })],
+        },
         {
           workout: {
             ...stored('w16-late', 'completed', '2026-11-16'),
             startedAt: instant('2026-11-16T19:00:00-06:00'),
           },
           sets: [doneSet('d1', 'w16-late', 'prensa', 1, { weightKg: 65 })],
-        },
-        {
-          workout: stored('w16-early', 'completed', '2026-11-16'),
-          sets: [doneSet('e1', 'w16-early', 'prensa', 1, { weightKg: 62.5 })],
         },
         {
           workout: stored('w21', 'in_progress', '2026-11-21'),
