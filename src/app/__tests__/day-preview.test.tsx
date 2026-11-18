@@ -56,10 +56,10 @@ describe('DayPreviewPage', () => {
     }
   });
 
-  it('AC-8: "Iniciar sesión" crea el workout de hoy con el plan del viernes (RN-TRN-14)', async () => {
+  it('AC-8: "Empezar sesión" crea el workout de hoy con el plan del viernes (RN-TRN-14)', async () => {
     const { router, services, user } = await openDay('/dia/2026-11-20');
 
-    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }));
+    await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toMatch(/^\/sesion\/[^/]+\/1$/);
@@ -127,7 +127,7 @@ describe('DayPreviewPage', () => {
 
     expect(screen.getByRole('link', { name: 'Volver a Hoy' })).toBeInTheDocument();
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Iniciar sesión' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
   });
 
   it('"Hoy" sigue marcada en la barra inferior', async () => {

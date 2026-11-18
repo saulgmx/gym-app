@@ -30,3 +30,14 @@ export function formatShortDay(date: LocalDate): string {
   const day = shortWeekday.format(instant).replace('.', '');
   return `${day.charAt(0).toUpperCase()}${day.slice(1)} ${String(instant.getUTCDate())}`;
 }
+
+const shortMonth = new Intl.DateTimeFormat('es', { month: 'short', timeZone: 'UTC' });
+
+/** "Miércoles 18 nov", for the top row of "Hoy" (spec 003 AC-1). WebKit adds a period to the
+ *  short month ("nov."); it is removed, as in formatShortDay. */
+export function formatShortDateTitle(date: LocalDate): string {
+  const instant = new Date(`${date}T00:00:00Z`);
+  const day = weekday.format(instant);
+  const month = shortMonth.format(instant).replace('.', '');
+  return `${day.charAt(0).toUpperCase()}${day.slice(1)} ${String(instant.getUTCDate())} ${month}`;
+}

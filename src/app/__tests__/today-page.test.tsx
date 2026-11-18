@@ -31,95 +31,150 @@ async function openToday(clock: Clock = at('2026-11-18')) {
   expect(screen.getByRole('heading', { level: 1, name: 'Hoy' })).toBeInTheDocument();
 }
 
-// The day card comes first; "Otra sesión de esta semana" (spec 002) adds a second h2 below it.
-function card(): HTMLElement {
-  const [heading] = screen.getAllByRole('heading', { level: 2 });
-  const section = heading?.closest('section');
-  if (!section) throw new Error('The day heading is inside a section');
-  return section;
-}
+// The day card is a region named by its eyebrow (spec 003 §6.2).
+const card = () => screen.getByRole('region', { name: 'Tu sesión de hoy' });
+const chipsOf = (region: HTMLElement) =>
+  within(region)
+    .queryAllByRole('listitem')
+    .map((chip) => chip.textContent);
+const details = () => screen.queryByText(/^Ver (los \d+ ejercicios|el ejercicio)$/);
 
 describe('TodayPage', () => {
-  it('AC-15: día de pesas con encabezado, sesión y ejercicios en orden', async () => {
+  it('spec 003 §6.1: el h1 "Hoy" sigue en la página, oculto a la vista', async () => {
     await openToday();
+    await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(screen.getByRole('heading', { level: 1, name: 'Hoy' })).toHaveClass('visually-hidden');
+  });
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
-    expect(screen.getByText('Miércoles 18 de noviembre')).toBeInTheDocument();
-    expect(screen.getByText('Bloque 1 · Full body')).toBeInTheDocument();
+  it('AC-1: lunes 16, fila superior y tarjeta de Full body A con resumen, chips y CTA', async () => {
+    await openToday(at('2026-11-16'));
+
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(screen.getByText('Lunes 16 nov')).toBeInTheDocument();
     expect(screen.getByText('Semana 1 de 15')).toBeInTheDocument();
+    expect(within(region).getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
+    expect(within(region).getByText('7 ejercicios · ~50 min')).toBeVisible();
+    expect(chipsOf(region)).toEqual(['Bloque 1 · Full body', 'RIR 3-4']);
+    expect(within(region).getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+  });
 
-    const exercises = within(card()).getAllByRole('listitem');
+  it('AC-3: "Ver los 7 ejercicios" cerrado; dentro, series × reps y la nota, sin cargas', async () => {
+    await openToday(at('2026-11-16'));
+    await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+
+    const summary = screen.getByText('Ver los 7 ejercicios');
+    const box = summary.closest('details');
+    if (!box) throw new Error('The summary is inside a details');
+    expect(box).not.toHaveAttribute('open');
+    expect(box.parentElement).not.toBe(card()); // below the card, not inside it
+    const exercises = within(box).getAllByRole('listitem');
     expect(exercises).toHaveLength(7);
-    const [first] = exercises;
-    expect(first).toHaveTextContent('Hack squat');
-    expect(first).toHaveTextContent('2 × 8-12'); // 3 sets × 0.7 in week 1
-    expect(first).toHaveTextContent('Con prensa: pies bajos. Faja solo si la carga es pesada');
+    expect(exercises[0]).toHaveTextContent('Prensa de piernas');
+    expect(exercises[0]).toHaveTextContent('2 × 8-12');
+    expect(exercises[0]).toHaveTextContent('Pelvis pegada al respaldo, sin despegar la lumbar');
+    expect(box).not.toHaveTextContent(/kg/);
   });
 
-  it('spec 003 plan §6.11: el RIR aparece una vez en la tarjeta, no en cada ejercicio', async () => {
-    await openToday();
+  it('AC-4: un ejercicio de tiempo muestra las reps en segundos (Lower, sábado 23-ene-2027)', async () => {
+    await openToday(at('2027-01-23'));
+    await screen.findByRole('heading', { level: 2, name: 'Lower' });
 
-    await screen.findByRole('heading', { level: 2, name: 'Full body B' });
-    expect(within(card()).getAllByText(/RIR/)).toHaveLength(1);
-    expect(within(card()).getByText('RIR 3-4')).toBeVisible();
-    for (const exercise of within(card()).getAllByRole('listitem')) {
-      expect(exercise).not.toHaveTextContent('RIR');
-    }
+    const plancha = screen
+      .getAllByRole('listitem')
+      .find((item) => item.textContent.startsWith('Plancha'));
+    expect(plancha).toHaveTextContent('3 × 30-45 s');
   });
 
-  it('AC-16: día de cardio con su nota y sin lista de ejercicios', async () => {
+  it('AC-6: miércoles 18 (Full body B, semana 1) → ~55 min', async () => {
+    await openToday(at('2026-11-18'));
+
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
+    expect(within(region).getByText('7 ejercicios · ~55 min')).toBeVisible();
+  });
+
+  it('AC-6: lunes 23 (Full body B, semana 2, factor 1) → ~75 min y RIR 2-3', async () => {
+    await openToday(at('2026-11-23'));
+
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
+    expect(within(region).getByText('7 ejercicios · ~75 min')).toBeVisible();
+    expect(chipsOf(region)).toEqual(['Bloque 1 · Full body', 'RIR 2-3']);
+    expect(screen.getByText('Semana 2 de 15')).toBeInTheDocument();
+  });
+
+  it('AC-5: semana 15 (deload): "Descarga" una vez, "RIR 4" y la duración al 50%', async () => {
+    await openToday(at('2027-02-22'));
+
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByRole('heading', { level: 2, name: 'Push' })).toBeVisible();
+    // The deload block is named "Descarga": one chip, not two.
+    expect(chipsOf(region)).toEqual(['Descarga', 'RIR 4']);
+    expect(within(region).getByText('7 ejercicios · ~55 min')).toBeVisible();
+    expect(screen.getByText('Semana 15 de 15')).toBeInTheDocument();
+  });
+
+  it('AC-7: martes 17 (cardio): eyebrow, "Cardio", la nota y solo el chip del bloque', async () => {
     await openToday(at('2026-11-17'));
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Cardio' })).toBeVisible();
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByRole('heading', { level: 2, name: 'Cardio' })).toBeVisible();
     expect(
-      screen.getByText('Cardio suave 30-40 min (bici, elíptica o caminata inclinada)'),
-    ).toBeInTheDocument();
-    expect(within(card()).queryByRole('list')).not.toBeInTheDocument();
+      within(region).getByText('Cardio suave 30-40 min (bici, elíptica o caminata inclinada)'),
+    ).toBeVisible();
+    expect(chipsOf(region)).toEqual(['Bloque 1 · Full body']);
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument();
+    expect(details()).not.toBeInTheDocument();
   });
 
-  it('AC-16: día de descanso con su texto y sin lista de ejercicios', async () => {
+  it('AC-8: jueves 19 (descanso): "Descanso", el texto fijo y solo el chip del bloque', async () => {
     await openToday(at('2026-11-19'));
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Descanso' })).toBeVisible();
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByRole('heading', { level: 2, name: 'Descanso' })).toBeVisible();
     expect(
-      screen.getByText('Recupera: dormir y comer bien también es entrenar.'),
-    ).toBeInTheDocument();
-    expect(within(card()).queryByRole('list')).not.toBeInTheDocument();
+      within(region).getByText('Recupera: dormir y comer bien también es entrenar.'),
+    ).toBeVisible();
+    expect(chipsOf(region)).toEqual(['Bloque 1 · Full body']);
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument();
+    expect(details()).not.toBeInTheDocument();
   });
 
-  it('AC-17, spec 003 AC-12: la tira de la semana marca hoy', async () => {
-    await openToday();
+  it('AC-9: antes del programa (domingo 15), solo la fecha y el mensaje; sin tira ni otros días', async () => {
+    await openToday(at('2026-11-15'));
 
-    const strip = await screen.findByRole('list', { name: 'Semana' });
-    const days = within(strip).getAllByRole('img');
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByText('El plan empieza el lunes 16 de noviembre.')).toBeVisible();
+    expect(screen.getByText('Domingo 15 nov')).toBeInTheDocument();
+    expect(screen.queryByText(/^Semana \d+ de/)).not.toBeInTheDocument();
+    expect(within(region).queryByRole('heading')).not.toBeInTheDocument();
+    expect(chipsOf(region)).toEqual([]);
+    expect(screen.queryByRole('region', { name: 'Esta semana' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Otra sesión de esta semana' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('AC-9: después del programa (lunes 1-mar-2027), el mensaje de fin', async () => {
+    await openToday(at('2027-03-01'));
+
+    const region = await screen.findByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByText('Terminaste el plan de 15 semanas.')).toBeVisible();
+    expect(screen.queryByText(/^Semana \d+ de/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Esta semana' })).not.toBeInTheDocument();
+  });
+
+  it('AC-10: "Esta semana" con "0 de 3 sesiones" y la tira debajo de la tarjeta', async () => {
+    await openToday(at('2026-11-18'));
+
+    const week = await screen.findByRole('region', { name: 'Esta semana' });
+    expect(within(week).getByRole('heading', { level: 2, name: 'Esta semana' })).toBeVisible();
+    expect(within(week).getByText('0 de 3 sesiones')).toBeVisible();
+    const days = within(within(week).getByRole('list', { name: 'Semana' })).getAllByRole('img');
     expect(days).toHaveLength(7);
     expect(days[2]).toHaveAccessibleName('miércoles, hoy, Full body B, pendiente');
     expect(days[0]).toHaveAccessibleName('lunes, Full body A, no hecha');
-  });
-
-  it('AC-18: semana de descarga', async () => {
-    await openToday(at('2027-02-22'));
-
-    expect(await screen.findByRole('heading', { level: 2, name: 'Push' })).toBeVisible();
-    expect(screen.getByText('Descarga')).toBeInTheDocument();
-    expect(screen.getByText('Semana 15 de 15 · Semana de descarga')).toBeInTheDocument();
-  });
-
-  it('AC-19: antes del inicio, solo el mensaje, sin tira ni lista', async () => {
-    await openToday(at('2026-11-15'));
-
-    expect(await screen.findByText('El plan empieza el lunes 16 de noviembre.')).toBeVisible();
-    expect(screen.getByText('Domingo 15 de noviembre')).toBeInTheDocument();
-    expect(screen.queryByRole('list', { name: 'Semana' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
-  });
-
-  it('AC-19: al terminar, solo el mensaje, sin tira ni lista', async () => {
-    await openToday(at('2027-03-01'));
-
-    expect(await screen.findByText('Terminaste el plan de 15 semanas.')).toBeVisible();
-    expect(screen.queryByRole('list', { name: 'Semana' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(card().compareDocumentPosition(week) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   describe('AC-20: al volver a primer plano otro día', () => {
@@ -150,7 +205,7 @@ describe('TodayPage', () => {
       becomeVisible('visible');
 
       expect(await screen.findByRole('heading', { level: 2, name: 'Descanso' })).toBeVisible();
-      expect(screen.getByText('Jueves 19 de noviembre')).toBeInTheDocument();
+      expect(screen.getByText('Jueves 19 nov')).toBeInTheDocument();
     });
 
     it('no cambia mientras la app sigue oculta', async () => {

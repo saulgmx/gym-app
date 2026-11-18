@@ -50,14 +50,14 @@ async function markDone(training: TrainingApi, workout: Workout, sets: [number, 
   }
 }
 
-const startButton = () => screen.queryByRole('button', { name: 'Iniciar sesión' });
+const startButton = () => screen.queryByRole('button', { name: 'Empezar sesión' });
 const otherDays = () => screen.queryByRole('region', { name: 'Otra sesión de esta semana' });
 
-describe('Iniciar sesión', () => {
+describe('Empezar sesión', () => {
   it('AC-1: el lunes crea el workout de Full body A y abre su primer ejercicio', async () => {
     const { router, services, user } = await openToday('2026-11-16');
 
-    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }));
+    await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
 
     // It navigates once the workout is written.
     await waitFor(() => {
@@ -87,7 +87,7 @@ describe('Iniciar sesión', () => {
     const services = createTestServices({ clock: at('2026-11-16') });
     const startWorkout = vi.fn(() => new Promise<Result<Workout, TrainingError>>(() => undefined));
     const { user } = await openToday('2026-11-16', withTraining(services, { startWorkout }));
-    const button = await screen.findByRole('button', { name: 'Iniciar sesión' });
+    const button = await screen.findByRole('button', { name: 'Empezar sesión' });
 
     await user.click(button);
     await user.click(button);
@@ -111,7 +111,7 @@ describe('Iniciar sesión', () => {
       withTraining(services, { startWorkout }),
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }));
+    await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/sesion/otra');
@@ -127,7 +127,7 @@ describe('Iniciar sesión', () => {
       withTraining(services, { startWorkout }),
     );
 
-    await user.click(await screen.findByRole('button', { name: 'Iniciar sesión' }));
+    await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
 
     expect(await screen.findByText('Hoy no toca pesas.')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/');
@@ -139,7 +139,7 @@ function withTraining(services: AppServices, overrides: Partial<TrainingApi>): A
 }
 
 describe('Continuar sesión', () => {
-  it('mientras carga la sesión activa no hay botones (nunca "Iniciar" de más)', async () => {
+  it('mientras carga la sesión activa no hay botones (nunca "Empezar" de más)', async () => {
     const services = createTestServices({ clock: at('2026-11-16') });
     // "Hoy" reads the active workout through its view (spec 003 plan §6.4).
     const getActiveWorkoutView = () => new Promise<WorkoutView | undefined>(() => undefined);
@@ -159,13 +159,14 @@ describe('Continuar sesión', () => {
 
     const current = await screen.findByRole('region', { name: 'Sesión en curso' });
     expect(current).toHaveTextContent('Full body A');
+    // spec 003 AC-18: "Continuar" opens the exercise of "Vas en" (nothing done yet: the first).
     expect(
       within(current).getByRole('link', { name: 'Continuar sesión del lunes 16 de noviembre' }),
-    ).toHaveAttribute('href', `/sesion/${workout.id}`);
+    ).toHaveAttribute('href', `/sesion/${workout.id}/1`);
     expect(within(current).getByRole('button', { name: 'Descartar sesión' })).toBeInTheDocument();
     expect(startButton()).not.toBeInTheDocument();
-    // The rest of "Hoy" stays: today is still Full body B.
-    expect(screen.getByRole('heading', { level: 2, name: 'Full body B' })).toBeInTheDocument();
+    // spec 003 §6.3: the session card takes the place of today's card; never both.
+    expect(screen.queryByRole('region', { name: 'Tu sesión de hoy' })).not.toBeInTheDocument();
   });
 
   it('una sesión de hoy dice solo "Continuar sesión"', async () => {
@@ -184,6 +185,20 @@ describe('Continuar sesión', () => {
 
     await screen.findByRole('region', { name: 'Sesión en curso' });
     expect(otherDays()).not.toBeInTheDocument();
+  });
+
+  it('spec 003 AC-14: con sesión activa la tira se ve igual, sin CTA ni desplegable', async () => {
+    const services = createTestServices({ clock: at('2026-11-18') });
+    await started(services, '2026-11-18');
+    await openToday('2026-11-18', services);
+
+    await screen.findByRole('region', { name: 'Sesión en curso' });
+    const week = screen.getByRole('region', { name: 'Esta semana' });
+    expect(within(week).getAllByRole('img')[2]).toHaveAccessibleName(
+      'miércoles, hoy, Full body B, pendiente',
+    );
+    expect(startButton()).not.toBeInTheDocument();
+    expect(screen.queryByText('Ver los 7 ejercicios')).not.toBeInTheDocument();
   });
 });
 
@@ -205,7 +220,7 @@ describe('Descartar sesión', () => {
 
     await user.click(within(dialog).getByRole('button', { name: 'Sí, descartar' }));
 
-    expect(await screen.findByRole('button', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Empezar sesión' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Sesión en curso' })).not.toBeInTheDocument();
     expect((await services.training.getWorkout(workout.id))?.status).toBe('discarded');
   });

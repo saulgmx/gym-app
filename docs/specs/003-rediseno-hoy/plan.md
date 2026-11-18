@@ -111,6 +111,7 @@ Alternativa: que `getTodayPlan` devuelva `estimatedSeconds`. Se descarta porque 
 ### 6.7 Textos y formatos
 - Fecha de la fila superior: `formatShortDateTitle` en `app/format-date.ts` → "Miércoles 18 nov" (mes `short` de `Intl`, sin punto, como `formatShortDay`).
 - Chip de RIR: `formatRir(plannedItems[0].targetRir)`. Todos los ítems tienen el mismo (RN-PLN-06), y una prueba lo comprueba sobre el seed real.
+- Chips sin repetir texto: el bloque de deload del seed se llama "Descarga", así que en la semana 15 el chip del bloque y el de descarga coinciden y se muestra uno (decisión de T13).
 - "N ejercicios · ~M min", "N de M ejercicios hechos", "Faltan ~X min", "Vas en: <ejercicio> · serie N", "N de M sesiones": funciones de formato en `app/pages/today/format.ts`, con pruebas.
 - `formatRir` de `plan/ui/format.ts` ya existe; `index.ts` lo exporta (nuevo, §3) para que el chip no lo duplique.
 
@@ -121,7 +122,9 @@ Alternativa: que `getTodayPlan` devuelva `estimatedSeconds`. Se descarta porque 
 Sin tokens nuevos: acento, `--surface-2`, `--border`, `--text-muted` y `--warn` existentes (ADR-0005). El borde punteado del cardio usa `--text-muted`. Los botones de "Otra sesión" pasan a 48 px con borde `--border`.
 
 ### 6.10 Presupuesto del bundle
-Hoy son 160.08 kB de 200 kB. El cambio son unos pocos componentes y funciones puras, sin dependencias nuevas. Se mide en la última tarea (AC-28).
+Antes del rediseño eran 160.08 kB de 200 kB. El cambio son unos pocos componentes y funciones puras, sin dependencias nuevas.
+
+**Medición (T15, 18-nov, con T1 a T14):** 161.91 kB de 200 kB gzip (`npm run build` y `npm run size`), +1.83 kB. AC-28 se cumple con 38 kB de margen.
 
 ### 6.11 El RIR en la vista previa
 Al quitar el RIR por fila de `PlanExerciseList`, la vista previa de `/dia/:date` lo muestra una vez, en una línea bajo el `h2` con el nombre de la sesión ("RIR 3-4"). No se repite el nombre junto a la fecha del `h1` (decisión del 18-nov en T8). Hasta que T13 traiga el chip, la tarjeta actual de "Hoy" lo muestra igual, para que "Hoy" no se quede sin RIR entre los puntos de control B y C. Alternativas descartadas: una opción del componente para mostrarlo por fila (dos modos para un dato que es igual en todas las filas) y dejar la vista previa sin RIR (pierde información).

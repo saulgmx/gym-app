@@ -8,7 +8,7 @@ test.use({ timezoneId: USER_TIME_ZONE });
 
 async function expectWednesdayOfWeekOne(page: Page) {
   await expect(page.getByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
-  await expect(page.getByText('Miércoles 18 de noviembre')).toBeVisible();
+  await expect(page.getByText('Miércoles 18 nov')).toBeVisible();
   await expect(page.getByText('Bloque 1 · Full body')).toBeVisible();
   await expect(page.getByText('Semana 1 de 15')).toBeVisible();
   const strip = page.getByRole('list', { name: 'Semana' });

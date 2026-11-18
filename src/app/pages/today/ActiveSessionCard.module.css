@@ -1,0 +1,122 @@
+/* "Sesión en curso" (spec 003 §6.3): accent border, 44 px title, decorative segment bar. */
+.card {
+  display: grid;
+  gap: 0.625rem;
+  padding: 1.25rem 1rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.card p {
+  margin: 0;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.elapsed {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 2.75rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.segments {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.segment {
+  flex: 1;
+  height: 0.5rem;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.done {
+  background: var(--accent);
+}
+
+.current {
+  border: 2px solid var(--accent);
+  background: transparent;
+}
+
+/* "Vas en" box. */
+.position {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  padding: 0.625rem 0.75rem;
+  font-weight: 500;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-button);
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.secondary {
+  border: 1px solid var(--warn);
+  background: transparent;
+  color: var(--warn);
+}
+
+.problem {
+  color: var(--warn);
+  font-size: 0.875rem;
+}
+
+.problem:empty {
+  display: none;
+}
