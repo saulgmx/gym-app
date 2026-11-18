@@ -205,7 +205,7 @@ Las reglas RN-TRN-* se escriben con pruebas primero en el dominio (P-5), aunque 
 | Criterio | Tipo de prueba | Archivo |
 |---|---|---|
 | RN-TRN-04 (AC-16 a AC-19b) | Unitaria (dominio) | `src/modules/training/__tests__/set-values.test.ts` |
-| RN-TRN-02, 05, 07, 10 a 15 (AC-1, 8, 10, 13 a 15, 20, 23, 24, 31 a 35) | Unitaria (dominio) | `src/modules/training/__tests__/workout.test.ts` |
+| RN-TRN-02, 05, 07, 10 a 15 (AC-1, 8, 10, 13 a 15, 20, 23, 24, 31 a 35) | Unitaria (dominio) | `src/modules/training/__tests__/workout-create.test.ts` (RN-TRN-02, 12, 14) y `workout-changes.test.ts` (el resto) |
 | AC-1 a AC-3, 6, 8, 10, 29, 30 | Unitaria del servicio con repositorio en memoria y un `PlanReader` falso (QS-08) | `src/modules/training/__tests__/training-service.test.ts` |
 | AC-41 (P-1) | Integración: `createPlan` y `createTraining` sobre el seed real; cada plantilla y cada alternativa. Vive en `app` porque `training` no puede importar el seed ni los fixtures de `plan` (fronteras) | `src/app/seed/__tests__/training-safety.test.ts` |
 | AC-2 (concurrencia), AC-4, AC-12, RN-TRN-03 | Integración (`fake-indexeddb`): dos instancias sobre la misma base, recarga | `src/modules/training/__tests__/dexie-repository.test.ts` |
