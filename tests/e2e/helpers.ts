@@ -90,6 +90,28 @@ async function storedSets(page: Page) {
   );
 }
 
+/** `startedAt` of the only workout, read straight from IndexedDB (an Instant, in seconds). */
+export async function storedStartedAt(page: Page): Promise<string> {
+  return page.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const open = indexedDB.open('gym-app');
+        open.onerror = () => {
+          reject(new Error('Cannot open gym-app'));
+        };
+        open.onsuccess = () => {
+          const request = open.result.transaction('workouts').objectStore('workouts').getAll();
+          request.onsuccess = () => {
+            open.result.close();
+            const [workout] = request.result as { startedAt: string }[];
+            if (!workout) reject(new Error('No workout stored'));
+            else resolve(workout.startedAt);
+          };
+        };
+      }),
+  );
+}
+
 /**
  * Waits until a confirmed value is written (RN-TRN-03). A field is saved a few milliseconds after
  * Enter; a reload in between would abort the write, which no user can do that fast.

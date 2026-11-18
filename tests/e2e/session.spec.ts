@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   freezeClockAt,
   installClockAt,
+  storedStartedAt,
   USER_TIME_ZONE,
   waitForControllingWorker,
   waitForStoredSet,
@@ -220,14 +221,17 @@ test('AC-16, AC-17, AC-18: la tarjeta de sesión en curso, el tiempo y "Continua
   page,
 }) => {
   // Timers are faked from 18:00 and keep flowing while the page loads: with the clock paused from
-  // the start, "Hoy" never left its loading state (only the hidden h1), in both browsers. It is
-  // paused at 18:18:42 only once the card is on screen, and from then on only runFor moves it.
+  // the start, "Hoy" never left its loading state (only the hidden h1), in both browsers. Once the
+  // card is on screen, the clock is paused 18 min 42 s after the stored startedAt (saved in whole
+  // seconds), not at 18:18:42: on a slow CI runner the start lands at 18:00:01 and would show
+  // "18:41". From then on only runFor moves it.
   await installClockAt(page, '2026-11-16T18:00:00-06:00');
   await logExampleSets(page);
   const card = page.getByRole('region', { name: 'Sesión en curso' });
   await expect(card.getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
 
-  await page.clock.pauseAt(new Date('2026-11-16T18:18:42-06:00'));
+  const startedAt = Date.parse(await storedStartedAt(page));
+  await page.clock.pauseAt(startedAt + (18 * 60 + 42) * 1000);
 
   await expect(card.getByText('18:42', { exact: true })).toBeVisible();
   await expect(card.getByText('1 de 7 ejercicios hechos', { exact: true })).toBeVisible();
