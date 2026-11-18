@@ -1,6 +1,6 @@
 # Plan técnico: Rediseño de "Hoy"
 
-**Spec:** `specs/003-rediseno-hoy/spec.md` · **Estado:** Aprobado (18-nov-2026)
+**Spec:** `specs/003-rediseno-hoy/spec.md` · **Estado:** Implementado (18-nov-2026)
 
 ## 1. Resumen de la solución
 
@@ -155,7 +155,7 @@ Tras cada prueba en verde se rompe el código a propósito, para ver que falla l
 
 ## 8. Riesgos
 
-- **`Intl` en WebKit:** el mes corto puede venir con punto ("nov."). Se quita igual que en `formatShortDay`, y el E2E corre en WebKit.
+- **`Intl` en WebKit:** el mes corto puede venir con punto ("nov."). Se quita igual que en `formatShortDay`. El WebKit de Playwright 1.65 escribe "nov" sin punto, igual que Node, así que el E2E no lo detecta (T16): lo cubre `format-date-period.test.ts`, que hace que `Intl` añada el punto al mes y al día cortos.
 - **Nombres largos con título de 44 px** ("Bloque 3 · PPL + Upper/Lower" en un chip, nombres de plantilla): se prueba a 320 px en AC-27.
 - **Temporizadores falsos y `useLiveQuery`:** `vi.useFakeTimers` puede congelar las promesas de Dexie. Solo `Elapsed` se prueba con temporizadores falsos, aislado; la página se prueba con el reloj fijo.
 - **Diálogo anclado abajo en iOS:** la barra de Safari y la zona segura. Se verifica en el iPhone (última tarea), como T26 de la fase 2.

@@ -22,6 +22,28 @@ export async function freezeClockAt(page: Page, isoWithOffset: string) {
 }
 
 /**
+ * Opens "Hoy" on any date of the program, or outside it. A fresh database starts the program on
+ * the Monday of the first visit's week (RN-PLN-13), so the first visit is on Monday 2026-11-16 and
+ * then the clock moves to `isoWithOffset` and the page reloads.
+ */
+export async function openTodayOn(page: Page, isoWithOffset: string) {
+  await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
+  await page.goto('/');
+  await expect(page.getByText('Lunes 16 nov', { exact: true })).toBeVisible();
+  await freezeClockAt(page, isoWithOffset);
+  await page.reload();
+}
+
+/**
+ * Fakes the page's timers from `isoWithOffset` (spec 003 AC-17). Unlike freezeClockAt, time keeps
+ * flowing until the test calls `page.clock.pauseAt`, and then only `runFor` moves it. Only the
+ * tests that need to see the elapsed time change use it; the others keep real timers.
+ */
+export async function installClockAt(page: Page, isoWithOffset: string) {
+  await page.clock.install({ time: new Date(isoWithOffset) });
+}
+
+/**
  * Interactive elements smaller than 44 × 44 px (spec 002 AC-39). A checkbox or switch is tapped
  * through its <label>, so the label is what gets measured.
  */
@@ -62,6 +84,28 @@ async function storedSets(page: Page) {
           request.onsuccess = () => {
             open.result.close();
             resolve(request.result as { weightKg: number | null; reps: number | null }[]);
+          };
+        };
+      }),
+  );
+}
+
+/** `startedAt` of the only workout, read straight from IndexedDB (an Instant, in seconds). */
+export async function storedStartedAt(page: Page): Promise<string> {
+  return page.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const open = indexedDB.open('gym-app');
+        open.onerror = () => {
+          reject(new Error('Cannot open gym-app'));
+        };
+        open.onsuccess = () => {
+          const request = open.result.transaction('workouts').objectStore('workouts').getAll();
+          request.onsuccess = () => {
+            open.result.close();
+            const [workout] = request.result as { startedAt: string }[];
+            if (!workout) reject(new Error('No workout stored'));
+            else resolve(workout.startedAt);
           };
         };
       }),

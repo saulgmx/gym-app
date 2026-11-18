@@ -33,8 +33,9 @@ export function formatShortDay(date: LocalDate): string {
 
 const shortMonth = new Intl.DateTimeFormat('es', { month: 'short', timeZone: 'UTC' });
 
-/** "Miércoles 18 nov", for the top row of "Hoy" (spec 003 AC-1). WebKit adds a period to the
- *  short month ("nov."); it is removed, as in formatShortDay. */
+/** "Miércoles 18 nov", for the top row of "Hoy" (spec 003 AC-1). Some Intl data writes the short
+ *  month with a period ("nov."), as reported on iOS Safari; Node and the Playwright WebKit do not.
+ *  It is removed, as in formatShortDay (format-date-period.test.ts makes Intl add it). */
 export function formatShortDateTitle(date: LocalDate): string {
   const instant = new Date(`${date}T00:00:00Z`);
   const day = weekday.format(instant);

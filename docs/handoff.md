@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 18-nov-2026 (fase 2 completa; spec 003, rediseño de "Hoy", aprobada) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 18-nov-2026 (fase 2 y rediseño de "Hoy", spec 003, completos) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -30,6 +30,13 @@
   - "Hoy" con "Iniciar", "Continuar" (con fecha si es de otro día) y "Descartar sesión"; "Otra sesión de esta semana" y su vista previa en `/dia/:date`; la sesión en `/sesion/:workoutId/:exerciseIndex` con tabla de series, "anterior", coma decimal, asistencia (peso negativo), alternativas, series extra y "Anterior"/"Siguiente". El aviso de actualización espera a que no haya sesión activa.
   - Bundle inicial **160.08 kB** de 200 kB, con el esquema del seed en `zod/mini` (T24). Marcar una serie se ve en 19 ms en Chromium y 4-5 ms en WebKit.
   - Verificado en el iPhone (T26): la primera pasada encontró las reps y el RIR con signo menos bajo la asistencia, solo en pantalla, corregido en el PR #17.
+- **Rediseño de "Hoy" completo** (spec 003 implementada, PR #20, #23, #24 y el de cierre):
+  - `plan`: duración estimada (`setSeconds`, `plannedSessionSeconds`, `displayMinutes`, RN-PLN-27), `WeekStrip` con marcas y `PlanExerciseList` sin RIR por fila. Contrato `plan` v1.14.
+  - `training`: avance y tiempo restante (`progressOf` puro y `workoutProgress`, RN-TRN-20 y 21), `getActiveWorkoutView` y `useActiveWorkoutView`; `firstPending` pasó al dominio. Contrato `training` v1.16.
+  - `shared`: `ConfirmDialog` anclado abajo con la zona segura.
+  - "Hoy" en `app/pages/today/`: estado D (pesas, cardio, descanso, fuera del programa) y D2 ("Sesión en curso", con `Elapsed` como único reloj de 1 s).
+  - Bundle inicial **161.91 kB** de 200 kB.
+  - E2E con `page.clock` para D y D2, axe, 44 px y 320 px (T16). Verificado en el iPhone (T17); el día de descanso solo en E2E.
 
 ## Decisiones tomadas
 
@@ -87,12 +94,15 @@
    6. ~~Punto de control B, persistencia y composición~~ (T10–T16, PR #14): servicio, repositorio Dexie, base v2, hooks, textos de error en `app` y la prueba P-1 sobre el seed real (AC-41). Contrato v1.7 a v1.10.
    7. ~~Punto de control C, interfaz~~ (T17–T24, PR #15): `ConfirmDialog`, `SetTable`, `SessionHeader`, "Hoy" con sesión, `/dia/:date`, `SessionPage`, aviso de actualización aplazado y `zod/mini`. Contrato v1.11 a v1.13; spec v0.6 y architecture v1.3 (`/sesion/:workoutId`).
    8. ~~Punto de control D, verificación y cierre~~ (T25–T27, PR #17 y el de cierre): E2E de la sesión y AC-39 (axe y objetivos de 44 px), iPhone y este cierre. Spec y plan 002 marcados como implementados.
-10. **Rediseño de "Hoy"** (spec §13, fase 2.5), antes de la fase 3. Pasos:
+10. ~~Rediseño de "Hoy"~~ (spec §13, fase 2.5). Pasos:
    1. ~~Spec 003~~ aprobada (18-nov): `docs/specs/003-rediseno-hoy/spec.md` (AC-1 a AC-29), desde `docs/design-hoy.md`. Estados D y D2 con datos existentes, sin cambios de base; duración estimada (RN-PLN-27, contrato `plan` v1.13), tiempo restante y avance de la sesión (RN-TRN-20 y 21, `training` v1.15); tira con marcas y "N de M" (N = 0 hasta la fase 3); descarte con texto que no dice "se borrarán" (RN-TRN-15). Fuera: "Hoy subes" (fase 4), ✓ de la tira y dolor (fase 3), hoja "Cambiar sesión" y sesión libre (spec futura), registrar cardio.
    2. ~~Plan técnico~~ aprobado (18-nov): `docs/specs/003-rediseno-hoy/plan.md`. Duración como funciones puras de `plan` (`setSeconds`, `plannedSessionSeconds`, `displayMinutes`); `workoutProgress(view)` en `training`, con `progressOf` puro que recibe el tiempo por serie (el dominio no importa `plan`); `getActiveWorkoutView` y `useActiveWorkoutView` para D2; `firstPending` pasa al dominio; `Elapsed` aislado con reloj de 1 s; componentes en `app/pages/today/`; `PlanExerciseList` sin RIR por fila (la vista previa lo muestra bajo el título); `ConfirmDialog` anclado abajo. Contratos `plan` v1.14, `training` v1.16 y `shared` §4.
    3. ~~Tareas~~ (18-nov): `docs/specs/003-rediseno-hoy/tasks.md`, T1 a T18 en 4 puntos de control (A dominio, B consulta y componentes de los módulos, C página "Hoy", D verificación y cierre).
-   4. **Siguiente: punto de control A** en `feat/003-today-redesign-a`, empezando por T1 (pruebas de `duration.ts`).
-11. **Fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 004**. Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión" y el aviso y el chip de espalda en "Hoy" (spec 003 §6.6).
+   4. ~~Punto de control A, dominio~~ (T1–T4, PR #20): `duration.ts` y `progress.ts` con pruebas primero.
+   5. ~~Punto de control B, consulta y componentes~~ (T5–T10, PR #23): `getActiveWorkoutView`, `workoutProgress`, `SessionPage` con `current`, `PlanExerciseList`, `WeekStrip` y `ConfirmDialog`.
+   6. ~~Punto de control C, página~~ (T11–T15, PR #24): formatos, `Elapsed`, estados D y D2; bundle 161.91 kB.
+   7. ~~Punto de control D, verificación y cierre~~ (T16–T18, PR de cierre): E2E, iPhone y este cierre. Spec y plan 003 marcados como implementados.
+11. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 004**. Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión" y el aviso y el chip de espalda en "Hoy" (spec 003 §6.6).
 12. Rediseño de la sesión activa (`docs/design-sesion-activa.md`): spec aparte, sin fecha.
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
@@ -142,8 +152,14 @@ Notas para retomar:
 - `NavLink` solo marca su propia ruta: "Hoy" en `/dia/:date` usa `Link` con `aria-current` calculado (`TabBar.tsx`).
 - Probar lo que se **ve**, no solo lo que se guarda: el signo de la asistencia se guardaba bien y se mostraba mal en reps y RIR, y solo lo encontró el iPhone (PR #17).
 - Un mutante de un límite de errores debe quitarlo del árbol: si conserva `getDerivedStateFromError`, sigue atrapando el error y el mutante "sobrevive" sin probar nada.
+- E2E con `page.clock.install` (spec 003 T16): con el reloj pausado desde la carga, "Hoy" no sale del estado de carga (solo el `h1` oculto). Se deja fluir, y se pausa con `pauseAt` cuando la tarjeta ya se ve; desde ahí solo `runFor` lo mueve. Se pausa respecto al `startedAt` guardado (en segundos enteros), no a una hora fija: en CI el clic de inicio puede llegar después de 1 s y se vería "18:41" (pasó en el PR #25; se reproduce con un `waitForTimeout(1500)` antes del clic). El resto del E2E sigue con `setFixedTime` (`freezeClockAt`).
+- El WebKit de Playwright 1.65 escribe los nombres cortos sin punto ("nov", "lun"), igual que Node: el `.replace('.', '')` de `format-date.ts` lo cubre `format-date-period.test.ts`, que hace que `Intl` añada el punto. En el iPhone la fecha se ve sin punto, pero eso no dice si Safari lo pone, porque la app lo quita.
+- Con una base vacía, el programa empieza el lunes de la semana de la primera visita (RN-PLN-13): el domingo 15 ya es la semana 1. Para abrir "Hoy" en otra fecha, `openTodayOn` (`tests/e2e/helpers.ts`) ancla el lunes 16 y luego mueve el reloj.
+- En E2E una serie sin valores no se marca hecha (RN-TRN-04): llenar kilos, reps y RIR antes del checkbox.
+- Dos clics de Playwright en dos pestañas nunca llegan a la vez: la segunda pestaña ve la sesión en vivo y su botón desaparece. AC-2 de spec 002 es secuencial en E2E; la simultaneidad la prueba `dexie-repository.test.ts`.
+- A 320 px los nombres del seed caben aun sin `overflow-wrap: anywhere`: esa línea no se ejercita hasta que haya nombres propios (spec futura de plantillas).
 - `zod/mini` (T24): la misma API en funciones (`z.pipe`, `.check(z.minLength(1))`, `z.exactOptional(…)`); las pruebas pueden seguir importando tipos de `zod`, que no entran en el bundle.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con el rediseño de 'Hoy' (spec 003). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/specs/003-rediseno-hoy/spec.md, plan.md y tasks.md, docs/design-hoy.md y docs/modules/plan.md y training.md. Empieza por la siguiente tarea pendiente de tasks.md. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3 (MVP usable en el gym). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y docs/modules/health.md. Empieza por la pregunta pendiente 8 (bandas de dolor, health.md §10), que bloquea la fase, y luego la spec 004. Guíame paso a paso, una tarea a la vez."

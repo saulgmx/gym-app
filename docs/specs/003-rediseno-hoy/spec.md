@@ -1,6 +1,6 @@
 # Spec: Rediseño de "Hoy"
 
-**ID:** 003 · **Estado:** Aprobada (18-nov-2026) · **Fecha:** 18-nov-2026
+**ID:** 003 · **Estado:** Implementada (18-nov-2026) · **Fecha:** 18-nov-2026
 **Requerimientos cubiertos:** RF-02, RF-05 (cómo se ve el deload), RF-10, RF-19, RNF-05, RNF-06 · **Fase:** entre la 2 y la 3 (no está en spec §13; ver §2)
 **Fuente de diseño:** [`docs/design-hoy.md`](../../design-hoy.md), tableros "D. Combinación A+B" y "D2. Sesión en curso" del lienzo de diseño
 **ADRs aplicados:** 0005, 0010
