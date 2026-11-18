@@ -1,0 +1,548 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fixedClock, sequentialIds, type ID, type Instant, type LocalDate } from '@/shared/kernel';
+import type {
+  Exercise,
+  PlanReader,
+  ProgramPosition,
+  SessionTemplate,
+  SuggestionProvider,
+  TodayPlan,
+} from '../application/ports';
+import { createTrainingService } from '../application/service';
+import type { SetLog, Workout, WorkoutState } from '../domain/types';
+import { memoryRepository } from './fixtures/memory-repository';
+
+// Application service with an in-memory repository and a fake plan (QS-08; contract v1.7).
+// Dates checked with Node: 2026-11-16 Monday … 20 Friday, 21 Saturday, 23 next Monday.
+
+const date = (s: string) => s as LocalDate;
+const id = (s: string) => s as ID;
+const instant = (s: string) => s as Instant;
+const saturday = fixedClock('2026-11-21T09:30:00-06:00');
+
+const exercise = (key: string, overrides: Partial<Exercise> = {}): Exercise => ({
+  id: id(key),
+  name: key,
+  muscleGroup: 'quads',
+  equipment: 'machine',
+  metric: 'weight',
+  lumbarRisk: 'low',
+  isPrimary: false,
+  restSeconds: [60, 90],
+  ...overrides,
+});
+const catalog: Exercise[] = [
+  exercise('prensa', { name: 'Prensa de piernas' }),
+  exercise('dominadas', { muscleGroup: 'back', equipment: 'bodyweight' }),
+  exercise('jalon', { muscleGroup: 'back', equipment: 'cable' }),
+  exercise('dead-bug', { muscleGroup: 'core', equipment: 'bodyweight', metric: 'reps' }),
+];
+const byId = (key: string) => {
+  const found = catalog.find((e) => e.id === key);
+  if (!found) throw new Error(key);
+  return found;
+};
+
+const position: ProgramPosition = {
+  status: 'active',
+  startDate: date('2026-11-16'),
+  totalWeeks: 15,
+  week: 1,
+  block: null,
+  isDeloadWeek: false,
+  volumeFactor: 0.7,
+};
+
+const template: SessionTemplate = {
+  id: id('tpl-a'),
+  blockId: id('block-1'),
+  name: 'Full body A',
+  items: [
+    { exerciseId: id('prensa'), order: 1, sets: [3, 3], reps: [8, 12], note: 'Pies bajos' },
+    {
+      exerciseId: id('dominadas'),
+      alternatives: [id('jalon')],
+      order: 2,
+      sets: [2, 3],
+      reps: [6, 10],
+    },
+    { exerciseId: id('dead-bug'), order: 3, sets: [2, 2], reps: [8, 10] },
+  ],
+};
+
+const workoutDay: TodayPlan = {
+  kind: 'workout',
+  position,
+  template,
+  plannedItems: [
+    {
+      exercise: byId('prensa'),
+      alternatives: [],
+      order: 1,
+      plannedSets: 2,
+      repRange: [8, 12],
+      targetRir: [3, 4],
+      note: 'Pies bajos',
+    },
+    {
+      exercise: byId('dominadas'),
+      alternatives: [byId('jalon')],
+      order: 2,
+      plannedSets: 1,
+      repRange: [6, 10],
+      targetRir: [3, 4],
+    },
+    {
+      exercise: byId('dead-bug'),
+      alternatives: [],
+      order: 3,
+      plannedSets: 1,
+      repRange: [8, 10],
+      targetRir: [3, 4],
+    },
+  ],
+};
+
+// Friday 20 and Monday 16 are workout days; Tuesday 17 is cardio; the rest are rest days.
+function fakePlan(missing: string[] = []) {
+  const plan = {
+    getTodayPlan: vi.fn((d: LocalDate): Promise<TodayPlan> => {
+      if (d === '2026-11-16' || d === '2026-11-20') return Promise.resolve(workoutDay);
+      if (d === '2026-11-17') return Promise.resolve({ kind: 'cardio', position, note: 'Suave' });
+      return Promise.resolve({ kind: 'rest', position });
+    }),
+    getExercises: vi.fn((ids: ID[]) =>
+      Promise.resolve(catalog.filter((e) => ids.includes(e.id) && !missing.includes(e.id))),
+    ),
+  } satisfies PlanReader;
+  return plan;
+}
+
+function setup(
+  options: { initial?: WorkoutState[]; suggestions?: SuggestionProvider; missing?: string[] } = {},
+) {
+  const store = memoryRepository(options.initial);
+  const plan = fakePlan(options.missing);
+  const suggestions = options.suggestions ?? { getPrefill: vi.fn(() => Promise.resolve(null)) };
+  const service = createTrainingService({
+    repository: store.repository,
+    plan,
+    suggestions,
+    clock: saturday,
+    ids: sequentialIds('id'),
+  });
+  return { service, store, plan, suggestions };
+}
+
+const expectOk = <T>(result: { ok: true; value: T } | { ok: false; error: { code: string } }) => {
+  if (!result.ok) throw new Error(`Expected ok, got ${result.error.code}`);
+  return result.value;
+};
+
+// Starts Friday's session on Saturday and returns the workout and its sets by key.
+async function started(options: Parameters<typeof setup>[0] = {}) {
+  const ctx = setup(options);
+  const workout = expectOk(
+    await ctx.service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+  );
+  const sets = [...ctx.store.sets.values()];
+  const setOf = (exerciseId: string, n = 1) => {
+    const found = sets.find((s) => s.exerciseId === exerciseId && s.setNumber === n);
+    if (!found) throw new Error(`${exerciseId} ${String(n)}`);
+    return found.id;
+  };
+  return { ...ctx, workout, setOf };
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('startWorkout', () => {
+  it('RN-TRN-02: crea el workout con la instantánea y lo guarda (AC-1)', async () => {
+    const { service, store } = setup();
+
+    const workout = expectOk(await service.startWorkout(date('2026-11-16')));
+
+    expect(workout).toMatchObject({
+      templateId: 'tpl-a',
+      programWeek: 1,
+      date: '2026-11-16',
+      plannedFor: '2026-11-16',
+      startedAt: '2026-11-21T09:30:00-06:00',
+      status: 'in_progress',
+    });
+    expect(workout.items.map((i) => [i.exerciseId, i.plannedSets, i.maxSets])).toEqual([
+      ['prensa', 2, 3],
+      ['dominadas', 1, 3],
+      ['dead-bug', 1, 2],
+    ]);
+    expect(workout.items[1]?.options).toEqual(['dominadas', 'jalon']);
+    expect(workout.items[0]?.note).toBe('Pies bajos');
+    expect(store.workouts.get(workout.id)).toEqual(workout);
+    expect(store.sets.size).toBe(4);
+  });
+
+  it('RN-TRN-14: otra sesión de la semana usa el plan de plannedFor (AC-8)', async () => {
+    const { workout, plan } = await started();
+    expect(workout).toMatchObject({ date: '2026-11-21', plannedFor: '2026-11-20' });
+    expect(plan.getTodayPlan).toHaveBeenCalledWith('2026-11-20');
+  });
+
+  it('RN-TRN-14: plannedFor de otra semana → error sin pedir el plan (AC-10)', async () => {
+    const { service, plan, store } = setup();
+    const result = await service.startWorkout(date('2026-11-21'), {
+      plannedFor: date('2026-11-23'),
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: 'training/planned-date-out-of-week' },
+    });
+    expect(plan.getTodayPlan).not.toHaveBeenCalled();
+    expect(store.workouts.size).toBe(0);
+  });
+
+  it('RN-TRN-14: un día sin pesas → training/no-plan-today, sin crear nada (AC-3, AC-10)', async () => {
+    const { service, store } = setup();
+    for (const d of ['2026-11-17', '2026-11-19']) {
+      const result = await service.startWorkout(date(d));
+      expect(result, d).toMatchObject({ ok: false, error: { code: 'training/no-plan-today' } });
+    }
+    expect(store.workouts.size).toBe(0);
+  });
+
+  it('RN-TRN-01: con una sesión activa → already-active con su id; queda una (AC-2)', async () => {
+    const { service, store, workout } = await started();
+
+    const result = await service.startWorkout(date('2026-11-16'));
+
+    expect(result).toEqual({
+      ok: false,
+      error: expect.objectContaining({
+        code: 'training/workout-already-active',
+        details: { workoutId: workout.id },
+      }) as unknown,
+    });
+    expect([...store.workouts.values()].filter((w) => w.status === 'in_progress')).toHaveLength(1);
+  });
+
+  it('RN-TRN-14: orden semana → plan del día → sesión activa', async () => {
+    const { service } = await started();
+    expect(await service.startWorkout(date('2026-11-19'))).toMatchObject({
+      error: { code: 'training/no-plan-today' },
+    });
+  });
+
+  it('RN-TRN-02: el prellenado sale del SuggestionProvider por ejercicio principal', async () => {
+    const getPrefill = vi.fn((exerciseId: ID) =>
+      Promise.resolve(
+        exerciseId === 'prensa' ? { weightKg: 60, message: '', tone: 'up' as const } : null,
+      ),
+    );
+    const { store } = await started({ suggestions: { getPrefill } });
+    expect(getPrefill.mock.calls.map(([e]) => e).sort()).toEqual([
+      'dead-bug',
+      'dominadas',
+      'prensa',
+    ]);
+    const prensa = [...store.sets.values()].filter((s) => s.exerciseId === 'prensa');
+    expect(prensa.map((s) => s.weightKg)).toEqual([60, 60]);
+  });
+
+  it('RN-TRN-16: un proveedor que rechaza cuenta como null y se registra', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const getPrefill = vi.fn(() => Promise.reject(new Error('boom')));
+
+    const { store } = await started({ suggestions: { getPrefill } });
+
+    expect([...store.sets.values()].every((s) => s.weightKg === null)).toBe(true);
+    expect(error).toHaveBeenCalled();
+  });
+});
+
+describe('operaciones sobre las series', () => {
+  it('RN-TRN-03: logSet guarda el cambio y lo devuelve (AC-12)', async () => {
+    const { service, store, setOf } = await started();
+    const set = expectOk(await service.logSet(setOf('prensa'), { weightKg: 60 }));
+    expect(set.weightKg).toBe(60);
+    expect(store.sets.get(set.id)).toEqual(set);
+  });
+
+  it('RN-TRN-04: un valor inválido no se guarda', async () => {
+    const { service, store, setOf } = await started();
+    const result = await service.logSet(setOf('prensa'), { weightKg: 60.1 });
+    expect(result).toMatchObject({ ok: false, error: { code: 'training/invalid-set-values' } });
+    expect(store.sets.get(setOf('prensa'))?.weightKg).toBeNull();
+  });
+
+  it('RN-TRN-04: valida con el ejercicio elegido (asistencia no vale en Jalón)', async () => {
+    const { service, workout, setOf } = await started();
+    expect((await service.logSet(setOf('dominadas'), { weightKg: -20 })).ok).toBe(true);
+    expectOk(await service.chooseExercise(workout.id, id('dominadas'), id('jalon')));
+    expect(await service.logSet(setOf('jalon'), { weightKg: -20 })).toMatchObject({
+      error: { details: { field: 'weightKg', reason: 'not-allowed' } },
+    });
+  });
+
+  it('una serie inexistente → training/set-not-found', async () => {
+    const { service } = await started();
+    for (const result of [
+      await service.logSet(id('no-existe'), { reps: 1 }),
+      await service.toggleSetDone(id('no-existe')),
+      await service.removeSet(id('no-existe')),
+    ]) {
+      expect(result).toMatchObject({ ok: false, error: { code: 'training/set-not-found' } });
+    }
+  });
+
+  it('RN-TRN-05, 11: toggleSetDone marca con clock.now() y la siguiente hereda (AC-13)', async () => {
+    const { service, store, setOf } = await started();
+    await service.logSet(setOf('prensa'), { weightKg: 60, reps: 10 });
+
+    const set = expectOk(await service.toggleSetDone(setOf('prensa')));
+
+    expect(set).toMatchObject({ done: true, completedAt: '2026-11-21T09:30:00-06:00' });
+    expect(store.sets.get(setOf('prensa', 2))?.weightKg).toBe(60);
+  });
+
+  it('RN-TRN-10: addExtraSet y removeSet guardan sus cambios', async () => {
+    const { service, store, workout, setOf } = await started();
+    const extra = expectOk(await service.addExtraSet(workout.id, id('prensa')));
+    expect(store.sets.get(extra.id)).toMatchObject({ setNumber: 3, isExtra: true });
+
+    expectOk(await service.removeSet(setOf('prensa', 2)));
+    expect(store.sets.get(extra.id)?.setNumber).toBe(2);
+  });
+
+  it('un workout inexistente → training/workout-not-found', async () => {
+    const { service } = await started();
+    for (const result of [
+      await service.addExtraSet(id('no-existe'), id('prensa')),
+      await service.chooseExercise(id('no-existe'), id('dominadas'), id('jalon')),
+      await service.discardWorkout(id('no-existe')),
+    ]) {
+      expect(result).toMatchObject({ ok: false, error: { code: 'training/workout-not-found' } });
+    }
+  });
+});
+
+describe('chooseExercise', () => {
+  it('RN-TRN-13: cambia y prellena con la sugerencia del ejercicio nuevo (AC-23)', async () => {
+    const getPrefill = vi.fn((exerciseId: ID) =>
+      Promise.resolve(
+        exerciseId === 'jalon' ? { weightKg: 45, message: '', tone: 'up' as const } : null,
+      ),
+    );
+    const { service, store, workout } = await started({ suggestions: { getPrefill } });
+
+    const updated = expectOk(
+      await service.chooseExercise(workout.id, id('dominadas'), id('jalon')),
+    );
+
+    expect(updated.items[1]?.exerciseId).toBe('jalon');
+    expect(store.workouts.get(workout.id)).toEqual(updated);
+    const jalon = [...store.sets.values()].filter((s) => s.exerciseId === 'jalon');
+    expect(jalon.map((s) => s.weightKg)).toEqual([45]);
+  });
+
+  it('RN-TRN-16: si el proveedor rechaza, el peso queda vacío', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const getPrefill = vi.fn(() => Promise.reject(new Error('boom')));
+    const { service, store, workout } = await started({ suggestions: { getPrefill } });
+
+    expectOk(await service.chooseExercise(workout.id, id('dominadas'), id('jalon')));
+
+    expect([...store.sets.values()].find((s) => s.exerciseId === 'jalon')?.weightKg).toBeNull();
+  });
+});
+
+describe('discardWorkout y getActiveWorkout', () => {
+  it('RN-TRN-15: descartar deja iniciar otra; después todo es workout-closed (AC-34, AC-35)', async () => {
+    const { service, workout, setOf } = await started();
+
+    expectOk(await service.discardWorkout(workout.id));
+
+    expect(await service.getActiveWorkout()).toBeUndefined();
+    expect(await service.logSet(setOf('prensa'), { reps: 1 })).toMatchObject({
+      error: { code: 'training/workout-closed' },
+    });
+    expect((await service.startWorkout(date('2026-11-20'))).ok).toBe(true);
+  });
+
+  it('RN-TRN-01: sin sesión activa → undefined', async () => {
+    expect(await setup().service.getActiveWorkout()).toBeUndefined();
+  });
+
+  it('RN-TRN-01: con una sesión activa → esa (AC-4)', async () => {
+    const { service, workout } = await started();
+    expect(await service.getActiveWorkout()).toEqual(workout);
+  });
+
+  it('RN-TRN-01: con varias in_progress (dato roto) → la de startedAt más reciente', async () => {
+    const at = (key: string, startedAt: string): WorkoutState => ({
+      workout: { ...stored(key, 'in_progress', '2026-11-20'), startedAt: instant(startedAt) },
+      sets: [],
+    });
+    const { service } = setup({
+      initial: [
+        at('a', '2026-11-20T08:00:00-06:00'),
+        at('b', '2026-11-20T18:00:00-06:00'),
+        at('c', '2026-11-20T10:00:00-06:00'),
+      ],
+    });
+    expect((await service.getActiveWorkout())?.id).toBe('b');
+  });
+});
+
+// Stored workouts for queries: one item per exercise key, sets given by the test.
+function stored(key: string, status: Workout['status'], d: string, exerciseIds = ['prensa']) {
+  return {
+    id: id(key),
+    templateId: id('tpl-a'),
+    programWeek: 1,
+    date: date(d),
+    plannedFor: date(d),
+    startedAt: instant(`${d}T09:00:00-06:00`),
+    status,
+    items: exerciseIds.map((e, i) => ({
+      exerciseId: id(e),
+      options: e === 'dominadas' ? [id('dominadas'), id('jalon')] : [id(e)],
+      order: i + 1,
+      plannedSets: 2,
+      maxSets: 3,
+      repRange: [8 + i, 12] as [number, number],
+      targetRir: [3, 4] as [number, number],
+    })),
+  } satisfies Workout;
+}
+
+const doneSet = (
+  key: string,
+  workoutId: string,
+  exerciseId: string,
+  setNumber: number,
+  v: Partial<SetLog> = {},
+): SetLog => ({
+  id: id(key),
+  workoutId: id(workoutId),
+  exerciseId: id(exerciseId),
+  setNumber,
+  weightKg: 60,
+  reps: 10,
+  rir: 2,
+  done: true,
+  isExtra: false,
+  completedAt: instant('2026-11-09T09:10:00-06:00'),
+  ...v,
+});
+
+describe('getWorkout y getWorkoutView', () => {
+  it('getWorkout → el workout o undefined', async () => {
+    const { service, workout } = await started();
+    expect(await service.getWorkout(workout.id)).toEqual(workout);
+    expect(await service.getWorkout(id('no-existe'))).toBeUndefined();
+  });
+
+  it('RN-TRN-17: series por el order del ítem y luego setNumber; exercises con todas las options', async () => {
+    const workout = stored('w', 'in_progress', '2026-11-21', ['prensa', 'dominadas']);
+    const sets = [
+      doneSet('d2', 'w', 'dominadas', 2),
+      doneSet('p2', 'w', 'prensa', 2),
+      doneSet('d1', 'w', 'dominadas', 1),
+      doneSet('p1', 'w', 'prensa', 1),
+    ];
+    const { service } = setup({ initial: [{ workout, sets }] });
+
+    const view = await service.getWorkoutView(id('w'));
+
+    expect(view?.workout).toEqual(workout);
+    expect(view?.sets.map((s) => s.id)).toEqual(['p1', 'p2', 'd1', 'd2']);
+    expect(Object.keys(view?.exercises ?? {}).sort()).toEqual(['dominadas', 'jalon', 'prensa']);
+    expect(view?.exercises[id('jalon')]).toEqual(byId('jalon'));
+  });
+
+  it('RN-TRN-17: un workout inexistente → undefined', async () => {
+    const { service } = setup();
+    expect(await service.getWorkoutView(id('no-existe'))).toBeUndefined();
+  });
+
+  it('RN-TRN-17: si plan no devuelve una option → lanza', async () => {
+    const workout = stored('w', 'in_progress', '2026-11-21', ['dominadas']);
+    const { service } = setup({ initial: [{ workout, sets: [] }], missing: ['jalon'] });
+    await expect(service.getWorkoutView(id('w'))).rejects.toThrow(/jalon/);
+  });
+});
+
+describe('getExerciseHistory (RN-TRN-08)', () => {
+  const history = () =>
+    setup({
+      initial: [
+        {
+          workout: stored('w09', 'completed', '2026-11-09', ['dead-bug', 'prensa']),
+          sets: [
+            doneSet('a2', 'w09', 'prensa', 2, { weightKg: 60, reps: 9 }),
+            doneSet('a1', 'w09', 'prensa', 1, { weightKg: 60, reps: 10 }),
+            doneSet('a3', 'w09', 'prensa', 3, { done: false }),
+            doneSet('a0', 'w09', 'dead-bug', 1, { weightKg: null }),
+          ],
+        },
+        {
+          workout: stored('w13', 'completed', '2026-11-13'),
+          sets: [doneSet('b1', 'w13', 'prensa', 1, { done: false })],
+        },
+        {
+          workout: stored('w14', 'discarded', '2026-11-14'),
+          sets: [doneSet('c1', 'w14', 'prensa', 1)],
+        },
+        {
+          workout: {
+            ...stored('w16-late', 'completed', '2026-11-16'),
+            startedAt: instant('2026-11-16T19:00:00-06:00'),
+          },
+          sets: [doneSet('d1', 'w16-late', 'prensa', 1, { weightKg: 65 })],
+        },
+        {
+          workout: stored('w16-early', 'completed', '2026-11-16'),
+          sets: [doneSet('e1', 'w16-early', 'prensa', 1, { weightKg: 62.5 })],
+        },
+        {
+          workout: stored('w21', 'in_progress', '2026-11-21'),
+          sets: [doneSet('f1', 'w21', 'prensa', 1)],
+        },
+      ],
+    }).service;
+
+  it('solo completed con series hechas, de la más reciente a la más antigua', async () => {
+    const sessions = await history().getExerciseHistory(id('prensa'));
+    expect(sessions.map((s) => s.workoutId)).toEqual(['w16-late', 'w16-early', 'w09']);
+  });
+
+  it('series hechas por setNumber, con el repRange del ítem del ejercicio', async () => {
+    const [w09] = await history().getExerciseHistory(id('prensa'), { before: date('2026-11-16') });
+    expect(w09).toEqual({
+      workoutId: 'w09',
+      date: '2026-11-09',
+      repRange: [9, 12],
+      sets: [
+        doneSet('a1', 'w09', 'prensa', 1, { weightKg: 60, reps: 10 }),
+        doneSet('a2', 'w09', 'prensa', 2, { weightKg: 60, reps: 9 }),
+      ],
+    });
+  });
+
+  it('before es exclusivo y limit recorta', async () => {
+    const service = history();
+    expect(
+      (await service.getExerciseHistory(id('prensa'), { before: date('2026-11-16') })).map(
+        (s) => s.workoutId,
+      ),
+    ).toEqual(['w09']);
+    expect(
+      (await service.getExerciseHistory(id('prensa'), { limit: 1 })).map((s) => s.workoutId),
+    ).toEqual(['w16-late']);
+  });
+
+  it('sin sesiones del ejercicio → []', async () => {
+    expect(await history().getExerciseHistory(id('jalon'))).toEqual([]);
+  });
+});
