@@ -1,6 +1,6 @@
 # Plan técnico: Fase 2, sesión activa
 
-**Spec:** `specs/002-fase-2/spec.md` · **Estado:** Aprobado · **Fecha:** 17-nov-2026
+**Spec:** `specs/002-fase-2/spec.md` · **Estado:** Implementado (17-nov-2026) · **Fecha:** 17-nov-2026
 
 ## 1. Resumen de la solución
 

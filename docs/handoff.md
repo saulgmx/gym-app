@@ -1,14 +1,14 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 17-nov-2026 (fase 1 completa) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 17-nov-2026 (fase 2 completa) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.5: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date` (spec 002).
-  - `docs/architecture.md` v1.2: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
+  - `docs/spec.md` v0.6: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date` y la 0.6 `/sesion/:workoutId` (spec 002).
+  - `docs/architecture.md` v1.3: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
@@ -23,6 +23,12 @@
   - Base Dexie `gym-app` v1 (`app/db.ts`), seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas) cargado al arrancar; `compose` expone `ready`, que "Hoy" espera con `use(ready)`.
   - "Hoy" muestra fecha, bloque, semana, tira de la semana y la sesión del día; verificado en el iPhone con y sin conexión (T19). En el iPhone el plan empezó el lunes 16-nov-2026.
   - Bundle inicial 168.64 kB de 200 kB.
+- **Fase 2 completa** (spec 002 implementada, PR #12 a #17 y el de cierre):
+  - Módulo `training` con sus cuatro capas: dominio puro (`set-values.ts`, `workout.ts`, `history.ts`), servicio con puertos (`PlanReader`, `SuggestionProvider` nulo hasta la fase 4), repositorio Dexie donde cada cambio es una transacción (`mutate`), hooks `useWorkoutView`, `useActiveWorkout` y `useLastSession`, y los componentes `SetTable`, `SetRow` y `SessionHeader`. Contratos `training` v1.14 y `plan` v1.12 (alternativas y `getExercise(s)`).
+  - Base Dexie `gym-app` **v2** (tablas `workouts` y `sets`); la subida desde v1 se probó (AC-38) y se verificó en el iPhone.
+  - "Hoy" con "Iniciar", "Continuar" (con fecha si es de otro día) y "Descartar sesión"; "Otra sesión de esta semana" y su vista previa en `/dia/:date`; la sesión en `/sesion/:workoutId/:exerciseIndex` con tabla de series, "anterior", coma decimal, asistencia (peso negativo), alternativas, series extra y "Anterior"/"Siguiente". El aviso de actualización espera a que no haya sesión activa.
+  - Bundle inicial **160.08 kB** de 200 kB, con el esquema del seed en `zod/mini` (T24). Marcar una serie se ve en 19 ms en Chromium y 4-5 ms en WebKit.
+  - Verificado en el iPhone (T26): la primera pasada encontró las reps y el RIR con signo menos bajo la asistencia, solo en pantalla, corregido en el PR #17.
 
 ## Decisiones tomadas
 
@@ -71,14 +77,17 @@
    - Bundle inicial 166.76 kB de 200 kB (umbral de `zod/mini`: 170 kB, plan §6.2); se mide otra vez en T18.
 7. ~~Punto de control C, "Hoy"~~ (T15–T18, PR #10, 17-nov): contrato `plan` v1.9 (hooks: el resultado lleva su fecha, errores al *error boundary*, RN-PLN-26) y v1.10 (`ProgramPosition` con `startDate` y `totalWeeks`); `WeekStrip` con indicador de texto y nombre accesible; `TodayPage` con `Suspense` y `use(ready)`; E2E con `page.clock` en la zona del usuario, sin conexión y axe. Se mantiene Zod clásico (168.64 kB < 170 kB, plan §6.2).
 8. ~~Punto de control D, cierre~~ (T19–T20, 17-nov): verificado en el iPhone (aviso de actualización, datos y modo avión); spec y plan 001 marcados como implementados.
-9. **Siguiente: fase 2, sesión activa** (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
+9. ~~Fase 2, sesión activa~~ (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
    1. ~~Pregunta 6~~ (17-nov, `modules/training.md` v1.1 §10): `completed` y `discarded` son finales, también las notas (RN-TRN-07); corregir llega en v1.1.
    2. ~~Spec 002~~ aprobada (17-nov): `docs/specs/002-fase-2/spec.md` (AC-1 a AC-41). La sesión solo se descarta en esta fase (Cierre en la fase 3); `SuggestionProvider` nulo y la serie siguiente hereda el peso (RN-TRN-11); entran RF-14, RF-16 y RF-17; alternativas solo sin series hechas (RN-TRN-13); "Otra sesión de esta semana" con `plannedFor` (RN-TRN-14); asistencia con peso negativo (RN-TRN-04); sin `bus` hasta la fase 4. Reglas ya en `modules/training.md` v1.2, `modules/plan.md` v1.11 (`PlannedItem.alternatives`, `getExercise(s)`, RN-PLN-15 (i)) y `modules/progression.md` §9.4.
    3. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/002-fase-2/plan.md`. Escritura con `repository.mutate` (transacción que relee y llama al dominio puro), sin `configureTraining`, bus ni Zustand; `useWorkoutView`; coma decimal; `describeError` desde `app`; ruta `/dia/:date`; `zod/mini` si el bundle pasa de 170 kB. Contrato `training` v1.3, spec v0.5 (§7.2) y architecture v1.2 (§6.4, §7.8).
    4. ~~Tareas~~ (17-nov): `docs/specs/002-fase-2/tasks.md`, T1 a T27 en 4 puntos de control (A dominio y `plan`, B persistencia y composición, C interfaz, D verificación y cierre). La prueba P-1 sobre el seed real vive en `app/seed` (fronteras, plan §7).
-   5. **Siguiente:** fusionar el PR de docs (`docs/002-phase-2-spec`) y empezar T1 en `feat/002-phase-2-a`.
-   6. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
-10. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+   5. ~~Punto de control A, dominio y `plan`~~ (T1–T9, PR #13): `PlannedItem.alternatives`, `getExercise(s)`, RN-PLN-15 (i); valores de una serie (RN-TRN-04), creación del workout (RN-TRN-02, 12, 14) y sus cambios puros. Contrato `training` v1.4 a v1.6.
+   6. ~~Punto de control B, persistencia y composición~~ (T10–T16, PR #14): servicio, repositorio Dexie, base v2, hooks, textos de error en `app` y la prueba P-1 sobre el seed real (AC-41). Contrato v1.7 a v1.10.
+   7. ~~Punto de control C, interfaz~~ (T17–T24, PR #15): `ConfirmDialog`, `SetTable`, `SessionHeader`, "Hoy" con sesión, `/dia/:date`, `SessionPage`, aviso de actualización aplazado y `zod/mini`. Contrato v1.11 a v1.13; spec v0.6 y architecture v1.3 (`/sesion/:workoutId`).
+   8. ~~Punto de control D, verificación y cierre~~ (T25–T27, PR #17 y el de cierre): E2E de la sesión y AC-39 (axe y objetivos de 44 px), iPhone y este cierre. Spec y plan 002 marcados como implementados.
+10. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la spec 003. Pruebas primero en `health` (constitución).
+11. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -105,7 +114,6 @@ Notas para retomar:
 - Headers: la prueba de arquitectura lee la CSP de `docs/architecture.md` §7.10; cambiarla es editar ese documento y `vercel.json` a la vez. Vercel aplica headers por la ruta pedida, no por el archivo servido.
 - `size-limit` mide con brotli salvo `"gzip": true`.
 - Playwright: WebKit (como Safari) enfoca enlaces con `Alt+Tab`. Las mutaciones E2E requieren reconstruir, porque `vite preview` sirve `dist/`.
-- `eslint-disable-next-line` justificado en `src/app/errors/messages.ts` (`no-generated-empty-object-type`): quitarlo cuando un módulo exporte su primer código de error.
 - El reporte de cobertura en texto oculta los archivos al 100%; para verlos, usar `--coverage.reporter=json-summary`.
 - Verificar con `set -o pipefail` cuando se encadenan comandos con `|`: un `| tail` oculta el código de salida. En zsh, `echo =====` falla (usar comillas) y un glob sin coincidencias aborta el comando.
 - `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
@@ -120,8 +128,15 @@ Notas para retomar:
 - `useLiveQuery` conserva el resultado anterior al cambiar las dependencias (por eso los hooks fechan su resultado) y lanza los errores en el render. Con Dexie 4.4.7 una espera ajena (`setTimeout`) en la consulta no rompe el seguimiento (plan 001 §6.4).
 - Zod 4 bajo la CSP: `z.config({ jitless: true })` antes de definir los esquemas.
 - CI: `npx playwright install --with-deps` se colgó una vez más de 10 min (normal: 35-90 s); cancelar y relanzar (`gh run cancel`, `gh run rerun`) lo resolvió. Si se repite, ponerle `timeout-minutes` a ese paso.
-- PWA en iOS: el aviso de versión nueva aparece al volver a abrir la app; "Actualizar" recarga y aplica la versión. Una versión sin cambios visibles parece que "no hizo nada".
+- PWA en iOS: el aviso de versión nueva aparece al volver a abrir la app; "Actualizar" recarga y aplica la versión. Una versión sin cambios visibles parece que "no hizo nada". Desde la fase 2 el aviso no aparece mientras haya una sesión activa (AC-37).
+- React Router 8 navega con transiciones asíncronas: dentro del `act` síncrono de un clic normal, el trabajo pendiente se puede descartar y la navegación no llega. En las pruebas de `app`, los toques que navegan usan `tapToNavigate` (`src/app/__tests__/test-app.tsx`), y antes de tocar algo en "Hoy" hay que esperar a que cargue (`use(ready)`). Era la causa de la prueba de rutas inestable desde la fase 1.
+- El foco que se mueve en un `useEffect` llega después del render: esperarlo con `waitFor`, no con un `expect` justo después del texto nuevo.
+- E2E con recarga: un campo se guarda unos milisegundos después del Enter, y recargar antes corta la escritura. Las pruebas esperan a que IndexedDB tenga el valor (`waitForStoredSet` en `tests/e2e/helpers.ts`) y luego recargan.
+- `NavLink` solo marca su propia ruta: "Hoy" en `/dia/:date` usa `Link` con `aria-current` calculado (`TabBar.tsx`).
+- Probar lo que se **ve**, no solo lo que se guarda: el signo de la asistencia se guardaba bien y se mostraba mal en reps y RIR, y solo lo encontró el iPhone (PR #17).
+- Un mutante de un límite de errores debe quitarlo del árbol: si conserva `getDerivedStateFromError`, sigue atrapando el error y el mutante "sobrevive" sin probar nada.
+- `zod/mini` (T24): la misma API en funciones (`z.pipe`, `.check(z.minLength(1))`, `z.exactOptional(…)`); las pruebas pueden seguir importando tipos de `zod`, que no entran en el bundle.
 
 ## Prompt sugerido para un chat nuevo
 
-"Empezamos la fase 2 (sesión activa). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/spec.md §13 y docs/modules/training.md. Empieza por la pregunta pendiente 6 y luego la spec 002. Guíame paso a paso, una tarea a la vez."
+"Empezamos la fase 3 (cierre con dolor lumbar, historial, exportar/importar). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/spec.md §13 y docs/modules/health.md, training.md y data.md. Empieza por la pregunta pendiente 8 y luego la spec 003. Guíame paso a paso, una tarea a la vez."
