@@ -51,8 +51,8 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T19 | Tras el despliegue: abrir `https://gym.saulgmx.com` en el iPhone (PWA instalada), aceptar la actualización, comprobar la sesión de hoy y la tira de la semana; modo avión y reabrir | producción | "Hoy" muestra la sesión correcta con y sin conexión en el iPhone | AC-1, AC-7 (manual en iOS), CA-2 | U + C | ☐ |
-| T20 | Actualizar `handoff.md`, marcar la spec y el plan como implementados y revisar los comandos de `CLAUDE.md` | docs | Revisión | — | C | ☐ |
+| T19 | Tras el despliegue: abrir `https://gym.saulgmx.com` en el iPhone (PWA instalada), aceptar la actualización, comprobar la sesión de hoy y la tira de la semana; modo avión y reabrir | producción | "Hoy" muestra la sesión correcta con y sin conexión en el iPhone | AC-1, AC-7 (manual en iOS), CA-2 | U + C | ☑ |
+| T20 | Actualizar `handoff.md`, marcar la spec y el plan como implementados y revisar los comandos de `CLAUDE.md` | docs | Revisión | — | C | ☑ |
 
 **Punto de control D:** PR "phase 1 handoff".
 

@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 17-nov-2026 (tras el punto de control B de la fase 1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 17-nov-2026 (fase 1 completa) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -18,7 +18,11 @@
   - A y B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`).
   - C: tokens y estilos base con stylelint, router con `TabBar` y 4 páginas vacías, manejo de errores (ADR-0010), `bootstrap()`, PWA instalable y offline con aviso de actualización, `vercel.json` con los headers, `size-limit` (102.87 kB de 200 kB) y Playwright en Chromium y WebKit.
   - D: `main` protegida; app en producción en **https://gym.saulgmx.com** (Vercel), verificada con `curl -I` e instalada en el iPhone con modo avión.
-  - Fase 1, puntos A y B (PR #8 y #9): el módulo `plan` completo salvo `ui`, base Dexie `gym-app` v1 y el seed real cargado al arrancar (`compose` expone `ready`). "Hoy" todavía muestra el estado vacío de la fase 0 hasta el punto C.
+- **Fase 1 completa** (spec 001 implementada, PR #8 a #10 y el de cierre):
+  - Módulo `plan` con sus cuatro capas: dominio (`schedule.ts`, `seed-rules.ts`), servicio con puertos, repositorio Dexie, esquema Zod del seed, hooks `useTodayPlan`/`useWeekPlan`, `WeekStrip` y `PlanExerciseList`. Contrato `plan` v1.10.
+  - Base Dexie `gym-app` v1 (`app/db.ts`), seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas) cargado al arrancar; `compose` expone `ready`, que "Hoy" espera con `use(ready)`.
+  - "Hoy" muestra fecha, bloque, semana, tira de la semana y la sesión del día; verificado en el iPhone con y sin conexión (T19). En el iPhone el plan empezó el lunes 16-nov-2026.
+  - Bundle inicial 168.64 kB de 200 kB.
 
 ## Decisiones tomadas
 
@@ -51,7 +55,7 @@
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
-## Siguiente paso: fase 1 (Dexie, seed y loader, `schedule.ts`)
+## Historia y siguiente paso
 
 1. ~~Fase 0~~ (bloques A–D, PR #3 a #6). Al fusionar el PR del bloque D: "Create a merge commit", con `ci` en verde y la rama al día (si GitHub dice "out-of-date", pulsar "Update branch").
 2. ~~Preguntas 1 a 4~~ (17-nov, `modules/plan.md` v1.1 §10): `high` con bloqueo total, también como alternativa y al importar (RN-PLN-07); `Block.schedule` con `weekParity` por semana dentro del bloque, manda el calendario (RN-PLN-03); `TemplateItem.alternatives` y la serie registra el ejercicio usado (RN-PLN-11); se planifica el mínimo del rango (RN-PLN-05).
@@ -66,8 +70,13 @@
    - Seed real en `src/app/seed/plan-seed.json`, verificado contra `plan-seed.summary.md` (transcripción a mano de `plan.md`; reglas en plan §4.1). Revisado por el usuario con ayuda de otro modelo: sin errores; Press de banca de Torso A queda solo con barra.
    - La regla de fronteras deja que el `index.ts` de un módulo importe `shared/kernel` (architecture §5.2).
    - Bundle inicial 166.76 kB de 200 kB (umbral de `zod/mini`: 170 kB, plan §6.2); se mide otra vez en T18.
-7. **Siguiente: punto de control C, T15**, en la rama `feat/001-phase-1-c` (creada desde `main` con el merge del PR #9; solo tiene este commit del handoff, sin subir). T15: hooks `useTodayPlan` y `useWeekPlan` con `useLiveQuery` en `plan/ui`, con prueba de `fake-indexeddb` que comprueba que se actualizan tras escribir en la tabla (plan §6.4). Antes, proponer los casos que el contrato no define.
-8. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+7. ~~Punto de control C, "Hoy"~~ (T15–T18, PR #10, 17-nov): contrato `plan` v1.9 (hooks: el resultado lleva su fecha, errores al *error boundary*, RN-PLN-26) y v1.10 (`ProgramPosition` con `startDate` y `totalWeeks`); `WeekStrip` con indicador de texto y nombre accesible; `TodayPage` con `Suspense` y `use(ready)`; E2E con `page.clock` en la zona del usuario, sin conexión y axe. Se mantiene Zod clásico (168.64 kB < 170 kB, plan §6.2).
+8. ~~Punto de control D, cierre~~ (T19–T20, 17-nov): verificado en el iPhone (aviso de actualización, datos y modo avión); spec y plan 001 marcados como implementados.
+9. **Siguiente: fase 2, sesión activa** (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
+   1. Resolver la pregunta 6 (workouts cerrados inmutables, RN-TRN-07), que bloquea la fase 2.
+   2. Escribir la spec 002 (`docs/specs/002-.../spec.md`) con sus criterios de aceptación, revisar el contrato `training.md` y luego plan y tareas, como en la fase 1.
+   3. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
+10. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -103,7 +112,14 @@ Notas para retomar:
 - zsh no divide variables sin comillas: opciones de `curl` en una variable van como array, `R=(--resolve a)` y `curl "${R[@]}"`.
 - DNS: si el Mac preguntó por un nombre antes de que existiera, guarda el "no existe" (~30 min). Verificar con `dig +short nombre @1.1.1.1` y `curl --resolve nombre:443:IP`, o limpiar con `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
 - En la fase 0 solo hay 2 pestañas (Hoy y Progreso); Sesión y Cierre se abren por URL.
+- `Suspense` en pruebas (fase 1, C): en el entorno de `act`, React solo reintenta un componente suspendido en `use(promesa)` dentro de un `act` esperado con `await`. `src/app/__tests__/test-app.tsx` renderiza así; para probar el orden real de arranque (promesa que se resuelve después), montar con `createRoot` y `IS_REACT_ACT_ENVIRONMENT = false` durante la prueba (`today-page.test.tsx`).
+- `import 'fake-indexeddb/auto'` va **antes** de cualquier import que cargue Dexie (incluido el router o una página): Dexie toma `indexedDB` al cargarse y, si no está, falla con `MissingAPIError`.
+- Vitest 5 oculta la consola de las pruebas que pasan: para depurar con `console.log`, hacer fallar la prueba a propósito.
+- `useLiveQuery` conserva el resultado anterior al cambiar las dependencias (por eso los hooks fechan su resultado) y lanza los errores en el render. Con Dexie 4.4.7 una espera ajena (`setTimeout`) en la consulta no rompe el seguimiento (plan 001 §6.4).
+- Zod 4 bajo la CSP: `z.config({ jitless: true })` antes de definir los esquemas.
+- CI: `npx playwright install --with-deps` se colgó una vez más de 10 min (normal: 35-90 s); cancelar y relanzar (`gh run cancel`, `gh run rerun`) lo resolvió. Si se repite, ponerle `timeout-minutes` a ese paso.
+- PWA en iOS: el aviso de versión nueva aparece al volver a abrir la app; "Actualizar" recarga y aplica la versión. Una versión sin cambios visibles parece que "no hizo nada".
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 1. Lee primero docs/README.md, docs/constitution.md, docs/handoff.md y docs/specs/001-fase-1/tasks.md. Estamos en la rama feat/001-phase-1-c; sigue con T15. Guíame paso a paso, una tarea a la vez."
+"Empezamos la fase 2 (sesión activa). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/spec.md §13 y docs/modules/training.md. Empieza por la pregunta pendiente 6 y luego la spec 002. Guíame paso a paso, una tarea a la vez."

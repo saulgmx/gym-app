@@ -43,7 +43,7 @@ El usuario tiene espondilolistesis L5-S1 grado I. La app **nunca** sugiere peso 
 - format: `npm run format` / `npm run format:check`
 - test: `npm test` (Vitest); `npm run test:watch`; `npm run test:coverage`
 - e2e: `npm run test:e2e` (construye y corre Playwright en Chromium y WebKit)
-- size: `npm run size` (presupuesto del bundle inicial)
+- size: `npm run size` (presupuesto del bundle inicial; mide `dist/` tal como está, así que construir antes)
 - icons: `npm run icons` (regenera los PNG desde `public/icon.svg`)
 - Instalar: `npm ci --strict-allow-scripts` (igual que CI y Vercel)
 
