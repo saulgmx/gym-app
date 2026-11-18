@@ -179,9 +179,13 @@ El contrato tenía `configureTraining(ports)` para romper el ciclo `training` �
 |---|---|---|
 | `/` | `TodayPage` | Con `useActiveWorkout`: "Continuar sesión" (con fecha si es de otro día) y "Descartar sesión"; si no, "Iniciar sesión" en días de pesas y la sección "Otra sesión de esta semana" |
 | `/dia/:date` (nueva, dentro de `AppLayout`) | `DayPreviewPage` | Vista previa de otro día de la semana con `PlanExerciseList` e "Iniciar sesión". Si la fecha no es válida, es de otra semana, es hoy o no es día de pesas, redirige a `/` con `replace` |
+| `/sesion/:workoutId` (nueva) | `SessionPage` | Destino de "Continuar sesión": sin `exerciseIndex`, redirige como un índice inválido |
 | `/sesion/:workoutId/:exerciseIndex` | `SessionPage` | `exerciseIndex` empieza en 1. Si no es un entero de 1 a n, redirige con `replace` al primer ejercicio con series pendientes (o al último si no hay pendientes). Un workout inexistente o cerrado muestra "Esta sesión ya no está disponible." (AC-28) |
 
 - `AppServices` gana `training`. `TodayPage` y `DayPreviewPage` comparten un componente `StartWorkoutButton` en `app/pages`.
+- **"Hoy" con sesión activa (T20):** arriba, un bloque "Sesión en curso" con el nombre, "Continuar sesión" (con la fecha si `date` no es hoy) y "Descartar sesión"; el resto de "Hoy" sigue igual, sin "Iniciar sesión" ni "Otra sesión de esta semana". Mientras `useActiveWorkout` carga no hay botones. El diálogo dice "¿Descartar la sesión?" / "No contará en tu historial y no podrás retomarla." con "Descartar" y "Cancelar"; si falla, el texto de `errorMessages` aparece bajo los botones.
+- **`StartWorkoutButton({ date, plannedFor })`:** deshabilitado mientras crea; si sale bien navega a `/sesion/<id>/1`; con `workout-already-active` navega a `/sesion/<workoutId>`; con otro error muestra su texto bajo el botón.
+- **"Otra sesión de esta semana":** `<section>` con `h2` y un enlace por día de pesas de la semana distinto de hoy, pasado o futuro ("Lun 16 · Full body A" → `/dia/2026-11-16`). Se oculta con sesión activa, sin otros días o fuera del programa.
 - **"Ver ejercicios"** es una lista desplegable dentro de `SessionHeader` (`<button aria-expanded>` y `<ol>`), no un diálogo. Cada fila es un enlace al ejercicio con su avance ("1 de 2 series"), y al final está "Descartar sesión".
 - **`ConfirmDialog`** en `shared/ui`: `<dialog>` nativo con `showModal()` (el resto de la página queda inerte y Escape cancela), y el foco vuelve al botón que lo abrió. Si jsdom no implementa `showModal`, se añade un relleno mínimo solo en la configuración de las pruebas; el comportamiento real lo cubre el E2E en Chromium y WebKit.
 

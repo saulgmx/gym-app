@@ -21,3 +21,12 @@ export function formatLongDateTitle(date: LocalDate): string {
   const text = formatLongDate(date);
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+const shortWeekday = new Intl.DateTimeFormat('es', { weekday: 'short', timeZone: 'UTC' });
+
+/** "Lun 16", for the day buttons of "Otra sesión de esta semana". */
+export function formatShortDay(date: LocalDate): string {
+  const instant = new Date(`${date}T00:00:00Z`);
+  const day = shortWeekday.format(instant).replace('.', '');
+  return `${day.charAt(0).toUpperCase()}${day.slice(1)} ${String(instant.getUTCDate())}`;
+}

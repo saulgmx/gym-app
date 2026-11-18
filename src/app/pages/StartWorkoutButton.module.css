@@ -1,0 +1,26 @@
+.wrapper {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.button {
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  padding: 0 1rem;
+  color: var(--bg);
+  font: inherit;
+  font-weight: 600;
+}
+
+.button:disabled {
+  opacity: 0.6;
+}
+
+.problem {
+  margin: 0;
+  color: var(--warn);
+  font-size: 0.875rem;
+}

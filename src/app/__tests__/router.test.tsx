@@ -67,6 +67,7 @@ describe('app router', () => {
     ['/', 'Hoy · Gym'],
     ['/progreso', 'Progreso · Gym'],
     ['/sesion/w1/0', 'Sesión · Gym'],
+    ['/sesion/w1', 'Sesión · Gym'], // "Continuar sesión" (spec 002 plan §6.7)
     ['/sesion/w1/cierre', 'Cierre de sesión · Gym'],
   ])('%s sets the document title to "%s"', async (path, title) => {
     await renderAt(path);
