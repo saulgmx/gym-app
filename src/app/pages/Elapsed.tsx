@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { Clock, Instant } from '@/shared/kernel';
-import { formatElapsed } from './format';
+import { formatElapsed } from '../format-time';
 
-// Time since the session started (spec 003 AC-17, plan §6.5). The only component with a 1 s
-// timer: the state holds the formatted text, so React re-renders this span only when the text
-// changes, never the card around it (P-6). Each tick reads clock.now() again, so a throttled
+// Time since the session started, in "Hoy" and in the session header (spec 003 AC-17, plan
+// §6.5; spec 004 AC-2). The only component with a 1 s timer: the state holds the formatted
+// text, so React re-renders this span only when the text changes, never what is around it (P-6). Each tick reads clock.now() again, so a throttled
 // timer in the background never drifts. Instants are compared with Date.parse, never as text
 // (ADR-0009). Not a live region: a screen reader would announce it every second.
 

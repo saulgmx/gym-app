@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import { Profiler } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Clock, Instant, LocalDate } from '@/shared/kernel';
-import { Elapsed } from '../pages/today/Elapsed';
+import { Elapsed } from '../pages/Elapsed';
 
 // Elapsed time of the session in progress (spec 003 AC-17, plan §6.5). A manual clock: the test
 // moves `now` and advances the fake timers. Seconds computed with Node from Date.parse.

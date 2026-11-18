@@ -3,12 +3,12 @@ import type { LocalDate } from '@/shared/kernel';
 import { formatShortDateTitle } from '../format-date';
 import {
   formatCurrent,
-  formatElapsed,
   formatItemsDone,
   formatRemaining,
   formatSessionSummary,
   formatWeekSessions,
 } from '../pages/today/format';
+import { formatElapsed } from '../format-time';
 
 // Texts of "Hoy" (spec 003 plan §6.7). Expected values computed with Node (Node 24, Intl es, ICU 78.3).
 

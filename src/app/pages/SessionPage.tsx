@@ -1,4 +1,4 @@
-import { Suspense, use, useEffect, useId, useRef, useState } from 'react';
+import { Suspense, use, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import {
   SessionHeader,
@@ -12,6 +12,7 @@ import { ConfirmDialog, cx } from '@/shared/ui';
 import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
 import { discardDialogText } from './discard-dialog';
+import { Elapsed } from './Elapsed';
 import styles from './SessionPage.module.css';
 import pageStyles from './pages.module.css';
 
@@ -40,8 +41,11 @@ function resumeIndex(view: WorkoutView): number {
 }
 
 function SessionContent() {
-  const { training, ready } = useApp();
+  const { training, clock, ready } = useApp();
   use(ready);
+  // "Today" is read once, when the page opens: a session of another day shows no time, and
+  // midnight does not change that until the page opens again (spec 004 §8, decision 9).
+  const [today] = useState(() => clock.today());
   const { workoutId = '', exerciseIndex } = useParams();
   const view = useWorkoutView(training, workoutId as ID);
   if (view === undefined) return null;
@@ -50,8 +54,11 @@ function SessionContent() {
   const index = parseIndex(exerciseIndex, view.workout.items.length);
   if (index === null)
     return <Navigate to={`/sesion/${workoutId}/${String(resumeIndex(view))}`} replace />;
+  const { workout } = view;
+  const elapsed =
+    workout.date === today ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
   // Keyed by index: each exercise starts fresh (message, dialog) and focuses its name.
-  return <ExerciseScreen key={index} view={view} index={index} />;
+  return <ExerciseScreen key={index} view={view} index={index} elapsed={elapsed} />;
 }
 
 function Unavailable() {
@@ -66,7 +73,15 @@ function Unavailable() {
   );
 }
 
-function ExerciseScreen({ view, index }: { view: WorkoutView; index: number }) {
+function ExerciseScreen({
+  view,
+  index,
+  elapsed,
+}: {
+  view: WorkoutView;
+  index: number;
+  elapsed: ReactNode;
+}) {
   const { training } = useApp();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -109,8 +124,11 @@ function ExerciseScreen({ view, index }: { view: WorkoutView; index: number }) {
       <SessionHeader
         view={view}
         index={index}
+        elapsed={elapsed && <TimeLabel>{elapsed}</TimeLabel>}
         onNavigate={(i) => void navigate(path(i))}
-        onDiscard={() => {
+        // Until the exit sheet comes (spec 004 T10), the arrow opens the discard confirmation,
+        // so discarding stays reachable once the menu no longer has it.
+        onExit={() => {
           setConfirming(true);
         }}
       />
@@ -173,5 +191,15 @@ function ExerciseScreen({ view, index }: { view: WorkoutView; index: number }) {
         }}
       />
     </div>
+  );
+}
+
+/** The time with its name for screen readers ("Tiempo de sesión 18:42", spec 004 AC-2). */
+function TimeLabel({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span className="visually-hidden">Tiempo de sesión </span>
+      {children}
+    </>
   );
 }

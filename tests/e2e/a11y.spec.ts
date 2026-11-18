@@ -64,8 +64,9 @@ test.describe('AC-39: la sesión activa', () => {
     await expect(page.getByText('Escribe un número.')).toBeVisible();
     await expectAccessible(page);
 
-    await page.getByRole('button', { name: 'Ver ejercicios' }).click();
-    await expect(page.getByRole('button', { name: 'Descartar sesión' })).toBeVisible();
+    // The exercise menu (spec 004 AC-4, AC-35).
+    await page.getByRole('button', { name: 'Ejercicio 3 de 7' }).click();
+    await expect(page.getByRole('dialog', { name: 'Full body A' })).toBeVisible();
     await expectAccessible(page);
   });
 

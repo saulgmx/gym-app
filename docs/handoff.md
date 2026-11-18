@@ -160,6 +160,7 @@ Notas para retomar:
 - El WebKit de Playwright 1.65 escribe los nombres cortos sin punto ("nov", "lun"), igual que Node: el `.replace('.', '')` de `format-date.ts` lo cubre `format-date-period.test.ts`, que hace que `Intl` añada el punto. En el iPhone la fecha se ve sin punto, pero eso no dice si Safari lo pone, porque la app lo quita.
 - Con una base vacía, el programa empieza el lunes de la semana de la primera visita (RN-PLN-13): el domingo 15 ya es la semana 1. Para abrir "Hoy" en otra fecha, `openTodayOn` (`tests/e2e/helpers.ts`) ancla el lunes 16 y luego mueve el reloj.
 - En E2E una serie sin valores no se marca hecha (RN-TRN-04): llenar kilos, reps y RIR antes del checkbox.
+- WebKit (como Safari) no enfoca un botón al hacerle clic con el ratón: un diálogo abierto así no tiene a quién devolver el foco. Las pruebas E2E del foco devuelto abren con el teclado (`focus()` y Enter); con el dedo en iOS no hay foco visible que recuperar (spec 004 T6).
 - Dos clics de Playwright en dos pestañas nunca llegan a la vez: la segunda pestaña ve la sesión en vivo y su botón desaparece. AC-2 de spec 002 es secuencial en E2E; la simultaneidad la prueba `dexie-repository.test.ts`.
 - A 320 px los nombres del seed caben aun sin `overflow-wrap: anywhere`: esa línea no se ejercita hasta que haya nombres propios (spec futura de plantillas).
 - `zod/mini` (T24): la misma API en funciones (`z.pipe`, `.check(z.minLength(1))`, `z.exactOptional(…)`); las pruebas pueden seguir importando tipos de `zod`, que no entran en el bundle.

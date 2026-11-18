@@ -58,7 +58,7 @@ Las fechas suponen un programa que empieza el lunes 16-nov-2026. En la semana 1 
 | ID | Dado | Cuando | Entonces |
 |---|---|---|---|
 | AC-4 | AC-1 | Toco "Ejercicio 2 de 7" | Se abre un diálogo modal sobre fondo oscurecido, con nombre "Full body A" y el título visible "Full body A". La tarjeta y la tabla no se mueven. El botón queda con `aria-expanded="true"` |
-| AC-5 | AC-4 | Miro el menú | El resumen "1 de 7 hechos · 1 en curso" y los 7 ejercicios en orden. Prensa: ✓ y "2 de 2 series". Press de banca con barra: anillo de acento y "En curso · serie 2". Los demás: su número y "series × rango" ("2 × 6-10", "1 × 10-12"). En una plantilla con Plancha, su fila pendiente dice "2 × 30-45 s" (RN-TRN-21) |
+| AC-5 | AC-4 | Miro el menú | El resumen "1 de 7 hechos · 1 en curso" y los 7 ejercicios en orden. Prensa: ✓ y "2 de 2 series". Press de banca con barra: anillo de acento y "En curso · serie 2". Los demás: su número y "series × rango" ("2 × 6-10", "1 × 10-12"). En una plantilla con Plancha, su fila pendiente dice "2 × 30-45 s". Un pendiente con alguna serie hecha dice "1 de 2 series", sin ✓ (RN-TRN-21) |
 | AC-6 | AC-4, viendo el ejercicio 4 (Curl femoral) | Miro el menú | Curl femoral lleva `aria-current="step"` y su resaltado; Press de banca sigue siendo el "en curso". Las dos marcas se distinguen |
 | AC-7 | AC-4 | Toco "Dominadas" | El menú se cierra y voy a `/sesion/<id>/3`, con el foco en el nombre del ejercicio (spec 002) |
 | AC-8 | AC-4 | Toco el fondo o pulso Escape | El menú se cierra sin navegar y el foco vuelve a "Ejercicio 2 de 7" |
@@ -142,7 +142,7 @@ No hay reglas nuevas. Cambios de documentos que se hacen al aprobar esta spec:
 ### 6.2 Menú de ejercicios
 - `<dialog>` modal con `showModal()`, fondo `--backdrop`, anclado bajo el encabezado y con desplazamiento propio si no cabe. Su nombre es el de la sesión (`workout.name`), que es también su título visible (`h2`).
 - Resumen: "N de M hechos" y, si hay ítem en curso, "· 1 en curso" (RN-TRN-21).
-- Una fila por ítem, en orden, como botón de ≥ 44 px: marca de estado (decorativa, `aria-hidden`), nombre del ejercicio elegido y subtítulo. Pendiente: "series planificadas × rango" ("× s" en tiempo); en curso: "En curso · serie N"; hecho: "N de N series", contando las extra. El nombre accesible de la fila incluye el estado ("Prensa de piernas, hecho, 2 de 2 series").
+- Una fila por ítem, en orden, como botón de ≥ 44 px: marca de estado (decorativa, `aria-hidden`), nombre del ejercicio elegido y subtítulo. Pendiente: "series planificadas × rango" ("× s" en tiempo), o "N de M series" si ya tiene alguna hecha; en curso: "En curso · serie N"; hecho: "N de N series", contando las extra. El nombre accesible de la fila incluye el estado con un texto oculto, sin `aria-label` ("Prensa de piernas, hecho, 2 de 2 series"; "Dominadas, pendiente, 2 × 6-10"); en curso, el subtítulo ya lo dice. Al abrir, el foco va a la fila del ejercicio que se ve, y el resumen es la descripción del diálogo.
 - El ejercicio que se ve lleva `aria-current="step"` y un resaltado de fondo, distinto del anillo del "en curso".
 - Elegir una fila cierra el menú y navega; el foco va al `h1` del ejercicio nuevo. Cerrar sin elegir (fondo, Escape) devuelve el foco al botón.
 

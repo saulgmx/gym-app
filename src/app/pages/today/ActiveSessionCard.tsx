@@ -7,7 +7,7 @@ import { useApp } from '../../context';
 import { errorMessages } from '../../errors/messages';
 import { formatLongDate } from '../../format-date';
 import { discardDialogText } from '../discard-dialog';
-import { Elapsed } from './Elapsed';
+import { Elapsed } from '../Elapsed';
 import { formatCurrent, formatItemsDone, formatRemaining } from './format';
 import styles from './ActiveSessionCard.module.css';
 

@@ -80,8 +80,7 @@ describe('el ejercicio', () => {
     await open(`/sesion/${workout.id}/2`, services);
 
     expect(await heading()).toHaveTextContent('Press de banca con barra');
-    expect(screen.getByText('Ejercicio 2 de 7')).toBeInTheDocument();
-    expect(screen.getByText('Full body A')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ejercicio 2 de 7' })).toBeInTheDocument();
     expect(screen.getByText('2 × 6-10 · RIR 3-4')).toBeInTheDocument();
     expect(screen.getByText('Costillas abajo, sin arco')).toBeInTheDocument();
     expect(screen.getByRole('table')).toBeInTheDocument();
@@ -272,15 +271,20 @@ describe('navegación', () => {
     expect(screen.getByRole('link', { name: 'Anterior' })).toBeInTheDocument();
   });
 
-  it('AC-26: elegir un ejercicio de la lista navega a él', async () => {
+  it('spec 004 AC-7: elegir un ejercicio del menú navega a él y el foco va a su nombre', async () => {
     const { services, workout } = await withWorkout();
     const { router, user } = await open(`/sesion/${workout.id}/1`, services);
     await heading();
 
-    await user.click(screen.getByRole('button', { name: 'Ver ejercicios' }));
-    await tapToNavigate(user, screen.getByRole('button', { name: /^Curl femoral/ }));
+    await user.click(screen.getByRole('button', { name: 'Ejercicio 1 de 7' }));
+    const menu = screen.getByRole('dialog', { name: 'Full body A' });
+    await tapToNavigate(user, within(menu).getByRole('button', { name: /^Curl femoral/ }));
 
     expect(router.state.location.pathname).toBe(`/sesion/${workout.id}/4`);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Curl femoral' })).toHaveFocus();
+    });
   });
 
   it.each(['9', 'abc', '0', '2.5'])(
@@ -373,13 +377,44 @@ describe('sesión no disponible', () => {
   });
 });
 
+describe('el tiempo de la sesión (spec 004 AC-2, AC-3)', () => {
+  const STARTED = fixedClock('2026-11-16T18:00:00-06:00');
+
+  async function startedAt18(pageClock: string) {
+    const services = createTestServices({ seedClock: STARTED, clock: fixedClock(pageClock) });
+    await services.ready;
+    const result = await services.training.startWorkout(MONDAY);
+    if (!result.ok) throw new Error(result.error.code);
+    return { services, workout: result.value };
+  }
+
+  it('AC-2: el encabezado muestra el tiempo desde el inicio, con su nombre para lectores', async () => {
+    const { services, workout } = await startedAt18('2026-11-16T18:18:42-06:00');
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    const time = screen.getByText('18:42');
+    expect(time.parentElement).toHaveTextContent('Tiempo de sesión 18:42');
+    expect(screen.getByText('Tiempo de sesión', { exact: false })).toHaveClass('visually-hidden');
+  });
+
+  it('AC-3: una sesión de otro día no muestra el tiempo', async () => {
+    const { services, workout } = await startedAt18('2026-11-17T09:00:00-06:00');
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(screen.queryByText('Tiempo de sesión', { exact: false })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ejercicio 2 de 7' })).toBeInTheDocument();
+  });
+});
+
 describe('Descartar sesión', () => {
   async function openDiscard() {
     const { services, workout } = await withWorkout();
     const opened = await open(`/sesion/${workout.id}/2`, services);
     await heading();
-    await opened.user.click(screen.getByRole('button', { name: 'Ver ejercicios' }));
-    await opened.user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
+    // Until T10 brings the exit sheet, the arrow opens the discard confirmation (spec 004 T6).
+    await opened.user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
     return { ...opened, services, workout };
   }
 
@@ -406,8 +441,7 @@ describe('Descartar sesión', () => {
     await done(services.training, workout, 2, 1);
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
-    await user.click(screen.getByRole('button', { name: 'Ver ejercicios' }));
-    await user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
+    await user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
 
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
     expect(dialog).toHaveAccessibleDescription(
