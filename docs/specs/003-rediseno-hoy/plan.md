@@ -111,6 +111,7 @@ Alternativa: que `getTodayPlan` devuelva `estimatedSeconds`. Se descarta porque 
 ### 6.7 Textos y formatos
 - Fecha de la fila superior: `formatShortDateTitle` en `app/format-date.ts` → "Miércoles 18 nov" (mes `short` de `Intl`, sin punto, como `formatShortDay`).
 - Chip de RIR: `formatRir(plannedItems[0].targetRir)`. Todos los ítems tienen el mismo (RN-PLN-06), y una prueba lo comprueba sobre el seed real.
+- Chips sin repetir texto: el bloque de deload del seed se llama "Descarga", así que en la semana 15 el chip del bloque y el de descarga coinciden y se muestra uno (decisión de T13).
 - "N ejercicios · ~M min", "N de M ejercicios hechos", "Faltan ~X min", "Vas en: <ejercicio> · serie N", "N de M sesiones": funciones de formato en `app/pages/today/format.ts`, con pruebas.
 - `formatRir` de `plan/ui/format.ts` ya existe; `index.ts` lo exporta (nuevo, §3) para que el chip no lo duplique.
 
