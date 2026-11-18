@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.6 (borrador) · **Fecha:** 17-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.7 (borrador) · **Fecha:** 18-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -210,8 +210,8 @@ Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). 
 
 | Pantalla | Ruta | Contenido |
 |---|---|---|
-| Hoy | `/` | Bloque y semana, estado de la última molestia lumbar, tira de la semana, lista de ejercicios de hoy con sugerencias, aviso de seguridad, botón "Iniciar sesión" |
-| Otro día de la semana | `/dia/:date` | Vista previa de una sesión de pesas de la semana actual distinta de hoy y "Iniciar sesión" (spec 002) |
+| Hoy | `/` | Fecha y semana; aviso persistente de dolor (§6.2); tarjeta "Tu sesión de hoy" con la sesión, duración estimada, bloque, RIR, estado de la última molestia lumbar, "Hoy subes" (ejercicios con sugerencia de subida) y "Empezar sesión"; desplegable con los ejercicios del día (series × repeticiones, sin cargas); tira "Esta semana" con el avance; "Otra sesión de esta semana". Con una sesión en curso, la tarjeta pasa a "Sesión en curso": tiempo, avance, tiempo restante, "Vas en", "Continuar sesión" y "Descartar sesión" (spec 003) |
+| Otro día de la semana | `/dia/:date` | Vista previa de una sesión de pesas de la semana actual distinta de hoy y "Empezar sesión" (spec 002) |
 | Sesión activa | `/sesion/:workoutId/:exerciseIndex` | Ejercicio actual, banner de sugerencia, tabla de series (anterior, kg, reps, RIR, check), consejo técnico, temporizador, "Terminar sesión" |
 | Continuar sesión | `/sesion/:workoutId` | Sin pantalla propia: redirige al primer ejercicio con series pendientes (o al último) (spec 002) |
 | Cierre | `/sesion/:workoutId/cierre` | Resumen, selector de dolor 0-10 con mensaje, banderas rojas, próxima sesión, notas, "Guardar sesión" |
@@ -222,7 +222,7 @@ Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). 
 
 ### 7.3 Flujos principales
 
-1. **Entrenar:** Hoy → Iniciar sesión → registrar series (repetir por ejercicio) → Terminar sesión → Cierre (dolor, notas) → Guardar → Hoy.
+1. **Entrenar:** Hoy → Empezar sesión → registrar series (repetir por ejercicio) → Terminar sesión → Cierre (dolor, notas) → Guardar → Hoy.
 2. **Ver progreso:** Progreso → elegir ejercicio → ver gráfica y detalle.
 3. **Respaldo:** Ajustes → Exportar JSON → guardar en iCloud, Drive o correo.
 
@@ -316,6 +316,7 @@ Casos clave del dominio:
 | 0 | Repo, Vite + React + TS, lint, tokens CSS, router, PWA vacía, esqueleto de módulos (`plan`, `training`, `progression`, `health`, `data`), bus de eventos y reglas de fronteras en CI | Esqueleto instalable con fronteras verificadas |
 | 1 | Dexie, seed y loader, `schedule.ts` | "Hoy" muestra la sesión correcta |
 | 2 | Sesión activa: `SetRow`, guardado por serie, recuperación de sesión | Se puede entrenar y registrar |
+| 2.5 | Rediseño de "Hoy" (spec 003): tarjeta de la sesión con duración, sesión en curso con avance y tira de la semana | "Hoy" dice de un vistazo qué toca y cómo vas |
 | 3 | Cierre con dolor lumbar, historial, exportar/importar | MVP usable en el gym |
 | 4 | Progresión, alertas, temporizador, peso corporal, gráficas | v1.0 |
 | 5 | Edición de plan, volumen semanal, recordatorios | v1.1 |

@@ -1,18 +1,19 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 17-nov-2026 (fase 2 completa) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 18-nov-2026 (fase 2 completa; spec 003, rediseño de "Hoy", aprobada) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.6: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date` y la 0.6 `/sesion/:workoutId` (spec 002).
+  - `docs/spec.md` v0.7: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date`, la 0.6 `/sesion/:workoutId` (spec 002) y la 0.7 (18-nov) el rediseño de "Hoy" en §7.2, §7.3 y §13 (spec 003).
   - `docs/architecture.md` v1.3: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
 - `docs/plan.md`: plan de entrenamiento de 3 bloques (fuente del seed).
+- `docs/design-hoy.md`: diseño elegido de "Hoy" (tableros D y D2 del lienzo de diseño), alineado con la spec 003. `docs/design-sesion-activa.md` (sin commit todavía): diseño de la sesión activa, para una spec aparte.
 - Prototipo visual (4 pantallas): https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
 - Repo `saulgmx/gym-app` (público) en `~/dev/personal/side-projects/gym-app`. **Fase 0 completa** (spec 000 implementada):
   - A y B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`).
@@ -58,7 +59,7 @@
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
-| 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
+| 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones". Además: el diseño de "Hoy" muestra el aviso con la **última** lectura ≥ 3/10, y la spec §6.2 lo pide sobre el umbral 2 sesiones seguidas o subiendo 3 (3/10 está en la banda "Normal"); decidir si son dos avisos o cambia la regla (spec 003 §6.6) | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
 ## Historia y siguiente paso
 
@@ -86,8 +87,12 @@
    6. ~~Punto de control B, persistencia y composición~~ (T10–T16, PR #14): servicio, repositorio Dexie, base v2, hooks, textos de error en `app` y la prueba P-1 sobre el seed real (AC-41). Contrato v1.7 a v1.10.
    7. ~~Punto de control C, interfaz~~ (T17–T24, PR #15): `ConfirmDialog`, `SetTable`, `SessionHeader`, "Hoy" con sesión, `/dia/:date`, `SessionPage`, aviso de actualización aplazado y `zod/mini`. Contrato v1.11 a v1.13; spec v0.6 y architecture v1.3 (`/sesion/:workoutId`).
    8. ~~Punto de control D, verificación y cierre~~ (T25–T27, PR #17 y el de cierre): E2E de la sesión y AC-39 (axe y objetivos de 44 px), iPhone y este cierre. Spec y plan 002 marcados como implementados.
-10. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la spec 003. Pruebas primero en `health` (constitución).
-11. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
+10. **Rediseño de "Hoy"** (spec §13, fase 2.5), antes de la fase 3. Pasos:
+   1. ~~Spec 003~~ aprobada (18-nov): `docs/specs/003-rediseno-hoy/spec.md` (AC-1 a AC-29), desde `docs/design-hoy.md`. Estados D y D2 con datos existentes, sin cambios de base; duración estimada (RN-PLN-27, contrato `plan` v1.13), tiempo restante y avance de la sesión (RN-TRN-20 y 21, `training` v1.15); tira con marcas y "N de M" (N = 0 hasta la fase 3); descarte con texto que no dice "se borrarán" (RN-TRN-15). Fuera: "Hoy subes" (fase 4), ✓ de la tira y dolor (fase 3), hoja "Cambiar sesión" y sesión libre (spec futura), registrar cardio.
+   2. **Siguiente: plan técnico** `docs/specs/003-rediseno-hoy/plan.md`: forma de la API de RN-PLN-27 y RN-TRN-20/21, de dónde saca "Hoy" el `WorkoutView` del activo, la tira en `plan/ui` (sin `training` hasta la fase 3), reloj por segundo en D2 y la hoja inferior del descarte.
+11. **Fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 004**. Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión" y el aviso y el chip de espalda en "Hoy" (spec 003 §6.6).
+12. Rediseño de la sesión activa (`docs/design-sesion-activa.md`): spec aparte, sin fecha.
+13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
 - Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
@@ -139,4 +144,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Empezamos la fase 3 (cierre con dolor lumbar, historial, exportar/importar). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/spec.md §13 y docs/modules/health.md, training.md y data.md. Empieza por la pregunta pendiente 8 y luego la spec 003. Guíame paso a paso, una tarea a la vez."
+"Seguimos con el rediseño de 'Hoy' (spec 003, aprobada). Lee primero docs/README.md, docs/constitution.md, docs/handoff.md, docs/specs/003-rediseno-hoy/spec.md, docs/design-hoy.md y docs/modules/plan.md y training.md. Escribe el plan técnico (docs/specs/003-rediseno-hoy/plan.md). Guíame paso a paso, una tarea a la vez."
