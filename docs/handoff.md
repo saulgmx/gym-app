@@ -97,7 +97,7 @@
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
-- Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` (en CI con `--with-deps`).
+- Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` en local; en CI vienen en la imagen `mcr.microsoft.com/playwright` del job `ci`, con la misma versión que `@playwright/test` (al actualizar Playwright, cambiar la etiqueta y el digest de la imagen en `ci.yml`).
 - Comandos: `npm run test:e2e` (construye y prueba contra `vite preview`), `npm run size`, `npm run icons` (regenera los PNG si cambia `public/icon.svg`).
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
@@ -134,7 +134,7 @@ Notas para retomar:
 - Vitest 5 oculta la consola de las pruebas que pasan: para depurar con `console.log`, hacer fallar la prueba a propósito.
 - `useLiveQuery` conserva el resultado anterior al cambiar las dependencias (por eso los hooks fechan su resultado) y lanza los errores en el render. Con Dexie 4.4.7 una espera ajena (`setTimeout`) en la consulta no rompe el seguimiento (plan 001 §6.4).
 - Zod 4 bajo la CSP: `z.config({ jitless: true })` antes de definir los esquemas.
-- CI: `npx playwright install --with-deps` se colgó una vez más de 10 min (normal: 35-90 s); cancelar y relanzar (`gh run cancel`, `gh run rerun`) lo resolvió. Si se repite, ponerle `timeout-minutes` a ese paso.
+- CI: `npx playwright install --with-deps` se colgaba a veces porque el mirror de Ubuntu bajaba los 139 MB de dependencias a ~60 kB/s (18-nov: un intento llegó al límite de 5 min). Desde el PR `ci/playwright-container` el job corre en la imagen oficial de Playwright y ya no usa `apt`.
 - PWA en iOS: el aviso de versión nueva aparece al volver a abrir la app; "Actualizar" recarga y aplica la versión. Una versión sin cambios visibles parece que "no hizo nada". Desde la fase 2 el aviso no aparece mientras haya una sesión activa (AC-37).
 - React Router 8 navega con transiciones asíncronas: dentro del `act` síncrono de un clic normal, el trabajo pendiente se puede descartar y la navegación no llega. En las pruebas de `app`, los toques que navegan usan `tapToNavigate` (`src/app/__tests__/test-app.tsx`), y antes de tocar algo en "Hoy" hay que esperar a que cargue (`use(ready)`). Era la causa de la prueba de rutas inestable desde la fase 1.
 - El foco que se mueve en un `useEffect` llega después del render: esperarlo con `waitFor`, no con un `expect` justo después del texto nuevo.
