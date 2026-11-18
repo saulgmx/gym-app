@@ -9,7 +9,7 @@ import {
 } from './helpers';
 
 // The active session on the production build (spec 002 AC-2, AC-4, AC-8, AC-21, AC-34, AC-36;
-// QS-03, QS-05). Each test starts with an empty IndexedDB; the program starts on Monday
+// QS-03, QS-05; spec 004 AC-7, AC-8, AC-14, AC-17, AC-19, AC-36, AC-38). Each test starts with an empty IndexedDB; the program starts on Monday
 // 2026-11-16, Full body A: Prensa de piernas (2 sets), Press de banca con barra (2 sets), ...
 
 test.use({ timezoneId: USER_TIME_ZONE });
@@ -181,7 +181,8 @@ test('AC-2: la segunda pestaña ve la sesión de la primera y entra en la misma'
 });
 
 test('AC-21, QS-05: marcar una serie se ve en menos de 100 ms', async ({ page, browserName }) => {
-  await freezeClockAt(page, MONDAY);
+  // With the clock flowing, so the header's 1 s timer runs during the measure (spec 004 AC-36).
+  await installClockAt(page, MONDAY);
   await page.goto('/');
   await startFromToday(page);
   await logSet(page, 1, { kg: '60', reps: '10', rir: '3' });
@@ -309,4 +310,100 @@ test('AC-29: sin conexión, la sesión en curso se ve igual en "Hoy"', async ({ 
   await expect(card.getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
   await expect(card.getByText('0 de 7 ejercicios hechos', { exact: true })).toBeVisible();
   await expect(card.getByRole('link', { name: 'Continuar sesión' })).toBeVisible();
+});
+
+// Spec 004 on the production build: the exercise menu, the exit sheet and leaving to continue
+// later. The discard path through the sheet is AC-34 above.
+
+const exitArrow = (page: Page) => page.getByRole('button', { name: 'Salir de la sesión' });
+const exitSheet = (page: Page) => page.getByRole('dialog', { name: '¿Salir de la sesión?' });
+
+test('spec 004 AC-7, AC-8: el menú salta a cualquier ejercicio y se cierra con el fondo', async ({
+  page,
+}) => {
+  await freezeClockAt(page, MONDAY);
+  await page.goto('/');
+  await startFromToday(page);
+
+  await page.getByRole('button', { name: 'Ejercicio 1 de 7' }).click();
+  const menu = page.getByRole('dialog', { name: 'Full body A' });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByText('0 de 7 hechos · 1 en curso')).toBeVisible();
+  await menu.getByRole('button', { name: /^Dominadas/ }).click();
+
+  await expect(page).toHaveURL(/\/sesion\/[^/]+\/3$/);
+  await expect(menu).toBeHidden();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dominadas');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+
+  // A tap on the backdrop, below the panel: it closes without navigating.
+  await page.getByRole('button', { name: 'Ejercicio 3 de 7' }).click();
+  await expect(menu).toBeVisible();
+  const viewport = page.viewportSize();
+  await page.mouse.click(10, (viewport?.height ?? 600) - 10);
+  await expect(menu).toBeHidden();
+  await expect(page).toHaveURL(/\/sesion\/[^/]+\/3$/);
+});
+
+test('spec 004 AC-14: "Salir y continuar después" va a "Hoy" y "atrás" vuelve a la sesión', async ({
+  page,
+}) => {
+  await freezeClockAt(page, MONDAY);
+  await page.goto('/');
+  await startFromToday(page);
+  await logSet(page, 1, { kg: '60', reps: '10', rir: '3' });
+  await markDone(page, 1);
+  const sessionUrl = page.url();
+
+  await exitArrow(page).click();
+  await exitSheet(page).getByRole('link', { name: 'Salir y continuar después' }).click();
+
+  await expect(page).toHaveURL('/');
+  const card = page.getByRole('region', { name: 'Sesión en curso' });
+  await expect(card.getByText('0 de 7 ejercicios hechos', { exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(sessionUrl);
+  await expect(page.getByRole('checkbox', { name: 'Serie 1 hecha' })).toBeChecked();
+});
+
+test('spec 004 AC-19: un valor escrito sin confirmar se guarda al tocar la flecha', async ({
+  page,
+}) => {
+  await freezeClockAt(page, MONDAY);
+  await page.goto('/');
+  await startFromToday(page);
+  // Typed, no Enter: the tap on the arrow takes the focus away and confirms it.
+  await page.getByRole('textbox', { name: 'Serie 1, kilos' }).fill('72,5');
+
+  await exitArrow(page).click();
+  await expect(exitSheet(page)).toBeVisible();
+  await waitForStoredSet(page, (s) => s.weightKg === 72.5);
+  await exitSheet(page).getByRole('link', { name: 'Salir y continuar después' }).click();
+  await page.getByRole('link', { name: 'Continuar sesión' }).click();
+
+  await expect(page.getByRole('textbox', { name: 'Serie 1, kilos' })).toHaveValue('72,5');
+});
+
+test('spec 004 AC-38: sin conexión, el menú, los detalles y salir funcionan igual', async ({
+  page,
+  context,
+}) => {
+  await freezeClockAt(page, MONDAY);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+  await waitForControllingWorker(page);
+
+  await context.setOffline(true);
+  await startFromToday(page);
+  await page.getByRole('button', { name: 'Ejercicio 1 de 7' }).click();
+  await page
+    .getByRole('dialog', { name: 'Full body A' })
+    .getByRole('button', { name: /^Press de banca con barra/ })
+    .click();
+  await page.getByRole('button', { name: 'Ver detalles' }).click();
+  await expect(page.getByText('Costillas abajo, sin arco')).toBeVisible();
+  await exitArrow(page).click();
+  await exitSheet(page).getByRole('link', { name: 'Salir y continuar después' }).click();
+
+  await expect(page.getByRole('region', { name: 'Sesión en curso' })).toBeVisible();
 });

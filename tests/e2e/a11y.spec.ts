@@ -178,3 +178,73 @@ test.describe('AC-27: "Hoy" a 320 px de ancho', () => {
     });
   }
 });
+
+// Spec 004 AC-35: the redesigned session in every state that adds something on screen, with
+// 44 px targets; and at 320 px wide with the details and the menu open, without overflowing.
+test.describe('spec 004 AC-35: la sesión rediseñada', () => {
+  test.use({ timezoneId: USER_TIME_ZONE });
+
+  async function expectAccessible(page: Page) {
+    const { violations } = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await smallTouchTargets(page)).toEqual([]);
+  }
+
+  async function openPressDeBanca(page: Page) {
+    await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Empezar sesión' }).click();
+    await page.getByRole('link', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Press de banca con barra');
+  }
+
+  test('tarjeta compacta y completa, menú, aviso de salida y confirmación', async ({ page }) => {
+    await openPressDeBanca(page);
+    await expectAccessible(page);
+
+    await page.getByRole('button', { name: 'Ver detalles' }).click();
+    await expect(page.getByText('Costillas abajo, sin arco')).toBeVisible();
+    await expectAccessible(page);
+
+    await page.getByRole('button', { name: 'Ejercicio 2 de 7' }).click();
+    await expect(page.getByRole('dialog', { name: 'Full body A' })).toBeVisible();
+    await expectAccessible(page);
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('button', { name: 'Salir de la sesión' }).click();
+    const sheet = page.getByRole('dialog', { name: '¿Salir de la sesión?' });
+    await expect(sheet).toBeVisible();
+    await expectAccessible(page);
+
+    await sheet.getByRole('button', { name: 'Descartar sesión' }).click();
+    await expect(page.getByRole('dialog', { name: '¿Descartar la sesión?' })).toBeVisible();
+    await expectAccessible(page);
+  });
+
+  test.describe('a 320 px de ancho', () => {
+    test.use({ viewport: { width: 320, height: 640 } });
+
+    const fits = (page: Page) =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      );
+
+    test('con los detalles abiertos, el menú y el aviso, nada desborda', async ({ page }) => {
+      await openPressDeBanca(page);
+      await page.getByRole('button', { name: 'Ver detalles' }).click();
+      expect(await fits(page)).toBe(true);
+
+      await page.getByRole('button', { name: 'Ejercicio 2 de 7' }).click();
+      const menu = page.getByRole('dialog', { name: 'Full body A' });
+      await expect(menu).toBeVisible();
+      // The 7 rows fit the panel's own scroll, never the page's width.
+      expect(await menu.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+      expect(await fits(page)).toBe(true);
+      await page.keyboard.press('Escape');
+
+      await page.getByRole('button', { name: 'Salir de la sesión' }).click();
+      await expect(page.getByRole('dialog', { name: '¿Salir de la sesión?' })).toBeVisible();
+      expect(await fits(page)).toBe(true);
+    });
+  });
+});
