@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.10 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.11 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -82,6 +82,7 @@ type TodayPlan =
 
 interface PlannedItem {
   exercise: Exercise; order: number;
+  alternatives: Exercise[];              // resueltas, en el orden del seed; [] si no hay (RN-PLN-11)
   plannedSets: number;                   // tras aplicar el factor de volumen
   repRange: [number, number];
   targetRir: [number, number];
@@ -101,8 +102,9 @@ export const planStores: Record<'exercises' | 'programs' | 'blocks' | 'templates
 export type PlanErrorCode =
   | 'plan/invalid-seed' | 'plan/high-risk-exercise' | 'plan/template-not-found' | 'plan/week-out-of-range';
 
-// Fase 1 implementa ensureSeeded, getPosition, getTodayPlan y getWeekPlan. El resto entra en PlanApi
-// cuando se implementa (fase 2: getExercise(s) y listExercises; v1.0: RF-03, RF-04; fase 3: dataPort).
+// Fase 1 implementa ensureSeeded, getPosition, getTodayPlan y getWeekPlan; fase 2, getExercise y getExercises.
+// El resto entra en PlanApi cuando se implementa (listExercises cuando alguien la use; v1.0: RF-03, RF-04;
+// fase 3: dataPort).
 
 interface PlanApi {
   ensureSeeded(seed: unknown): Promise<Result<void>>;                // RN-PLN-13 a 15: valida y carga si está vacío
@@ -110,7 +112,7 @@ interface PlanApi {
   getTodayPlan(date: LocalDate): Promise<TodayPlan>;
   getWeekPlan(weekStart: LocalDate): Promise<TodayPlan[]>;            // para WeekStrip
   getExercise(id: ID): Promise<Exercise | undefined>;
-  getExercises(ids: ID[]): Promise<Exercise[]>;
+  getExercises(ids: ID[]): Promise<Exercise[]>;                     // en el orden de ids, sin los que no existen
   listExercises(filter?: { maxRisk?: LumbarRisk }): Promise<Exercise[]>;
   setStartDate(date: LocalDate): Promise<Result<void>>;              // RF-03
   jumpToWeek(week: number, today: LocalDate): Promise<Result<void>>; // RF-03: recalcula startDate
@@ -151,12 +153,12 @@ No escucha eventos.
 | RN-PLN-08 | Un ejercicio `medium` se puede añadir a una plantilla con confirmación explícita en la UI. | spec §6.5 |
 | RN-PLN-09 | `jumpToWeek(n)` fija `startDate = lunes de la semana actual − (n − 1) × 7 días`. | RF-03 |
 | RN-PLN-10 | La semana empieza en lunes (ISO 8601). `getWeekPlan` normaliza la fecha recibida con `startOfIsoWeek` y devuelve 7 días, de lunes a domingo. | Spec 001 |
-| RN-PLN-11 | `alternatives` contiene IDs de ejercicios existentes, distintos del principal, sin repetir y con la misma `metric` que el principal. `PlannedItem` muestra el principal; la serie registra el ejercicio que realmente se usó, y cada ejercicio lleva su propia progresión. | plan.md |
+| RN-PLN-11 | `alternatives` contiene IDs de ejercicios existentes, distintos del principal, sin repetir y con la misma `metric` que el principal. `PlannedItem` lleva el principal en `exercise` y las alternativas resueltas en `alternatives`; la serie registra el ejercicio que realmente se usó, y cada ejercicio lleva su propia progresión. | plan.md |
 | RN-PLN-12 | Una entrada de `schedule` puede apuntar a una plantilla de cualquier bloque del mismo programa. El bloque Deload (semana 15) reutiliza el calendario y las plantillas del bloque 3. | Spec 001 |
 | RN-PLN-13 | El seed no trae fecha: `ensureSeeded` fija `startDate = startOfIsoWeek(clock.today())`, con `clock.today()` leído al llamar a `ensureSeeded`, no al crear el módulo. | Spec 001 |
 | RN-PLN-14 | `ensureSeeded` es atómico e idempotente: valida todo antes de escribir y escribe en una sola transacción, solo si las 4 tablas del plan están vacías. Con llamadas concurrentes, el seed se aplica una vez. Si `programs` está vacía pero otra tabla tiene filas (estado corrupto), lanza sin escribir; la escritura usa inserciones (`bulkAdd`), nunca reemplazos. | P-2, spec 001 |
-| RN-PLN-15 | Validación del seed, además del esquema Zod: (a) todo ID referenciado existe; (b) los bloques cubren las semanas 1..`totalWeeks` sin huecos ni solapes (RN-PLN-02); (c) cada día de cada bloque tiene una entrada sin `weekParity` o exactamente dos, una `odd` y una `even`; (d) RN-PLN-11; (e) IDs únicos dentro de cada tabla; (f) `block.programId` es el del programa y `program.blockIds` son exactamente los bloques del seed, ordenados por `startWeek`; (g) las claves de `weekRir` y `weekFactors` son semanas del propio bloque; (h) `order` único dentro de cada plantilla. Un fallo devuelve `plan/invalid-seed`. La forma y el rango de cada valor los valida el esquema Zod (RN-PLN-24, ADR-0012). | ADR-0012, spec 001 |
-| RN-PLN-19 | La validación del seed (`validateSeed`, dominio puro) devuelve el primer error en este orden: RN-PLN-07 (seguridad primero), (a) referencias, (b) semanas, (c) calendario, (d) alternativas, y después (e) a (h). El error lleva un `message` técnico en inglés y `details` con los IDs implicados; el usuario solo ve el mensaje genérico. | P-1, ADR-0010 |
+| RN-PLN-15 | Validación del seed, además del esquema Zod: (a) todo ID referenciado existe; (b) los bloques cubren las semanas 1..`totalWeeks` sin huecos ni solapes (RN-PLN-02); (c) cada día de cada bloque tiene una entrada sin `weekParity` o exactamente dos, una `odd` y una `even`; (d) RN-PLN-11; (e) IDs únicos dentro de cada tabla; (f) `block.programId` es el del programa y `program.blockIds` son exactamente los bloques del seed, ordenados por `startWeek`; (g) las claves de `weekRir` y `weekFactors` son semanas del propio bloque; (h) `order` único dentro de cada plantilla; (i) dentro de una plantilla, el principal y las alternativas de un ítem no aparecen en ningún otro ítem (un ejercicio por workout, RN-TRN-12). Un fallo devuelve `plan/invalid-seed`. La forma y el rango de cada valor los valida el esquema Zod (RN-PLN-24, ADR-0012). | ADR-0012, spec 001 |
+| RN-PLN-19 | La validación del seed (`validateSeed`, dominio puro) devuelve el primer error en este orden: RN-PLN-07 (seguridad primero), (a) referencias, (b) semanas, (c) calendario, (d) alternativas, y después (e) a (i). El error lleva un `message` técnico en inglés y `details` con los IDs implicados; el usuario solo ve el mensaje genérico. | P-1, ADR-0010 |
 | RN-PLN-16 | Un día sin entrada en `schedule`, una plantilla o un ejercicio inexistentes al calcular el plan del día son un bug (RN-PLN-15 lo impide): se lanza una excepción, no un `Result`. | ADR-0010 |
 | RN-PLN-17 | Los `plannedItems` se ordenan por `TemplateItem.order`, no por la posición en el arreglo. | Spec 001 |
 | RN-PLN-20 | `ensureSeeded` siempre analiza y valida el seed, también si la base ya tiene programa: primero el parser (esquema Zod), luego `validateSeed` y al final la escritura (`seedIfEmpty`). Devuelve el primer error tal cual y no ejecuta los pasos siguientes. | P-2, ADR-0012 |
@@ -190,7 +192,9 @@ No escucha eventos.
 - RN-PLN-17: ítems guardados en desorden → salen por `order`.
 - RN-PLN-18: cardio con su nota; descanso sin nota; nota del ítem en su `PlannedItem`.
 - RN-PLN-07: ejercicio `high` solo en el catálogo → `plan/high-risk-exercise`.
-- RN-PLN-15: un seed por cada caso (e)–(h) → `plan/invalid-seed`.
+- RN-PLN-15: un seed por cada caso (e)–(i) → `plan/invalid-seed`; en (i), la alternativa de un ítem es el principal o la alternativa de otro.
+- RN-PLN-11: `PlannedItem.alternatives` con los ejercicios resueltos en orden; `[]` sin alternativas.
+- `getExercises`: devuelve en el orden pedido y omite los IDs que no existen; `getExercise` de un ID inexistente → `undefined`.
 - RN-PLN-19: seed con un `high` y una referencia rota → `plan/high-risk-exercise`; `details` nombra los IDs.
 - RN-PLN-13: primer arranque en lunes → ese lunes; en domingo → el lunes anterior.
 - RN-PLN-20: parser que falla → su error, sin validar ni escribir; reglas que fallan → su error, sin escribir; seed inválido con programa ya cargado → error y la base no cambia.
@@ -222,3 +226,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 11. **Persistencia, antes de T10 (contrato v1.8):** "vacía" son las 4 tablas; un estado parcial lanza sin escribir y la escritura usa `bulkAdd` (RN-PLN-14); objetos del dominio tal cual y un solo programa (RN-PLN-25).
 12. **Hooks, antes de T15 (contrato v1.9):** `useLiveQuery` conserva el resultado anterior al cambiar las dependencias, así que cada resultado lleva su fecha y el hook devuelve `undefined` si no coincide; los errores se lanzan en el render, como hace `useLiveQuery`, para el *error boundary* (RN-PLN-26).
 13. **Página "Hoy", antes de T17 (contrato v1.10):** `ProgramPosition` gana `startDate` y `totalWeeks`, siempre presentes, para el encabezado y los mensajes fuera del programa (RN-PLN-01).
+14. **Spec 002, fase 2 (contrato v1.11):** `PlannedItem.alternatives` resueltas; `getExercise` y `getExercises` entran en `PlanApi` (`training` las usa para recuperar la sesión); RN-PLN-15 (i), un ejercicio por workout. `listExercises` sigue fuera (P-7).
