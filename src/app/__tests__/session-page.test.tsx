@@ -361,6 +361,84 @@ describe('la tarjeta del ejercicio (spec 004 AC-20 a AC-25)', () => {
   });
 });
 
+describe('el pie (spec 004 AC-31 a AC-34)', () => {
+  const footer = () => screen.getByRole('navigation', { name: 'Ejercicios' });
+
+  it('AC-31: en el primero, la línea del siguiente y solo "Siguiente"', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/1`, services);
+    await heading();
+
+    expect(
+      within(footer()).getByText('Siguiente: Press de banca con barra · 2 × 6-10'),
+    ).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Siguiente']);
+  });
+
+  it('AC-32: en uno intermedio, la línea, "Anterior" y "Siguiente" en ese orden', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(within(footer()).getByText('Siguiente: Dominadas · 2 × 6-10')).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Anterior', 'Siguiente']);
+  });
+
+  it('AC-33: en el último, "Último ejercicio de hoy", solo "Anterior" y ningún "Terminar"', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/7`, services);
+    await heading();
+
+    expect(within(footer()).getByText('Último ejercicio de hoy')).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Anterior']);
+    expect(screen.queryByText(/Terminar/)).not.toBeInTheDocument();
+  });
+
+  it('AC-34: con el siguiente por tiempo, el objetivo va en segundos', async () => {
+    const { services, workout } = await withWorkout();
+    const thirdId = workout.items[2]?.exerciseId ?? ('' as ID);
+    const asTime = editView(services, (view) => {
+      const third = view.exercises[thirdId];
+      if (!third) return view;
+      return { ...view, exercises: { ...view.exercises, [thirdId]: { ...third, metric: 'time' } } };
+    });
+    await open(`/sesion/${workout.id}/2`, asTime);
+    await heading();
+
+    expect(within(footer()).getByText('Siguiente: Dominadas · 2 × 6-10 s')).toBeVisible();
+  });
+
+  it('AC-34: con el siguiente cambiado a su alternativa, su nombre', async () => {
+    const { services, workout } = await withWorkout();
+    const item = workout.items[2];
+    const alternative = item?.options[1];
+    if (!item || !alternative) throw new Error('Dominadas needs an alternative in the seed');
+    const changed = await services.training.chooseExercise(
+      workout.id,
+      item.exerciseId,
+      alternative,
+    );
+    if (!changed.ok) throw new Error(changed.error.code);
+    const name = (await services.training.getWorkoutView(workout.id))?.exercises[alternative]?.name;
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(within(footer()).getByText(`Siguiente: ${String(name)} · 2 × 6-10`)).toBeVisible();
+  });
+});
+
 describe('navegación', () => {
   it('AC-25: "Anterior" y "Siguiente" llevan al vecino; no existen en los extremos', async () => {
     const { services, workout } = await withWorkout();

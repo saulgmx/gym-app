@@ -1,36 +1,6 @@
-/* Active session (spec 002 §6). The footer stays within thumb reach at the bottom. */
+/* Active session (spec 002 §6, spec 004). The fixed footer (SessionFooter) needs room below. */
 .screen {
   display: grid;
   gap: 1rem;
-  padding-bottom: calc(var(--touch-min) + 2rem);
-}
-
-.footer {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  gap: 0.75rem;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-}
-
-.step {
-  display: inline-flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(var(--touch-min) + 0.5rem);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-button);
-  color: var(--accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.next {
-  background: var(--accent);
-  color: var(--bg);
+  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom));
 }

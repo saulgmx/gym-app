@@ -8,13 +8,13 @@ import {
   type WorkoutView,
 } from '@/modules/training';
 import type { ID } from '@/shared/kernel';
-import { cx } from '@/shared/ui';
 import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
 import { Elapsed } from './Elapsed';
 import { formatElapsed } from '../format-time';
 import { ExerciseCard } from './session/ExerciseCard';
 import { ExitSheet } from './session/ExitSheet';
+import { SessionFooter } from './session/SessionFooter';
 import { formatExitSummary } from './session/format';
 import styles from './SessionPage.module.css';
 import pageStyles from './pages.module.css';
@@ -169,18 +169,7 @@ function ExerciseScreen({
         exerciseId={item.exerciseId}
         describeError={describeTrainingError}
       />
-      <nav aria-label="Ejercicios" className={styles.footer}>
-        {index > 1 && (
-          <Link to={path(index - 1)} className={styles.step}>
-            Anterior
-          </Link>
-        )}
-        {index < workout.items.length && (
-          <Link to={path(index + 1)} className={cx(styles.step, styles.next)}>
-            Siguiente
-          </Link>
-        )}
-      </nav>
+      <SessionFooter view={view} index={index} path={path} />
       <ExitSheet
         open={exitSummary !== null}
         summary={exitSummary ?? ''}
