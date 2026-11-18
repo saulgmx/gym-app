@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.7 (borrador) · **Fecha:** 18-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.8 (borrador) · **Fecha:** 18-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -212,7 +212,7 @@ Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). 
 |---|---|---|
 | Hoy | `/` | Fecha y semana; aviso persistente de dolor (§6.2); tarjeta "Tu sesión de hoy" con la sesión, duración estimada, bloque, RIR, estado de la última molestia lumbar, "Hoy subes" (ejercicios con sugerencia de subida) y "Empezar sesión"; desplegable con los ejercicios del día (series × repeticiones, sin cargas); tira "Esta semana" con el avance; "Otra sesión de esta semana". Con una sesión en curso, la tarjeta pasa a "Sesión en curso": tiempo, avance, tiempo restante, "Vas en", "Continuar sesión" y "Descartar sesión" (spec 003) |
 | Otro día de la semana | `/dia/:date` | Vista previa de una sesión de pesas de la semana actual distinta de hoy y "Empezar sesión" (spec 002) |
-| Sesión activa | `/sesion/:workoutId/:exerciseIndex` | Ejercicio actual, banner de sugerencia, tabla de series (anterior, kg, reps, RIR, check), consejo técnico, temporizador, "Terminar sesión" |
+| Sesión activa | `/sesion/:workoutId/:exerciseIndex` | Encabezado con salida, "Ejercicio N de M" (menú de ejercicios) y tiempo; aviso de salida (seguir, salir y continuar después, descartar); tarjeta del ejercicio compacta o completa (series, rango, RIR, consejo, alternativa); tabla de series (anterior, kg, reps, RIR, check); pie con "Siguiente: …", "Anterior" y "Siguiente" (spec 004). Fase 3: "Terminar y guardar". Fase 4: banner de sugerencia y temporizador |
 | Continuar sesión | `/sesion/:workoutId` | Sin pantalla propia: redirige al primer ejercicio con series pendientes (o al último) (spec 002) |
 | Cierre | `/sesion/:workoutId/cierre` | Resumen, selector de dolor 0-10 con mensaje, banderas rojas, próxima sesión, notas, "Guardar sesión" |
 | Progreso | `/progreso` | Selector de ejercicio, gráfica por semana, historial de dolor lumbar, peso corporal |

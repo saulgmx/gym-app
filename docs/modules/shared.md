@@ -81,7 +81,7 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `Button` | Variantes `primary`, `secondary`, `ghost`; `aria-label` obligatorio si es solo icono |
 | `IconButton` | Botón cuadrado de 44 px |
 | `NumberField` | `<input>` con `inputmode`, `label`, pasos y teclado numérico |
-| `Dialog`, `ConfirmDialog` | `<dialog>` nativo con foco atrapado |
+| `Dialog`, `ConfirmDialog` | `<dialog>` nativo con foco atrapado (ver abajo) |
 | `ChipSelect` | Selección única con chips (RF-31 selector de ejercicio) |
 | `Chart` | Envoltorio de uPlot (ADR-0004) con tabla alternativa accesible |
 | `StatCard` | Valor + etiqueta |
@@ -100,6 +100,28 @@ Vite tipa cada CSS Module como un índice de strings, así que con `noUncheckedI
 
 Los componentes se importan desde `@/shared/ui` (su `index.ts`); las hojas globales `.css` se importan una sola vez desde `app/main.tsx`.
 
+### `Dialog` (spec 004 plan §6.1)
+
+```ts
+function Dialog(props: {
+  open: boolean;                      // controlado: true → showModal(), false → close()
+  onClose: () => void;                // Escape (evento cancel) y, si dismissOnBackdrop, tocar el fondo
+  placement: 'bottom' | 'top';        // hoja inferior con zona segura, o panel bajo el encabezado
+  dismissOnBackdrop?: boolean;        // false por defecto
+  labelledBy: string;                 // id del título visible
+  describedBy?: string;
+  initialFocus?: RefObject<HTMLElement | null>; // si falta, el primer control
+  className?: string;
+  children: ReactNode;
+}): JSX.Element;
+```
+
+- `<dialog>` nativo con `showModal()`: el resto de la página queda inerte. Escape no cierra solo: llama a `onClose` y decide quien lo usa.
+- Al abrir, el foco va a `initialFocus` o al primer control; al cerrarse, vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace).
+- Tocar el fondo: el `<dialog>` no tiene relleno y su contenido llena la caja, así que un clic cuyo `target` es el propio `<dialog>` cayó en `::backdrop`. Solo llama a `onClose` con `dismissOnBackdrop`.
+- `bottom`: a todo el ancho, anclado abajo con `env(safe-area-inset-bottom)` (como `ConfirmDialog`). `top`: bajo el encabezado, con los márgenes de la página, `max-height` y desplazamiento propio.
+- Lo usan `ConfirmDialog`, el menú de `SessionHeader` (`training/ui`) y el aviso de salida de la sesión (`app`).
+
 ### `ConfirmDialog` (spec 002, T17)
 
 ```ts
@@ -110,6 +132,7 @@ function ConfirmDialog(props: {
   confirmLabel: string;
   cancelLabel?: string;          // 'Cancelar' por defecto
   destructive?: boolean;         // confirmar con --warn y texto --bg (10.61:1)
+  dismissOnBackdrop?: boolean;   // false por defecto; true: tocar el fondo llama a onCancel (spec 004)
   onConfirm: () => void;
   onCancel: () => void;
 }): JSX.Element;
@@ -117,7 +140,8 @@ function ConfirmDialog(props: {
 
 - `<dialog>` nativo con `showModal()`: el resto de la página queda inerte.
 - El foco inicial va a "Cancelar", nunca a la acción: un Enter o un toque accidental no confirma (P-2).
-- Escape (evento `cancel`) llama a `onCancel`; tocar fuera del diálogo no lo cierra.
+- Está hecho con `Dialog` (`placement="bottom"`, foco inicial en "Cancelar").
+- Escape (evento `cancel`) llama a `onCancel`. Tocar fuera del diálogo no lo cierra, salvo con `dismissOnBackdrop`, que solo usa la sesión activa (spec 004 AC-16); "Hoy" no lo activa.
 - Al cerrarse, el foco vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace).
 - Botones ≥ 44 px; confirmar es `--accent` con texto `--bg` (14.10:1), o `--warn` en `destructive`.
 - Anclado abajo, a todo el ancho, con margen `env(safe-area-inset-bottom)`: la "confirmación inferior" del diseño de "Hoy" (spec 003 plan §6.12). Sin opción de posición mientras ningún uso pida otra (P-7).
@@ -133,4 +157,4 @@ function ConfirmDialog(props: {
 | `SuggestionBanner` | `progression/ui` | |
 | `SetRow`, `SetTable`, `RestTimer` | `training/ui` | |
 | `PainSelector`, `RedFlagsChecklist` | `health/ui` | |
-| `StatCard`, `Chart`, `ChipSelect`, `SafetyNote`, `ConfirmDialog` | `shared/ui` | Genéricos |
+| `StatCard`, `Chart`, `ChipSelect`, `SafetyNote`, `Dialog`, `ConfirmDialog` | `shared/ui` | Genéricos |
