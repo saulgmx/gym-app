@@ -108,15 +108,16 @@ describe('progressOf: ejercicios hechos (RN-TRN-21)', () => {
     expect(p.itemsDone).toBe(1);
   });
 
-  it('RN-TRN-21: un ejercicio sin ninguna serie no cuenta como hecho ni como actual', () => {
+  it('RN-TRN-21: un ejercicio sin ninguna serie cuenta como hecho y no es el actual (spec 003 §7, datos inconsistentes)', () => {
     const p = progress([
       ['a', 'xx'],
       ['b', ''],
       ['c', 'x.'],
     ]);
-    expect(p.items).toEqual(['done', 'pending', 'current']);
-    expect(p.itemsDone).toBe(1);
+    expect(p.items).toEqual(['done', 'done', 'current']);
+    expect(p.itemsDone).toBe(2);
     expect(p.current?.itemIndex).toBe(3);
+    expect(p.itemsWithDoneSets).toBe(2);
   });
 });
 

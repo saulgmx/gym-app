@@ -27,11 +27,12 @@ export function progressOf(
     return { item, pending: own.filter(isPending), doneCount: own.filter((s) => s.done).length };
   });
 
-  // RN-TRN-21: the current item is the first with a set left; done = it has sets and none is left.
+  // RN-TRN-21: the current item is the first with a set left; done = none is left. An item with
+  // no sets counts as done (spec 003 §7, inconsistent data: RN-TRN-10 prevents it).
   const currentIndex = perItem.findIndex((entry) => entry.pending.length > 0);
   const items = perItem.map((entry, index): WorkoutProgress['items'][number] => {
     if (index === currentIndex) return 'current';
-    return entry.doneCount > 0 && entry.pending.length === 0 ? 'done' : 'pending';
+    return entry.pending.length === 0 ? 'done' : 'pending';
   });
 
   const currentEntry = perItem[currentIndex];
