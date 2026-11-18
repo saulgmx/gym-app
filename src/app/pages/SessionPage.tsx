@@ -8,12 +8,14 @@ import {
   type WorkoutView,
 } from '@/modules/training';
 import type { ID } from '@/shared/kernel';
-import { ConfirmDialog, cx } from '@/shared/ui';
+import { cx } from '@/shared/ui';
 import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
-import { discardDialogText } from './discard-dialog';
 import { Elapsed } from './Elapsed';
+import { formatElapsed } from '../format-time';
 import { ExerciseCard } from './session/ExerciseCard';
+import { ExitSheet } from './session/ExitSheet';
+import { formatExitSummary } from './session/format';
 import styles from './SessionPage.module.css';
 import pageStyles from './pages.module.css';
 
@@ -58,8 +60,8 @@ function SessionContent() {
   if (index === null)
     return <Navigate to={`/sesion/${workoutId}/${String(resumeIndex(view))}`} replace />;
   const { workout } = view;
-  const elapsed =
-    workout.date === today ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
+  const sameDay = workout.date === today;
+  const elapsed = sameDay ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
   // Keyed by index: each exercise starts fresh (message, dialog) and focuses its name.
   return (
     <ExerciseScreen
@@ -67,6 +69,7 @@ function SessionContent() {
       view={view}
       index={index}
       elapsed={elapsed}
+      sameDay={sameDay}
       expanded={expanded}
       onToggleDetails={() => {
         setExpanded(!expanded);
@@ -91,18 +94,22 @@ function ExerciseScreen({
   view,
   index,
   elapsed,
+  sameDay,
   expanded,
   onToggleDetails,
 }: {
   view: WorkoutView;
   index: number;
   elapsed: ReactNode;
+  /** The session is from the day the page opened: the exit text then carries the time. */
+  sameDay: boolean;
   expanded: boolean;
   onToggleDetails: () => void;
 }) {
-  const { training } = useApp();
+  const { training, clock } = useApp();
   const navigate = useNavigate();
-  const [confirming, setConfirming] = useState(false);
+  // The exit sheet and the text it shows, computed when it opens (spec 004 §6.3).
+  const [exitSummary, setExitSummary] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const title = useRef<HTMLHeadingElement>(null);
 
@@ -123,8 +130,15 @@ function ExerciseScreen({
     setMessage(result.ok ? '' : errorMessages[result.error.code]);
   }
 
+  function openExit() {
+    const progress = workoutProgress(view);
+    const seconds = (Date.parse(clock.now()) - Date.parse(workout.startedAt)) / 1000;
+    const time = sameDay ? formatElapsed(seconds) : null;
+    setExitSummary(formatExitSummary(progress.itemsDone, progress.itemCount, time));
+  }
+
   async function discard() {
-    setConfirming(false);
+    setExitSummary(null);
     const result = await training.discardWorkout(workout.id);
     if (result.ok) void navigate('/', { replace: true });
     else setMessage(errorMessages[result.error.code]);
@@ -137,11 +151,7 @@ function ExerciseScreen({
         index={index}
         elapsed={elapsed && <TimeLabel>{elapsed}</TimeLabel>}
         onNavigate={(i) => void navigate(path(i))}
-        // Until the exit sheet comes (spec 004 T10), the arrow opens the discard confirmation,
-        // so discarding stays reachable once the menu no longer has it.
-        onExit={() => {
-          setConfirming(true);
-        }}
+        onExit={openExit}
       />
       <ExerciseCard
         view={view}
@@ -171,14 +181,14 @@ function ExerciseScreen({
           </Link>
         )}
       </nav>
-      <ConfirmDialog
-        open={confirming}
-        {...discardDialogText(workoutProgress(view))}
-        destructive
-        onConfirm={() => void discard()}
-        onCancel={() => {
-          setConfirming(false);
+      <ExitSheet
+        open={exitSummary !== null}
+        summary={exitSummary ?? ''}
+        counts={workoutProgress(view)}
+        onClose={() => {
+          setExitSummary(null);
         }}
+        onDiscard={() => void discard()}
       />
     </div>
   );

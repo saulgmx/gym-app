@@ -121,23 +121,31 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
   await freezeClockAt(page, MONDAY);
   await page.goto('/');
   await startFromToday(page);
-  // Until T10 brings the exit sheet, the arrow opens the discard confirmation (spec 004 T6).
   // From the keyboard: WebKit, like Safari, does not focus a button on a mouse click, so only a
   // keyboard (or screen reader) user has a focus to get back.
   const exit = page.getByRole('button', { name: 'Salir de la sesión' });
   await exit.focus();
   await page.keyboard.press('Enter');
+  const sheet = page.getByRole('dialog', { name: '¿Salir de la sesión?' });
+  await expect(sheet.getByRole('button', { name: 'Seguir entrenando' })).toBeFocused();
+  await sheet.getByRole('button', { name: 'Descartar sesión' }).click();
   const dialog = page.getByRole('dialog', { name: '¿Descartar la sesión?' });
 
-  // Cancel first: nothing changes, and focus starts on Cancelar (P-2).
+  // Cancel first: back to the exit sheet, nothing changes, and focus starts on Cancelar (P-2).
   await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Seguir entrenando' })).toBeFocused();
   await expect(page).toHaveURL(SESSION_URL);
 
-  // Focus is back on the arrow after cancelling.
+  // "Seguir entrenando" closes everything and gives focus back to the arrow (spec 004 AC-13).
+  await page.keyboard.press('Enter');
+  await expect(sheet).toBeHidden();
   await expect(exit).toBeFocused();
+
   await exit.click();
+  await sheet.getByRole('button', { name: 'Descartar sesión' }).click();
   await dialog.getByRole('button', { name: 'Sí, descartar' }).click();
 
   await expect(page).toHaveURL('/');

@@ -551,8 +551,9 @@ describe('Descartar sesión', () => {
     const { services, workout } = await withWorkout();
     const opened = await open(`/sesion/${workout.id}/2`, services);
     await heading();
-    // Until T10 brings the exit sheet, the arrow opens the discard confirmation (spec 004 T6).
+    // Through the exit sheet (spec 004 AC-15).
     await opened.user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
+    await opened.user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
     return { ...opened, services, workout };
   }
 
@@ -580,6 +581,7 @@ describe('Descartar sesión', () => {
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
     await user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
+    await user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
 
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
     expect(dialog).toHaveAccessibleDescription(
@@ -594,7 +596,9 @@ describe('Descartar sesión', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Back to the exit sheet (spec 004 AC-16), nothing changed.
+    expect(screen.queryByRole('dialog', { name: '¿Descartar la sesión?' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: '¿Salir de la sesión?' })).toBeVisible();
     expect(router.state.location.pathname).toBe(`/sesion/${workout.id}/2`);
     expect((await services.training.getWorkout(workout.id))?.status).toBe('in_progress');
   });
