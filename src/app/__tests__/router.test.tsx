@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { closeTestDatabases, renderRoute } from './test-app';
+import { closeTestDatabases, renderRoute, tapToNavigate } from './test-app';
 
 // Spec 000 AC-22, AC-24, AC-25 and §6 (empty pages, document titles), on the real route table.
 
@@ -32,7 +32,7 @@ describe('app router', () => {
     // Wait for Hoy to finish loading: a click while its content is still suspended on use(ready)
     // leaves the navigation pending inside the click's act.
     await screen.findByRole('list', { name: 'Semana' });
-    await userEvent.click(screen.getByRole('link', { name: 'Progreso' }));
+    await tapToNavigate(userEvent.setup(), screen.getByRole('link', { name: 'Progreso' }));
 
     expect(router.state.location.pathname).toBe('/progreso');
     expect(screen.getByRole('heading', { level: 1, name: 'Progreso' })).toBeInTheDocument();
@@ -41,9 +41,11 @@ describe('app router', () => {
     expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
   });
 
-  it('AC-24: /sesion/:workoutId/:exerciseIndex shows the empty session page without TabBar', async () => {
+  it('AC-24: /sesion/:workoutId/:exerciseIndex shows the session page without TabBar', async () => {
     await renderAt('/sesion/w1/0');
-    expect(screen.getByRole('heading', { level: 1, name: 'Sesión' })).toBeInTheDocument();
+    // w1 does not exist, so the page says so (spec 002 AC-28).
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sesión' })).toBeInTheDocument();
+    expect(screen.getByText('Esta sesión ya no está disponible.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Volver a Hoy' })).toHaveAttribute('href', '/');
     expect(tabBar()).not.toBeInTheDocument();
   });

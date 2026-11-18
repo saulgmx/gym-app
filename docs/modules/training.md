@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.12 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.13 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -152,7 +152,7 @@ export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fas
 
 ### `SessionHeader` (spec 002 §6, T19)
 
-- Muestra `workout.name` como título y "Ejercicio 2 de 7". No sabe de rutas: `onNavigate(index)` y `onDiscard()` los cablea `app`. "Anterior" y "Siguiente" van en el pie de `SessionPage`, al alcance del pulgar, no aquí.
+- Muestra `workout.name` como texto (no encabezado: el `h1` de la página es el ejercicio, spec 002 §6) y "Ejercicio 2 de 7". No sabe de rutas: `onNavigate(index)` y `onDiscard()` los cablea `app`. "Anterior" y "Siguiente" van en el pie de `SessionPage`, al alcance del pulgar, no aquí.
 - **"Ver ejercicios":** `<button aria-expanded>` que despliega un `<ol>` con un botón por ejercicio, en el orden de los ítems: nombre y avance ("Prensa de piernas · 1 de 2 series"; "1 de 1 serie" con una sola). El actual lleva `aria-current="step"`; uno con todas sus series hechas añade "hecho". Elegir uno llama a `onNavigate` y cierra la lista.
 - Al final de la lista, "Descartar sesión" llama a `onDiscard`; el `ConfirmDialog` lo pone la página.
 
@@ -247,3 +247,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 12. **Textos de error, T15 (contrato v1.10):** `describeError` recibe `SetErrorContext` (métrica y asistencia) para que `app` elija el texto de `invalid-set-values`; los textos viven en `app/errors/messages.ts` (ADR-0010).
 13. **`SetTable`, antes de T18 (contrato v1.11):** formato de "anterior", check nativo, interruptor de asistencia que invierte el signo de las series no hechas, "Quitar serie" sobre la última y borradores que conservan lo escrito con foco o error.
 14. **`SessionHeader`, antes de T19 (contrato v1.12):** `Workout.name` guarda el nombre de la plantilla en la instantánea (RN-TRN-02), sin migración porque `workouts` aún no está en producción; el encabezado recibe callbacks en vez de rutas, y "Anterior"/"Siguiente" viven en el pie de la página.
+15. **`SessionHeader` en T22 (contrato v1.13):** el nombre de la sesión deja de ser `h1`, porque spec 002 §6 reserva el `h1` para el ejercicio.

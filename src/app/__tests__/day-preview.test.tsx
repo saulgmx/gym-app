@@ -9,6 +9,7 @@ import {
   createTestServices,
   renderRoute,
   renderRouteWhileLoading,
+  tapToNavigate,
 } from './test-app';
 
 // Another workout day of this week in /dia/:date (spec 002 AC-8, RN-TRN-14, plan §6.7) over the
@@ -67,7 +68,7 @@ describe('DayPreviewPage', () => {
   it('AC-8: se llega desde "Otra sesión de esta semana" en "Hoy"', async () => {
     const { router, user } = await openDay('/');
 
-    await user.click(await screen.findByRole('link', { name: 'Vie 20 · Full body A' }));
+    await tapToNavigate(user, await screen.findByRole('link', { name: 'Vie 20 · Full body A' }));
 
     expect(router.state.location.pathname).toBe('/dia/2026-11-20');
     expect(

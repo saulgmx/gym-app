@@ -11,6 +11,7 @@ interface SessionHeaderProps {
 }
 
 // Session name, position and the exercise list (docs/modules/training.md §4, SessionHeader).
+// The page's h1 is the exercise (spec 002 §6), so the session name is plain text.
 export function SessionHeader({ view, index, onNavigate, onDiscard }: SessionHeaderProps) {
   const [open, setOpen] = useState(false);
   const listId = useId();
@@ -32,7 +33,7 @@ export function SessionHeader({ view, index, onNavigate, onDiscard }: SessionHea
 
   return (
     <header className={styles.header}>
-      <h1 className={styles.title}>{workout.name}</h1>
+      <p className={styles.title}>{workout.name}</p>
       <p className={styles.position}>
         Ejercicio {index} de {workout.items.length}
       </p>

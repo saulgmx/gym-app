@@ -67,7 +67,9 @@ describe('SessionHeader', () => {
   it('AC-25: el nombre de la sesión y "Ejercicio 1 de 2"', () => {
     setup(1);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Full body A');
+    expect(screen.getByText('Full body A')).toBeInTheDocument();
+    // The page's h1 is the exercise (spec 002 §6).
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
     expect(screen.getByText('Ejercicio 1 de 2')).toBeInTheDocument();
   });
 

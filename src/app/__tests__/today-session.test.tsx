@@ -184,7 +184,7 @@ describe('Descartar sesión', () => {
   it('AC-34: confirmar la descarta y vuelve a ofrecer "Iniciar sesión"', async () => {
     const { services, user, workout } = await openWithSession();
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
-    expect(dialog).toHaveTextContent('No contará en tu historial y no podrás retomarla.');
+    expect(dialog).toHaveTextContent('Las series registradas no contarán en tu historial.');
 
     await user.click(within(dialog).getByRole('button', { name: 'Descartar' }));
 

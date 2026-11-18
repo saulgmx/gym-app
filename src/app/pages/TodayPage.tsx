@@ -14,6 +14,7 @@ import { useApp } from '../context';
 import { errorMessages } from '../errors/messages';
 import { formatLongDate, formatLongDateTitle, formatShortDay } from '../format-date';
 import { useToday } from '../hooks/useToday';
+import { discardDialogText } from './discard-dialog';
 import { StartWorkoutButton } from './StartWorkoutButton';
 import styles from './TodayPage.module.css';
 
@@ -137,9 +138,7 @@ function ActiveWorkout({ workout, today }: { workout: Workout; today: LocalDate 
       </p>
       <ConfirmDialog
         open={confirming}
-        title="¿Descartar la sesión?"
-        message="No contará en tu historial y no podrás retomarla."
-        confirmLabel="Descartar"
+        {...discardDialogText}
         destructive
         onConfirm={() => void discard()}
         onCancel={() => {

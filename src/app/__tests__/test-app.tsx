@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { act, render } from '@testing-library/react';
+import type { userEvent } from '@testing-library/user-event';
 import { Dexie } from 'dexie';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { fixedClock, type Clock } from '@/shared/kernel';
@@ -63,4 +64,15 @@ export async function renderRoute(path: string, services: AppServices = createTe
 /** Synchronous render, for a page whose `ready` never settles (loading state). */
 export function renderRouteWhileLoading(path: string, services: AppServices) {
   return renderTree(path, services);
+}
+
+/**
+ * A tap that navigates. React Router runs navigations as async transitions; inside the sync act()
+ * of a plain click the pending work can be dropped, so the click is awaited inside act().
+ */
+export async function tapToNavigate(
+  user: ReturnType<typeof userEvent.setup>,
+  element: HTMLElement,
+) {
+  await act(() => user.click(element));
 }
