@@ -1,8 +1,12 @@
+import 'fake-indexeddb/auto';
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { Block, PlannedItem, ProgramPosition, TodayPlan } from '@/modules/plan';
 import type { ID, LocalDate } from '@/shared/kernel';
+import { AppContext } from '../context';
 import { DayCard } from '../pages/today/DayCard';
+import { closeTestDatabases, createTestServices } from './test-app';
 
 // DayCard with a hand-built plan (spec 003 §6.2, AC-5): the real seed names its deload block
 // "Descarga", so the deload chip is checked here with a block of another name.
@@ -56,9 +60,22 @@ const deloadDay: TodayPlan = {
   plannedItems: [item],
 };
 
+afterEach(closeTestDatabases);
+
+// "Empezar sesión" needs the app services and a router.
+function renderCard(today: TodayPlan) {
+  render(
+    <AppContext value={createTestServices()}>
+      <MemoryRouter>
+        <DayCard today={today} date={'2026-11-16' as LocalDate} />
+      </MemoryRouter>
+    </AppContext>,
+  );
+}
+
 describe('DayCard', () => {
   it('AC-5: en semana de descarga añade el chip "Descarga" al del bloque y al RIR', () => {
-    render(<DayCard today={deloadDay} date={'2026-11-16' as LocalDate} canStart={false} />);
+    renderCard(deloadDay);
 
     const region = screen.getByRole('region', { name: 'Tu sesión de hoy' });
     expect(
@@ -75,7 +92,7 @@ describe('DayCard', () => {
       ...deloadDay,
       position: { ...position, isDeloadWeek: false },
     };
-    render(<DayCard today={normal} date={'2026-11-16' as LocalDate} canStart={false} />);
+    renderCard(normal);
 
     expect(screen.queryByText('Descarga')).not.toBeInTheDocument();
   });

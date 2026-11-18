@@ -34,7 +34,7 @@ function outsideMessage(today: TodayPlan): string {
     : `Terminaste el plan de ${String(position.totalWeeks)} semanas.`;
 }
 
-function Body({ today, date, canStart }: { today: TodayPlan; date: LocalDate; canStart: boolean }) {
+function Body({ today, date }: { today: TodayPlan; date: LocalDate }) {
   const block = today.position.block?.name;
   switch (today.kind) {
     case 'workout': {
@@ -53,7 +53,7 @@ function Body({ today, date, canStart }: { today: TodayPlan; date: LocalDate; ca
               today.position.isDeloadWeek && 'Descarga',
             ]}
           />
-          {canStart && <StartWorkoutButton date={date} plannedFor={date} />}
+          <StartWorkoutButton date={date} plannedFor={date} />
         </>
       );
     }
@@ -78,22 +78,15 @@ function Body({ today, date, canStart }: { today: TodayPlan; date: LocalDate; ca
   }
 }
 
-export function DayCard({
-  today,
-  date,
-  canStart,
-}: {
-  today: TodayPlan;
-  date: LocalDate;
-  canStart: boolean; // false while a session is in progress
-}) {
+// Only in state D: with a session in progress, ActiveSessionCard takes its place (§6.3).
+export function DayCard({ today, date }: { today: TodayPlan; date: LocalDate }) {
   const eyebrowId = useId();
   return (
     <section className={styles.card} aria-labelledby={eyebrowId}>
       <p id={eyebrowId} className={styles.eyebrow}>
         Tu sesión de hoy
       </p>
-      <Body today={today} date={date} canStart={canStart} />
+      <Body today={today} date={date} />
     </section>
   );
 }

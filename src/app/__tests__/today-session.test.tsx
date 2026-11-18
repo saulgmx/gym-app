@@ -159,13 +159,14 @@ describe('Continuar sesión', () => {
 
     const current = await screen.findByRole('region', { name: 'Sesión en curso' });
     expect(current).toHaveTextContent('Full body A');
+    // spec 003 AC-18: "Continuar" opens the exercise of "Vas en" (nothing done yet: the first).
     expect(
       within(current).getByRole('link', { name: 'Continuar sesión del lunes 16 de noviembre' }),
-    ).toHaveAttribute('href', `/sesion/${workout.id}`);
+    ).toHaveAttribute('href', `/sesion/${workout.id}/1`);
     expect(within(current).getByRole('button', { name: 'Descartar sesión' })).toBeInTheDocument();
     expect(startButton()).not.toBeInTheDocument();
-    // The rest of "Hoy" stays: today is still Full body B.
-    expect(screen.getByRole('heading', { level: 2, name: 'Full body B' })).toBeInTheDocument();
+    // spec 003 §6.3: the session card takes the place of today's card; never both.
+    expect(screen.queryByRole('region', { name: 'Tu sesión de hoy' })).not.toBeInTheDocument();
   });
 
   it('una sesión de hoy dice solo "Continuar sesión"', async () => {
