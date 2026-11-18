@@ -36,7 +36,7 @@ export function displayMinutes(seconds: number): number;
 
 - `index.ts` también exporta `formatRir` ("RIR 3-4"), que ya existe en `ui/format.ts`.
 - `TodayPlan` no cambia: la duración se calcula en la página con `plannedSessionSeconds(today.plannedItems)`, sin tocar el servicio ni los hooks.
-- `PlanExerciseList({ items })`: cada fila muestra el nombre, "series × reps" y la nota. Ya no muestra "RIR" por ejercicio, porque es el mismo para todos (RN-PLN-06) y va una sola vez: en el chip de "Hoy" y bajo el título de la vista previa de `/dia/:date` ("Full body A · RIR 3-4", decisión 6.11).
+- `PlanExerciseList({ items })`: cada fila muestra el nombre, "series × reps" y la nota. Ya no muestra "RIR" por ejercicio, porque es el mismo para todos (RN-PLN-06) y va una sola vez: en el chip de "Hoy" y en la vista previa de `/dia/:date`, en una línea bajo el `h2` de la sesión ("RIR 3-4", decisión 6.11).
 - `WeekStrip({ days, weekStart, today })`: misma firma. Las marcas dependen de `day.kind` y de si la fecha es pasada, hoy o futura (spec §6.4). El estado "hecha" no entra hasta la fase 3 (P-7). Entonces la firma ganará un `done` por día que calcula `app`.
 
 **`training` v1.16 (§4, API pública):**
@@ -100,7 +100,7 @@ Alternativa: que `getTodayPlan` devuelva `estimatedSeconds`. Se descarta porque 
 `SessionPage` usa `workoutProgress(view).current?.itemIndex ?? items.length` para redirigir (spec 002 AC-4, AC-27). Es la misma regla que "Vas en", con una sola implementación (RN-TRN-21).
 
 ### 6.4 Una consulta reactiva para D2
-`useActiveWorkoutView` reemplaza a `useActiveWorkout` en `TodayPage`: un solo `useLiveQuery` sobre `workouts` y `sets`, que se actualiza al marcar series en otra pestaña. Sigue el patrón de RN-TRN-19 (`undefined` cargando, `null` sin activo, con clave fija `'active'`).
+`useActiveWorkoutView` reemplaza a `useActiveWorkout` en `TodayPage`: un solo `useLiveQuery` sobre `workouts` y `sets`, que se actualiza al marcar series en otra pestaña. Sigue el patrón de RN-TRN-19 (`undefined` cargando, `null` sin activo, con clave fija `'active-view'`).
 
 ### 6.5 Reloj por segundo aislado
 `<Elapsed startedAt clock />` es el único componente con `setInterval` (1 s), así que solo su texto se vuelve a renderizar (P-6). Lee `clock.now()` y calcula los segundos con `Date.parse` de los dos `Instant` (ADR-0009: no se comparan como texto). Con un resultado negativo muestra "0:00"; el formato es `m:ss` o `h:mm:ss`. No es región viva (`aria-live` ausente). Si `workout.date ≠ hoy`, no se monta.
@@ -124,7 +124,7 @@ Sin tokens nuevos: acento, `--surface-2`, `--border`, `--text-muted` y `--warn` 
 Hoy son 160.08 kB de 200 kB. El cambio son unos pocos componentes y funciones puras, sin dependencias nuevas. Se mide en la última tarea (AC-28).
 
 ### 6.11 El RIR en la vista previa
-Al quitar el RIR por fila de `PlanExerciseList`, la vista previa de `/dia/:date` lo muestra una vez bajo el título. Alternativas descartadas: una opción del componente para mostrarlo por fila (dos modos para un dato que es igual en todas las filas) y dejar la vista previa sin RIR (pierde información).
+Al quitar el RIR por fila de `PlanExerciseList`, la vista previa de `/dia/:date` lo muestra una vez, en una línea bajo el `h2` con el nombre de la sesión ("RIR 3-4"). No se repite el nombre junto a la fecha del `h1` (decisión del 18-nov en T8). Hasta que T13 traiga el chip, la tarjeta actual de "Hoy" lo muestra igual, para que "Hoy" no se quede sin RIR entre los puntos de control B y C. Alternativas descartadas: una opción del componente para mostrarlo por fila (dos modos para un dato que es igual en todas las filas) y dejar la vista previa sin RIR (pierde información).
 
 ### 6.12 El diálogo de confirmación, abajo para todos
 `ConfirmDialog` cambia de posición sin una opción nueva (`placement`). Hoy solo lo usa el descarte, así que una variante no tendría quien la use (P-7). Si algún día hace falta un diálogo centrado, se añade la opción entonces.
