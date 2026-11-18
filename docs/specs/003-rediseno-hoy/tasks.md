@@ -52,6 +52,19 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 **Punto de control D:** PR "today redesign handoff".
 
+## Modelo recomendado por tarea
+
+Guía para elegir el modelo de Claude Code en cada tarea (18-nov). Si el costo o los límites de uso no importan, Opus en todas es lo más simple y reduce el retrabajo.
+
+| Punto | Modelo | Por qué |
+|---|---|---|
+| A (T1-T4) | Sonnet | Funciones puras bien especificadas, con los valores esperados ya calculados |
+| B (T5-T10) | Opus en T5-T7; Sonnet en T8-T10 | T5-T7 tocan la arquitectura (fronteras, consulta reactiva, migrar `firstPending`); T8-T10 son componentes chicos |
+| C (T11-T15) | Sonnet en T11, T12 y T15; Opus en T13-T14 | T13-T14 son la página completa, con muchos criterios a la vez y las trampas de pruebas del handoff |
+| D (T16-T18) | Opus en T16; Sonnet en T18 | T16 es E2E en WebKit con `page.clock`, donde más se pierde con pruebas inestables. T17 es tuya en el iPhone |
+
+Cambiar a Opus en cuanto Sonnet decida algo que no está en el plan o se atore con una prueba inestable. Con cualquier modelo, cada tarea cierra con `npm run lint` y `npm test` en verde y las mutaciones anotadas en "Verificación".
+
 ## Notas
 
 - **Ramas:** primero se fusiona `docs/003-today-redesign-plan` (plan, contratos y estas tareas). La implementación va en `feat/003-today-redesign-a` a `-d`, cada una desde `main` actualizado, con un commit por tarea y un PR por punto de control ("Create a merge commit").
