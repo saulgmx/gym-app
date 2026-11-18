@@ -17,6 +17,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Chromium, WebKit and their system deps come preinstalled, so E2E downloads nothing from the
+    # Ubuntu mirror (it sometimes trickled at ~60 kB/s and timed out). The tag must match
+    # @playwright/test in package.json: update both together, and the digest with them.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-resolute@sha256:dcf385f7a31aa1cbb0a7a0c97a539142bf70480b661f89f26a774ec1fe2edd1d
+      options: --user 1001
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,13 +45,6 @@ jobs:
       # Initial JS < 200 kB gzip (QS-10, AC-34); measures dist/, so it runs after the build.
       - run: npm run size
 
-      # apt mirrors sometimes stall while installing the browser deps; time out and retry
-      # (the runner's mirror list lets a retry move to another mirror) instead of hanging the job.
-      - run: |
-          echo 'Acquire::Retries "3"; Acquire::http::Timeout "20"; Acquire::https::Timeout "20";' \
-            | sudo tee /etc/apt/apt.conf.d/99-ci-timeouts
-
-      # E2E on vite preview with the production headers (AC-1, AC-23, AC-26, AC-36).
-      - run: npx playwright install --with-deps chromium webkit
-        timeout-minutes: 5
+      # E2E on vite preview with the production headers (AC-1, AC-23, AC-26, AC-36). The
+      # browsers come from the container image above.
       - run: npm run test:e2e
