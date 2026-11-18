@@ -13,7 +13,7 @@
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
 - `docs/plan.md`: plan de entrenamiento de 3 bloques (fuente del seed).
-- `docs/design-hoy.md`: diseño elegido de "Hoy" (tableros D y D2 del lienzo de diseño), alineado con la spec 003. `docs/design-sesion-activa.md` (sin commit todavía): diseño de la sesión activa, para una spec aparte.
+- `docs/design-hoy.md`: diseño elegido de "Hoy" (tableros D y D2 del lienzo de diseño), alineado con la spec 003. `docs/design-sesion-activa.md`: diseño elegido de la sesión activa (tablero "Sesión activa A3", variantes Primero, Intermedio y Último), alineado con la spec 004.
 - Prototipo visual (4 pantallas): https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
 - Repo `saulgmx/gym-app` (público) en `~/dev/personal/side-projects/gym-app`. **Fase 0 completa** (spec 000 implementada):
   - A y B: herramientas, fronteras verificadas, esqueleto de módulos, `shared/kernel` (tipos branded, `Result`, fechas, números, relojes, UUIDv7, `DataPort`) y `shared/events` (bus en memoria + `@/shared/events/testing`).
@@ -102,8 +102,10 @@
    5. ~~Punto de control B, consulta y componentes~~ (T5–T10, PR #23): `getActiveWorkoutView`, `workoutProgress`, `SessionPage` con `current`, `PlanExerciseList`, `WeekStrip` y `ConfirmDialog`.
    6. ~~Punto de control C, página~~ (T11–T15, PR #24): formatos, `Elapsed`, estados D y D2; bundle 161.91 kB.
    7. ~~Punto de control D, verificación y cierre~~ (T16–T18, PR de cierre): E2E, iPhone y este cierre. Spec y plan 003 marcados como implementados.
-11. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 004**. Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión" y el aviso y el chip de espalda en "Hoy" (spec 003 §6.6).
-12. Rediseño de la sesión activa (`docs/design-sesion-activa.md`): spec aparte, sin fecha.
+11. **Siguiente: rediseño de la sesión activa** (spec 004, fase 2.5, desde `docs/design-sesion-activa.md`). Pasos:
+   1. **Spec 004 aprobada** (18-nov): `docs/specs/004-rediseno-sesion/spec.md` (AC-1 a AC-38). Encabezado en una fila (flecha, "Ejercicio N de M ▾", tiempo), aviso de salida con "Seguir entrenando", "Salir y continuar después" y "Descartar sesión" (Cancelar vuelve al aviso), menú flotante con el nombre de la sesión como título, tarjeta compacta/completa (empieza compacta y recuerda la elección sin guardarla), "Seg", pistas de reps y RIR, serie actual resaltada y línea "Siguiente: …" / "Último ejercicio de hoy" en el pie. Sin base de datos ni reglas nuevas (RN-TRN-21). Fuera: "Terminar y guardar" (spec 005), descanso y sugerencias (fase 4). El tiempo no se muestra en una sesión de otro día, como en "Hoy" (§8, decisión 9).
+   2. Al aprobar: contrato `training` v1.18 (`SessionHeader`, `SetTable`) y spec v0.8 (§7.2); luego plan técnico y tareas.
+12. **Fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 005** (la 004 es el rediseño de la sesión activa). Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión", el aviso y el chip de espalda en "Hoy" (spec 003 §6.6) y "Terminar y guardar lo hecho" en el aviso de salida de la sesión (spec 004).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -162,4 +164,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3 (MVP usable en el gym). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y docs/modules/health.md. Empieza por la pregunta pendiente 8 (bandas de dolor, health.md §10), que bloquea la fase, y luego la spec 004. Guíame paso a paso, una tarea a la vez."
+"Seguimos con el rediseño de la sesión activa (spec 004). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y docs/specs/004-rediseno-sesion/spec.md. La spec está aprobada: sigue con el plan técnico (contrato `training` v1.18 y spec v0.8 §7.2 primero). Después viene la fase 3 (spec 005), que empieza por la pregunta pendiente 8 (health.md §10). Guíame paso a paso, una tarea a la vez."
