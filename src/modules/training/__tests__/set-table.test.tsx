@@ -175,12 +175,12 @@ describe('columnas y campos', () => {
     expect(screen.getAllByRole('row')).toHaveLength(1 + 2 * 2); // a problem row under each set
   });
 
-  it('time: columna "s" y sin kg; reps: sin kg', async () => {
+  it('AC-26 (spec 004): time: columna "Seg" y sin kg; reps: sin kg', async () => {
     const workout = await show(plancha.id);
     expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
       'Serie',
       'Anterior',
-      's',
+      'Seg',
       'RIR',
       'Hecha',
     ]);
@@ -192,6 +192,86 @@ describe('columnas y campos', () => {
     });
     const deadBugTable = must(screen.getAllByRole('table')[1]);
     expect(within(deadBugTable).queryByRole('columnheader', { name: 'kg' })).toBeNull();
+  });
+});
+
+describe('pistas de los campos (spec 004 AC-27)', () => {
+  it('reps y RIR muestran el rango del ítem como placeholder; kg no tiene pista', async () => {
+    await show(prensa.id);
+
+    expect(field('Serie 1, repeticiones')).toHaveAttribute('placeholder', '8-12');
+    expect(field('Serie 1, RIR')).toHaveAttribute('placeholder', '3-4');
+    expect(field('Serie 2, repeticiones')).toHaveAttribute('placeholder', '8-12');
+    expect(field('Serie 1, kilos')).not.toHaveAttribute('placeholder');
+  });
+
+  it('en tiempo, la pista de los segundos es el rango del ítem', async () => {
+    await show(plancha.id);
+    expect(field('Serie 1, segundos')).toHaveAttribute('placeholder', '8-12');
+  });
+
+  it('la pista no es un valor: el campo está vacío y no se guarda nada', async () => {
+    await show(prensa.id);
+    const reps = field('Serie 1, repeticiones');
+
+    await userEvent.click(reps);
+    await userEvent.tab();
+
+    expect(reps).toHaveValue('');
+    expect((await setsOf(prensa.id))[0]?.reps).toBeNull();
+  });
+});
+
+describe('serie actual (spec 004 AC-28 a AC-30)', () => {
+  const currentRows = () =>
+    screen.getAllByRole('row').filter((row) => row.hasAttribute('data-current'));
+  const currentNumber = () =>
+    currentRows().map((row) => within(row).getByRole('rowheader').textContent);
+
+  async function fillAndCheck(n: number, kg: string, reps: string, rir: string) {
+    const s = String(n);
+    await userEvent.type(field(`Serie ${s}, kilos`), `${kg}{Enter}`);
+    await userEvent.type(field(`Serie ${s}, repeticiones`), `${reps}{Enter}`);
+    await userEvent.type(field(`Serie ${s}, RIR`), `${rir}{Enter}`);
+    await waitFor(async () => {
+      expect((await setsOf(prensa.id))[n - 1]?.rir).toBe(Number(rir));
+    });
+    await userEvent.click(check(n));
+    await waitFor(() => {
+      expect(check(n)).toBeChecked();
+    });
+  }
+
+  it('AC-28: la primera serie sin hacer es la actual, y solo ella', async () => {
+    await show(prensa.id);
+    expect(currentNumber()).toEqual(['1']);
+
+    await fillAndCheck(1, '60', '10', '3');
+
+    await waitFor(() => {
+      expect(currentNumber()).toEqual(['2']);
+    });
+  });
+
+  it('AC-29: sin series pendientes no hay serie actual; una extra pasa a ser la actual', async () => {
+    await show(prensa.id);
+    await fillAndCheck(1, '60', '10', '3');
+    await fillAndCheck(2, '60', '9', '3');
+    await waitFor(() => {
+      expect(currentRows()).toHaveLength(0);
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Añadir serie' }));
+
+    await waitFor(() => {
+      expect(currentNumber()).toEqual(['3extra']);
+    });
+  });
+
+  it('AC-30: es la del ejercicio que se ve, aunque otro tenga series pendientes antes', async () => {
+    // Prensa (order 1) has nothing done; Dominadas still shows its own first set.
+    await show(dominadas.id);
+    expect(currentNumber()).toEqual(['1']);
   });
 });
 

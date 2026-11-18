@@ -14,6 +14,10 @@ interface SetRowProps {
   set: SetLog;
   metric: ExerciseFacts['metric'];
   assisted: boolean;
+  /** Placeholders: the planned ranges of reps (or seconds) and RIR. Not values. */
+  hints: { reps: string; rir: string };
+  /** The first set not done yet: a visual cue only (spec 004 §6.5). */
+  current: boolean;
   previous: string;
   problem: RowProblem | undefined;
   /** Saves one field; resolves false when it was rejected (the field keeps what was typed). */
@@ -29,6 +33,8 @@ export function SetRow({
   set,
   metric,
   assisted,
+  hints,
+  current,
   previous,
   problem,
   onCommit,
@@ -42,11 +48,18 @@ export function SetRow({
   const flip = (field: SetField, n: number | null) =>
     n === null || field !== 'weightKg' || !assisted ? n : -n;
 
-  const cell = (field: SetField, label: string, value: number | null, decimal: boolean) => (
+  const cell = (
+    field: SetField,
+    label: string,
+    value: number | null,
+    decimal: boolean,
+    placeholder?: string,
+  ) => (
     <td>
       <NumberField
         id={fieldId(set, field)}
         label={label}
+        {...(placeholder === undefined ? {} : { placeholder })}
         value={flip(field, value)}
         decimal={decimal}
         invalid={invalid(field)}
@@ -58,7 +71,7 @@ export function SetRow({
 
   return (
     <>
-      <tr className={cx(set.done && styles.done)}>
+      <tr className={cx(set.done && styles.done)} data-current={current || undefined}>
         <th scope="row" className={styles.number}>
           {n}
           {set.isExtra && <span className={styles.extra}>extra</span>}
@@ -76,8 +89,9 @@ export function SetRow({
           `Serie ${n}, ${metric === 'time' ? 'segundos' : 'repeticiones'}`,
           set.reps,
           false,
+          hints.reps,
         )}
-        {cell('rir', `Serie ${n}, RIR`, set.rir, false)}
+        {cell('rir', `Serie ${n}, RIR`, set.rir, false, hints.rir)}
         <td>
           <label className={styles.check}>
             <input
@@ -108,6 +122,7 @@ interface NumberFieldProps {
   label: string;
   value: number | null;
   decimal: boolean;
+  placeholder?: string;
   invalid: boolean;
   errorId: string;
   onCommit: (value: number | null) => Promise<boolean>;
@@ -116,7 +131,16 @@ interface NumberFieldProps {
 // Keeps what was typed while it has the focus, was rejected or is still on its way to the
 // stored value (useLiveQuery answers after the write); otherwise shows what is stored, so a
 // change from another tab or the inherited weight appears on its own.
-function NumberField({ id, label, value, decimal, invalid, errorId, onCommit }: NumberFieldProps) {
+function NumberField({
+  id,
+  label,
+  value,
+  decimal,
+  placeholder,
+  invalid,
+  errorId,
+  onCommit,
+}: NumberFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [rejected, setRejected] = useState(false);
@@ -150,6 +174,7 @@ function NumberField({ id, label, value, decimal, invalid, errorId, onCommit }: 
       inputMode={decimal ? 'decimal' : 'numeric'}
       autoComplete="off"
       aria-label={label}
+      placeholder={placeholder}
       aria-invalid={invalid || undefined}
       aria-describedby={invalid ? errorId : undefined}
       value={shown}
