@@ -270,7 +270,10 @@ describe('escrituras', () => {
 
     expect((await dump(db)).workouts[0]?.status).toBe('discarded');
     expect(await service.getActiveWorkout()).toBeUndefined();
-    expect((await service.startWorkout(date('2026-11-21'))).ok).toBe(true);
+    const second = ok(await service.startWorkout(date('2026-11-21')));
+    // The discarded workout keeps its 3 sets; the new one only sees its own.
+    expect((await dump(db)).sets).toHaveLength(6);
+    expect((await service.getWorkoutView(second.id))?.sets).toHaveLength(3);
   });
 
   it('RN-TRN-18: si la base falla a mitad de un cambio, rechaza y no queda nada a medias', async () => {
