@@ -7,7 +7,7 @@ import {
   WeekStrip,
   type TodayPlan,
 } from '@/modules/plan';
-import { useActiveWorkout, type Workout } from '@/modules/training';
+import { useActiveWorkoutView, workoutProgress, type WorkoutView } from '@/modules/training';
 import { addDays, startOfIsoWeek, type LocalDate } from '@/shared/kernel';
 import { ConfirmDialog } from '@/shared/ui';
 import { useApp } from '../context';
@@ -41,14 +41,15 @@ function TodayContent() {
   const weekStart = startOfIsoWeek(date);
   const today = useTodayPlan(plan, date);
   const week = useWeekPlan(plan, weekStart);
-  const active = useActiveWorkout(training);
+  // The view, not only the workout: the discard dialog counts its sets (spec 003 plan §6.4).
+  const active = useActiveWorkoutView(training);
   // Nothing until every query answers, so "Iniciar sesión" never flashes before "Continuar".
   if (!today || !week || active === undefined) return null;
 
   const { position } = today;
   const dateLine = <p className={styles.date}>{formatLongDateTitle(date)}</p>;
   // An active session can always be continued, even if it is from a day outside the program.
-  const current = active && <ActiveWorkout workout={active} today={date} />;
+  const current = active && <ActiveWorkout view={active} today={date} />;
 
   if (position.status === 'not_started') {
     return (
@@ -100,8 +101,9 @@ function TodayContent() {
   );
 }
 
-function ActiveWorkout({ workout, today }: { workout: Workout; today: LocalDate }) {
+function ActiveWorkout({ view, today }: { view: WorkoutView; today: LocalDate }) {
   const { training } = useApp();
+  const { workout } = view;
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState('');
   const titleId = useId();
@@ -139,7 +141,7 @@ function ActiveWorkout({ workout, today }: { workout: Workout; today: LocalDate 
       </p>
       <ConfirmDialog
         open={confirming}
-        {...discardDialogText}
+        {...discardDialogText(workoutProgress(view))}
         destructive
         onConfirm={() => void discard()}
         onCancel={() => {

@@ -165,7 +165,7 @@ function ExerciseScreen({ view, index }: { view: WorkoutView; index: number }) {
       </nav>
       <ConfirmDialog
         open={confirming}
-        {...discardDialogText}
+        {...discardDialogText(workoutProgress(view))}
         destructive
         onConfirm={() => void discard()}
         onCancel={() => {
