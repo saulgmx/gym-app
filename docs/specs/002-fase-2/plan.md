@@ -191,7 +191,7 @@ El contrato tenía `configureTraining(ports)` para romper el ciclo `training` �
 
 ### 6.8 Aviso de actualización aplazado (AC-37)
 
-`UpdatePrompt` lee `useActiveWorkout(training)` y no muestra nada mientras haya una sesión activa. `needRefresh` sigue en `true`, así que el aviso aparece solo al descartar (o, en la fase 3, al cerrar). Como vive fuera del router, recibe `training` por `AppContext`.
+`UpdatePrompt` lee `useActiveWorkout(training)` y no muestra nada mientras haya una sesión activa. `needRefresh` sigue en `true`, así que el aviso aparece solo al descartar (o, en la fase 3, al cerrar). Como vive fuera del router, recibe `training` por `AppContext`, así que la zona de avisos se monta dentro del proveedor. Mientras se consulta la sesión activa tampoco se muestra, y si la consulta falla, un límite propio lo oculta en vez de llevar la app entera a `AppErrorBoundary` (la página ya muestra su error).
 
 ### 6.9 Presupuesto del bundle
 
