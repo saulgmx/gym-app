@@ -22,6 +22,19 @@ export async function freezeClockAt(page: Page, isoWithOffset: string) {
 }
 
 /**
+ * Opens "Hoy" on any date of the program, or outside it. A fresh database starts the program on
+ * the Monday of the first visit's week (RN-PLN-13), so the first visit is on Monday 2026-11-16 and
+ * then the clock moves to `isoWithOffset` and the page reloads.
+ */
+export async function openTodayOn(page: Page, isoWithOffset: string) {
+  await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
+  await page.goto('/');
+  await expect(page.getByText('Lunes 16 nov', { exact: true })).toBeVisible();
+  await freezeClockAt(page, isoWithOffset);
+  await page.reload();
+}
+
+/**
  * Fakes the page's timers from `isoWithOffset` (spec 003 AC-17). Unlike freezeClockAt, time keeps
  * flowing until the test calls `page.clock.pauseAt`, and then only `runFor` moves it. Only the
  * tests that need to see the elapsed time change use it; the others keep real timers.

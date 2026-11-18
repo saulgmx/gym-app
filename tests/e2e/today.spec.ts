@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { freezeClockAt, USER_TIME_ZONE, waitForControllingWorker } from './helpers';
+import { freezeClockAt, openTodayOn, USER_TIME_ZONE, waitForControllingWorker } from './helpers';
 
 // Spec 001 AC-1 and AC-7 on the production build. Each test starts with an empty IndexedDB, so
 // the seed loads on the first visit with startDate = Monday 2026-11-16 (RN-PLN-13).
@@ -90,13 +90,7 @@ test.describe('spec 003: Hoy en el estado D', () => {
   });
 
   test('AC-9: antes del programa solo la fecha, sin tira', async ({ page }) => {
-    // A fresh database starts the program on the Monday of the first visit's week (RN-PLN-13), so
-    // the program is anchored on Monday the 16th first, and the clock then goes back a day.
-    await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
-    await page.goto('/');
-    await expect(page.getByText('Lunes 16 nov', { exact: true })).toBeVisible();
-    await freezeClockAt(page, '2026-11-15T08:00:00-06:00');
-    await page.reload();
+    await openTodayOn(page, '2026-11-15T08:00:00-06:00');
 
     await expect(page.getByText('Domingo 15 nov', { exact: true })).toBeVisible();
     await expect(page.getByText('El plan empieza el lunes 16 de noviembre.')).toBeVisible();
