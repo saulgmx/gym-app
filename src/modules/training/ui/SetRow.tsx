@@ -37,21 +37,21 @@ export function SetRow({
   const n = String(set.setNumber);
   const errorId = `set-${set.id}-error`;
   const invalid = (field: SetField | 'done') => problem?.field === field;
-  // With assistance on, the field shows −weight and saves −typed (−20 reads as 20).
-  const sign = assisted ? -1 : 1;
+  // With assistance on, the weight field shows −weight and saves −typed (−20 reads as 20).
+  // Reps and RIR never change sign, neither shown nor saved.
+  const flip = (field: SetField, n: number | null) =>
+    n === null || field !== 'weightKg' || !assisted ? n : -n;
 
   const cell = (field: SetField, label: string, value: number | null, decimal: boolean) => (
     <td>
       <NumberField
         id={fieldId(set, field)}
         label={label}
-        value={value === null ? null : sign * value}
+        value={flip(field, value)}
         decimal={decimal}
         invalid={invalid(field)}
         errorId={errorId}
-        onCommit={(typed) =>
-          onCommit(field, typed === null || field !== 'weightKg' ? typed : sign * typed)
-        }
+        onCommit={(typed) => onCommit(field, flip(field, typed))}
       />
     </td>
   );

@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.13 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.14 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -147,7 +147,7 @@ export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fas
 - **Campos:** `<input type="text">` con `inputmode` (`decimal` en kg, `numeric` en reps y RIR) y nombre por fila ("Serie 1, kilos"). Se envían al confirmar (`change` o Enter), solo si cambiaron. Mientras un campo tiene el foco, tiene un error o espera a que la vista traiga lo recién guardado, conserva lo escrito (sin parpadeo: `useLiveQuery` responde después de la escritura); si no, muestra lo guardado (cambios de otra pestaña, peso heredado). Cualquier cambio del valor guardado termina la espera.
 - **Check:** `<input type="checkbox">` con nombre "Serie 1 hecha", ≥ 44 px. Si marcar falla, el motivo aparece bajo la fila (`aria-live="polite"`) y el foco va al campo del error (AC-16).
 - **Errores:** el texto sale de `describeError(error, { metric, assisted })` (ADR-0010).
-- **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, cada campo muestra `−peso` y guarda `−escrito`; al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
+- **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, el campo de peso muestra `−peso` y guarda `−escrito` (las reps y el RIR nunca cambian de signo); al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
 - **"Añadir serie"** hasta `maxSets` (deshabilitado con "Máximo N series"); **"Quitar serie"** quita la última si no está hecha y se deshabilita si está hecha o es la única. Las series extra llevan "extra".
 
 ### `SessionHeader` (spec 002 §6, T19)
@@ -248,3 +248,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 13. **`SetTable`, antes de T18 (contrato v1.11):** formato de "anterior", check nativo, interruptor de asistencia que invierte el signo de las series no hechas, "Quitar serie" sobre la última y borradores que conservan lo escrito con foco o error.
 14. **`SessionHeader`, antes de T19 (contrato v1.12):** `Workout.name` guarda el nombre de la plantilla en la instantánea (RN-TRN-02), sin migración porque `workouts` aún no está en producción; el encabezado recibe callbacks en vez de rutas, y "Anterior"/"Siguiente" viven en el pie de la página.
 15. **`SessionHeader` en T22 (contrato v1.13):** el nombre de la sesión deja de ser `h1`, porque spec 002 §6 reserva el `h1` para el ejercicio.
+16. **Asistencia solo en el peso, T26 (contrato v1.14):** en el iPhone las reps y el RIR aparecían con signo menos al activar la asistencia. Lo guardado era correcto (RN-TRN-04 rechaza negativos); el error estaba solo en lo que se mostraba, y la redacción de "cada campo" se precisa.
