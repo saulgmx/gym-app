@@ -423,6 +423,29 @@ describe('Con asistencia (decisión 7)', () => {
     });
   });
 
+  it('con la asistencia activada, las reps y el RIR se ven sin signo (solo el peso lo lleva)', async () => {
+    await show(dominadas.id);
+    await userEvent.click(assistance());
+    for (const [name, value] of [
+      ['Serie 1, asistencia en kilos', '20'],
+      ['Serie 1, repeticiones', '8'],
+      ['Serie 1, RIR', '2'],
+    ] as const) {
+      await userEvent.type(field(name), value);
+      await userEvent.tab();
+    }
+    await waitFor(async () => {
+      expect((await setsOf(dominadas.id))[0]).toMatchObject({ weightKg: -20, reps: 8, rir: 2 });
+    });
+
+    // Once the saved values are back in the view, not only while the draft is kept.
+    await waitFor(() => {
+      expect(field('Serie 1, repeticiones')).toHaveValue('8');
+    });
+    expect(field('Serie 1, RIR')).toHaveValue('2');
+    expect(field('Serie 1, asistencia en kilos')).toHaveValue('20');
+  });
+
   it('el error lleva el contexto de asistencia', async () => {
     await show(dominadas.id);
     await userEvent.click(assistance());
