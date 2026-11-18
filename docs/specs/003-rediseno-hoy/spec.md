@@ -1,6 +1,6 @@
 # Spec: Rediseño de "Hoy"
 
-**ID:** 003 · **Estado:** Borrador · **Fecha:** 18-nov-2026
+**ID:** 003 · **Estado:** Aprobada (18-nov-2026) · **Fecha:** 18-nov-2026
 **Requerimientos cubiertos:** RF-02, RF-05 (cómo se ve el deload), RF-10, RF-19, RNF-05, RNF-06 · **Fase:** entre la 2 y la 3 (no está en spec §13; ver §2)
 **Fuente de diseño:** [`docs/design-hoy.md`](../../design-hoy.md), tableros "D. Combinación A+B" y "D2. Sesión en curso" del lienzo de diseño
 **ADRs aplicados:** 0005, 0010
@@ -21,7 +21,7 @@ Feature de interfaz, sin cambios en la base de datos. Va antes de la fase 3; la 
   - Tira de la semana nueva: círculos, marcas y "N de M sesiones". En esta spec "N" es siempre 0 (ver "No incluye").
   - Texto nuevo de la confirmación de descarte, el mismo en "Hoy" y en la sesión activa.
   - "Empezar sesión" en lugar de "Iniciar sesión", también en `/dia/:date`.
-  - Actualizar spec §7.2 y §7.3 al aprobar.
+  - Spec §7.2, §7.3 y §13 actualizadas al aprobar (spec v0.7).
 - **No incluye:**
   - **Marcar días hechos** en la tira (✓), contar "N" y las filas "hecha ✓" de "Otra sesión de esta semana": necesitan workouts `completed` (fase 3, `finishWorkout`).
   - **"Hoy subes":** necesita sugerencias de `progression` (fase 4). No se construye hasta entonces (P-7).
@@ -113,7 +113,7 @@ Ejemplo: sesión de Full body A iniciada el lunes 16-nov a las 18:00, con las 2 
 
 Del contrato [`modules/plan.md`](../../modules/plan.md): RN-PLN-01 a 06. Del contrato [`modules/training.md`](../../modules/training.md): RN-TRN-01, 09, 14 y 15.
 
-Reglas nuevas, que se mueven a los contratos al aprobar esta spec. El plan técnico confirma dónde vive cada una.
+Reglas nuevas, ya movidas a los contratos al aprobar esta spec (`plan` v1.13, `training` v1.15). El plan técnico fija la forma exacta de la API.
 
 | ID | Regla | Origen |
 |---|---|---|

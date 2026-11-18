@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.12 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.13 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -169,6 +169,7 @@ No escucha eventos.
 | RN-PLN-25 | Almacenamiento: cada tabla guarda los objetos del dominio tal cual (`Exercise`, `Program` con `startDate`, `Block`, `SessionTemplate`). La lectura toma el único programa, sus bloques (índice `programId`), todas las plantillas y todos los ejercicios. Más de un programa es un bug: lanza. | P-2, ADR-0010 |
 | RN-PLN-26 | Hooks (`useTodayPlan`, `useWeekPlan`, con `useLiveQuery`): devuelven `undefined` mientras cargan y mientras el resultado pertenece a otra fecha (nunca el plan de ayer con la fecha de hoy, AC-20); se actualizan solos al cambiar las tablas del plan (spec 001 plan §6.4); un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta (AC-21). | Spec 001 |
 | RN-PLN-18 | Notas del día: en cardio, la `note` de la entrada del calendario; en descanso, ninguna (el texto lo pone la UI); en pesas, la `note` de cada `TemplateItem` en su `PlannedItem`. | Spec 001 §6 |
+| RN-PLN-27 | Duración estimada de una sesión planificada, en segundos: `600 + Σ por ítem (plannedSets × (trabajo + descansoMedio) + 90)`. `trabajo` = 45 s por serie, o la media de `repRange` si `metric = 'time'`; `descansoMedio` = media de `exercise.restSeconds`. Se muestra en minutos redondeados al múltiplo de 5 más cercano (`Math.round`), mínimo 5. Las constantes (600 de calentamiento, 45 de trabajo, 90 de cambio de ejercicio) tienen nombre en el dominio y son las mismas que usa `training` para el tiempo restante (RN-TRN-20). Función pura del dominio, sin almacenamiento. | Spec 003, `plan.md` (60 min por sesión, 10 de calentamiento) |
 
 ## 7. Errores
 
@@ -207,6 +208,7 @@ No escucha eventos.
 - RN-PLN-26: cambiar la fecha nunca devuelve el plan de la fecha anterior; escribir en `programs` o `templates` actualiza el hook sin volver a renderizar; sin programa, el error llega al *error boundary*.
 - RN-PLN-24: un seed por cada caso (a)–(i) → `plan/invalid-seed` con su ruta; un `high` pasa el esquema.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
+- RN-PLN-27: Full body A y B de la semana 1 → 50 y 55 min; Full body B de la semana 2 → 75 min; un ejercicio `time` usa la media de su rango; redondeo al múltiplo de 5 y mínimo 5.
 
 ## 9. Trazabilidad
 
@@ -229,3 +231,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 13. **Página "Hoy", antes de T17 (contrato v1.10):** `ProgramPosition` gana `startDate` y `totalWeeks`, siempre presentes, para el encabezado y los mensajes fuera del programa (RN-PLN-01).
 14. **Spec 002, fase 2 (contrato v1.11):** `PlannedItem.alternatives` resueltas; `getExercise` y `getExercises` entran en `PlanApi` (`training` las usa para recuperar la sesión); RN-PLN-15 (i), un ejercicio por workout. `listExercises` sigue fuera (P-7).
 15. **Casos de borde de la fase 2, antes de T1 (contrato v1.12):** una alternativa inexistente al calcular el día lanza (RN-PLN-16); `getExercises` devuelve uno por ID pedido; `getExercise(s)` sin programa lanzan (RN-PLN-22); RN-PLN-15 (i) cubre también el mismo principal en dos ítems.
+16. **Spec 003, rediseño de "Hoy" (contrato v1.13):** duración estimada de la sesión del día (RN-PLN-27), con constantes con nombre que comparte `training` (RN-TRN-20). La forma exacta de la API (función exportada o campo de `TodayPlan`) la fija el plan técnico.
