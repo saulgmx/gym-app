@@ -120,6 +120,7 @@ function ConfirmDialog(props: {
 - Escape (evento `cancel`) llama a `onCancel`; tocar fuera del diálogo no lo cierra.
 - Al cerrarse, el foco vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace).
 - Botones ≥ 44 px; confirmar es `--accent` con texto `--bg` (14.10:1), o `--warn` en `destructive`.
+- Anclado abajo, a todo el ancho, con margen `env(safe-area-inset-bottom)`: la "confirmación inferior" del diseño de "Hoy" (spec 003 plan §6.12). Sin opción de posición mientras ningún uso pida otra (P-7).
 - jsdom no implementa `showModal` ni `close`: `tests/setup/unit.ts` añade un relleno mínimo solo para pruebas; el comportamiento real lo cubre el E2E en Chromium y WebKit.
 
 ## 5. Dónde vive cada componente de la spec §7.5

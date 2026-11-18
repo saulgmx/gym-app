@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.15 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.16 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -110,6 +110,7 @@ interface TrainingApi {
   getActiveWorkout(): Promise<Workout | undefined>;                                       // RF-19
   getWorkout(id: ID): Promise<Workout | undefined>;
   getWorkoutView(id: ID): Promise<WorkoutView | undefined>;
+  getActiveWorkoutView(): Promise<WorkoutView | undefined>;                               // el activo de RN-TRN-01, armado como RN-TRN-17
   getExerciseHistory(exerciseId: ID, opts?: { limit?: number; before?: LocalDate }): Promise<ExerciseSession[]>;
 }
 
@@ -124,6 +125,20 @@ interface WorkoutSummary { durationMin: number; setsDone: number; setsPlanned: n
 // Hooks (ui, useLiveQuery). Reciben la API, como los de plan. null = no existe; undefined = cargando.
 export function useWorkoutView(training: TrainingApi, id: ID): WorkoutView | null | undefined;
 export function useActiveWorkout(training: TrainingApi): Workout | null | undefined;
+export function useActiveWorkoutView(training: TrainingApi): WorkoutView | null | undefined; // "Hoy" en D2 (spec 003)
+
+// Avance de la sesión en curso (RN-TRN-20 y 21, spec 003). El dominio (progressOf) recibe el tiempo
+// por serie como función; application lo arma con plan.setSeconds, porque solo application importa plan.
+interface WorkoutProgress {
+  itemsDone: number;                                       // RN-TRN-21
+  itemCount: number;
+  items: ('done' | 'current' | 'pending')[];               // uno por ítem, en orden
+  current: { itemIndex: number; exerciseId: ID; setNumber: number } | null; // itemIndex desde 1
+  remainingSeconds: number | null;                         // RN-TRN-20; null sin series pendientes
+  setsDone: number;                                        // texto de descarte (spec 003 AC-23)
+  itemsWithDoneSets: number;
+}
+export function workoutProgress(view: WorkoutView): WorkoutProgress;
 export function useLastSession(training: TrainingApi, exerciseId: ID, before: LocalDate): ExerciseSession | null | undefined; // "anterior" de RF-12
 
 // Componentes. Los textos de error llegan con describeError desde app (ADR-0010); el contexto
@@ -254,3 +269,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 15. **`SessionHeader` en T22 (contrato v1.13):** el nombre de la sesión deja de ser `h1`, porque spec 002 §6 reserva el `h1` para el ejercicio.
 16. **Asistencia solo en el peso, T26 (contrato v1.14):** en el iPhone las reps y el RIR aparecían con signo menos al activar la asistencia. Lo guardado era correcto (RN-TRN-04 rechaza negativos); el error estaba solo en lo que se mostraba, y la redacción de "cada campo" se precisa.
 17. **Spec 003, rediseño de "Hoy" (contrato v1.15):** tiempo restante (RN-TRN-20) y avance de la sesión en curso (RN-TRN-21), que pasa al dominio desde `app/pages` (hoy `firstPending` en `SessionPage`). La forma exacta de la API la fija el plan técnico.
+18. **Plan de la spec 003 (contrato v1.16):** `getActiveWorkoutView` y `useActiveWorkoutView` para D2; `workoutProgress(view)` exportado, con `progressOf` puro en el dominio que recibe el tiempo por serie (el dominio no importa `plan`, architecture §5.2); `SessionPage` usa `current` en lugar de su `firstPending`. `useActiveWorkout` se queda para `UpdatePrompt` y `DayPreviewPage`.
