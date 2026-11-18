@@ -52,15 +52,15 @@ describe('PlanExerciseList', () => {
     return screen.getAllByRole('listitem');
   }
 
-  it('AC-15: una fila por ejercicio, en orden, con series × reps, RIR y nota', async () => {
+  it('spec 003 AC-3: una fila por ejercicio, en orden, con series × reps y nota, sin RIR', async () => {
     const [prensa, plancha] = await renderMonday();
 
     expect(prensa).toHaveTextContent('Prensa de piernas');
     expect(prensa).toHaveTextContent('2 × 8-12');
-    expect(prensa).toHaveTextContent('RIR 3-4');
+    expect(prensa).not.toHaveTextContent('RIR');
     expect(prensa).toHaveTextContent('Pies bajos');
 
-    // Time metric: seconds; 2 sets × 0.7 rounds to 1 (RN-PLN-05).
+    // spec 003 AC-4, time metric: seconds; 2 sets × 0.7 rounds to 1 (RN-PLN-05).
     expect(plancha).toHaveTextContent('Plancha');
     expect(plancha).toHaveTextContent('1 × 30-45 s');
   });
@@ -76,7 +76,7 @@ describe('PlanExerciseList', () => {
   it('una fila sin nota no muestra texto de nota', async () => {
     const [, plancha] = await renderMonday();
 
-    expect(plancha?.textContent).toBe('Plancha1 × 30-45 sRIR 3-4');
+    expect(plancha?.textContent).toBe('Plancha1 × 30-45 s');
   });
 });
 

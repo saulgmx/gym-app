@@ -15,6 +15,7 @@ import { errorMessages } from '../errors/messages';
 import { formatLongDate, formatLongDateTitle, formatShortDay } from '../format-date';
 import { useToday } from '../hooks/useToday';
 import { discardDialogText } from './discard-dialog';
+import { SessionRir } from './SessionRir';
 import { StartWorkoutButton } from './StartWorkoutButton';
 import styles from './TodayPage.module.css';
 
@@ -173,6 +174,7 @@ function DayBody({ today }: { today: TodayPlan }) {
       return (
         <>
           <h2>{today.template.name}</h2>
+          <SessionRir items={today.plannedItems} />
           <PlanExerciseList items={today.plannedItems} />
         </>
       );

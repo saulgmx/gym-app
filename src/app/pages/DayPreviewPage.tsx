@@ -7,6 +7,7 @@ import { useApp } from '../context';
 import { formatLongDateTitle, formatShortDay } from '../format-date';
 import { useToday } from '../hooks/useToday';
 import { StartWorkoutButton } from './StartWorkoutButton';
+import { SessionRir } from './SessionRir';
 import styles from './pages.module.css';
 import todayStyles from './TodayPage.module.css';
 
@@ -58,6 +59,7 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
       <h1>{formatLongDateTitle(date)}</h1>
       <section className={todayStyles.card}>
         <h2>{day.template.name}</h2>
+        <SessionRir items={day.plannedItems} />
         <PlanExerciseList items={day.plannedItems} />
         <StartWorkoutButton date={today} plannedFor={date} />
       </section>

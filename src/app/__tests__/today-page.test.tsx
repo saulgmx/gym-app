@@ -53,8 +53,18 @@ describe('TodayPage', () => {
     const [first] = exercises;
     expect(first).toHaveTextContent('Hack squat');
     expect(first).toHaveTextContent('2 × 8-12'); // 3 sets × 0.7 in week 1
-    expect(first).toHaveTextContent('RIR 3-4');
     expect(first).toHaveTextContent('Con prensa: pies bajos. Faja solo si la carga es pesada');
+  });
+
+  it('spec 003 plan §6.11: el RIR aparece una vez en la tarjeta, no en cada ejercicio', async () => {
+    await openToday();
+
+    await screen.findByRole('heading', { level: 2, name: 'Full body B' });
+    expect(within(card()).getAllByText(/RIR/)).toHaveLength(1);
+    expect(within(card()).getByText('RIR 3-4')).toBeVisible();
+    for (const exercise of within(card()).getAllByRole('listitem')) {
+      expect(exercise).not.toHaveTextContent('RIR');
+    }
   });
 
   it('AC-16: día de cardio con su nota y sin lista de ejercicios', async () => {

@@ -45,6 +45,17 @@ describe('DayPreviewPage', () => {
     expect(document.title).toBe('Vie 20 · Gym');
   });
 
+  it('spec 003 plan §6.11: el RIR va una vez bajo el título de la sesión, no en cada ejercicio', async () => {
+    await openDay('/dia/2026-11-20');
+
+    const title = await screen.findByRole('heading', { level: 2, name: 'Full body A' });
+    expect(screen.getAllByText(/RIR/)).toHaveLength(1);
+    expect(title.nextElementSibling).toHaveTextContent('RIR 3-4');
+    for (const exercise of within(screen.getByRole('list')).getAllByRole('listitem')) {
+      expect(exercise).not.toHaveTextContent('RIR');
+    }
+  });
+
   it('AC-8: "Iniciar sesión" crea el workout de hoy con el plan del viernes (RN-TRN-14)', async () => {
     const { router, services, user } = await openDay('/dia/2026-11-20');
 
