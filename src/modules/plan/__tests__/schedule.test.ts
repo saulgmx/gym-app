@@ -27,6 +27,8 @@ const exercises: Exercise[] = [
   exercise('curl-femoral', { name: 'Curl femoral', muscleGroup: 'hamstrings' }),
   exercise('plancha', { name: 'Plancha', muscleGroup: 'core', metric: 'time' }),
   exercise('banca', { name: 'Press de banca', muscleGroup: 'chest', isPrimary: true }),
+  exercise('curl-sentado', { name: 'Curl femoral sentado', muscleGroup: 'hamstrings' }),
+  exercise('curl-tumbado', { name: 'Curl femoral tumbado', muscleGroup: 'hamstrings' }),
 ];
 
 const templates: SessionTemplate[] = [
@@ -36,7 +38,14 @@ const templates: SessionTemplate[] = [
     name: 'Full body A',
     // Stored out of order on purpose (RN-PLN-17).
     items: [
-      { exerciseId: id('curl-femoral'), order: 2, sets: [2, 3], reps: [10, 12] },
+      {
+        exerciseId: id('curl-femoral'),
+        // Not in catalog order, so the test sees the seed's order (RN-PLN-11).
+        alternatives: [id('curl-tumbado'), id('curl-sentado')],
+        order: 2,
+        sets: [2, 3],
+        reps: [10, 12],
+      },
       {
         exerciseId: id('prensa'),
         order: 1,
@@ -289,6 +298,13 @@ describe('getDayPlan', () => {
     expect(curl).not.toHaveProperty('note');
   });
 
+  it('RN-PLN-11: cada ítem lleva sus alternativas resueltas, en el orden del seed; [] si no hay', () => {
+    const [prensa, curl] = workoutPlan('2026-11-16').plannedItems;
+    expect(prensa?.alternatives).toEqual([]);
+    expect(curl?.alternatives.map((e) => e.id)).toEqual(['curl-tumbado', 'curl-sentado']);
+    expect(curl?.alternatives[1]).toEqual(exercises.find((e) => e.id === 'curl-sentado'));
+  });
+
   it('RN-PLN-18: cardio con la nota del calendario; descanso sin nota', () => {
     const tuesday = getDayPlan(snapshot, date('2026-11-17'));
     const thursday = getDayPlan(snapshot, date('2026-11-19'));
@@ -319,6 +335,14 @@ describe('getDayPlan', () => {
     expect(() => getDayPlan(withoutTemplate, date('2026-11-16'))).toThrow();
     expect(() => getDayPlan(withoutExercise, date('2026-11-16'))).toThrow();
     expect(() => getDayPlan(withoutMonday, date('2026-11-16'))).toThrow();
+  });
+
+  it('RN-PLN-16: una alternativa inexistente → lanza', () => {
+    const withoutAlternative = {
+      ...snapshot,
+      exercises: exercises.filter((e) => e.id !== 'curl-sentado'),
+    };
+    expect(() => getDayPlan(withoutAlternative, date('2026-11-16'))).toThrow(/RN-PLN-16/);
   });
 });
 

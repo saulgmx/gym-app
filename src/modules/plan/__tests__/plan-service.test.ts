@@ -24,7 +24,10 @@ const exercise = (key: string, overrides: Partial<Exercise> = {}): Exercise => (
 });
 
 const seed = (): PlanSeed => ({
-  exercises: [exercise('prensa', { name: 'Prensa de piernas', isPrimary: true })],
+  exercises: [
+    exercise('prensa', { name: 'Prensa de piernas', isPrimary: true }),
+    exercise('jalon', { name: 'Jalón al pecho', muscleGroup: 'back', equipment: 'cable' }),
+  ],
   program: { id: id('program'), name: 'Prueba', totalWeeks: 2, blockIds: [id('b1')] },
   blocks: [
     {
@@ -268,6 +271,35 @@ describe('consultas sobre el repositorio', () => {
     await expect(service.getPosition(monday)).rejects.toThrow(/RN-PLN-22/);
     await expect(service.getTodayPlan(monday)).rejects.toThrow(/RN-PLN-22/);
     await expect(service.getWeekPlan(monday)).rejects.toThrow(/RN-PLN-22/);
+  });
+
+  it('getExercise → el ejercicio del catálogo, o undefined si no existe', async () => {
+    const { service } = setup({ initial: loaded() });
+
+    expect(await service.getExercise(id('jalon'))).toEqual(seed().exercises[1]);
+    expect(await service.getExercise(id('no-existe'))).toBeUndefined();
+  });
+
+  it('getExercises → uno por ID pedido, en su orden, sin los que no existen', async () => {
+    const { service } = setup({ initial: loaded() });
+    const [prensa, jalon] = seed().exercises;
+
+    const found = await service.getExercises([
+      id('jalon'),
+      id('no-existe'),
+      id('prensa'),
+      id('jalon'),
+    ]);
+
+    expect(found).toEqual([jalon, prensa, jalon]);
+    expect(await service.getExercises([])).toEqual([]);
+  });
+
+  it('RN-PLN-22: sin programa cargado, getExercise y getExercises lanzan', async () => {
+    const { service } = setup();
+
+    await expect(service.getExercise(id('prensa'))).rejects.toThrow(/RN-PLN-22/);
+    await expect(service.getExercises([id('prensa')])).rejects.toThrow(/RN-PLN-22/);
   });
 
   it('RN-PLN-23: sin caché, la siguiente consulta refleja un cambio en el repositorio', async () => {
