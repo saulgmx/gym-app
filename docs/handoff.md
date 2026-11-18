@@ -7,8 +7,8 @@
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.4: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5.
-  - `docs/architecture.md` v1.1: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
+  - `docs/spec.md` v0.5: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date` (spec 002).
+  - `docs/architecture.md` v1.2: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
@@ -74,8 +74,9 @@
 9. **Siguiente: fase 2, sesión activa** (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
    1. ~~Pregunta 6~~ (17-nov, `modules/training.md` v1.1 §10): `completed` y `discarded` son finales, también las notas (RN-TRN-07); corregir llega en v1.1.
    2. ~~Spec 002~~ aprobada (17-nov): `docs/specs/002-fase-2/spec.md` (AC-1 a AC-41). La sesión solo se descarta en esta fase (Cierre en la fase 3); `SuggestionProvider` nulo y la serie siguiente hereda el peso (RN-TRN-11); entran RF-14, RF-16 y RF-17; alternativas solo sin series hechas (RN-TRN-13); "Otra sesión de esta semana" con `plannedFor` (RN-TRN-14); asistencia con peso negativo (RN-TRN-04); sin `bus` hasta la fase 4. Reglas ya en `modules/training.md` v1.2, `modules/plan.md` v1.11 (`PlannedItem.alternatives`, `getExercise(s)`, RN-PLN-15 (i)) y `modules/progression.md` §9.4.
-   3. **Siguiente:** plan técnico (`docs/specs/002-fase-2/plan.md`) y luego tareas, como en la fase 1.
-   4. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
+   3. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/002-fase-2/plan.md`. Escritura con `repository.mutate` (transacción que relee y llama al dominio puro), sin `configureTraining`, bus ni Zustand; `useWorkoutView`; coma decimal; `describeError` desde `app`; ruta `/dia/:date`; `zod/mini` si el bundle pasa de 170 kB. Contrato `training` v1.3, spec v0.5 (§7.2) y architecture v1.2 (§6.4, §7.8).
+   4. **Siguiente:** tareas (`docs/specs/002-fase-2/tasks.md`) en puntos de control, como en la fase 1; luego el PR de docs.
+   5. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
 10. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:

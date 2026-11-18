@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.4 (borrador) · **Fecha:** 17-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.5 (borrador) · **Fecha:** 17-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -211,6 +211,7 @@ Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). 
 | Pantalla | Ruta | Contenido |
 |---|---|---|
 | Hoy | `/` | Bloque y semana, estado de la última molestia lumbar, tira de la semana, lista de ejercicios de hoy con sugerencias, aviso de seguridad, botón "Iniciar sesión" |
+| Otro día de la semana | `/dia/:date` | Vista previa de una sesión de pesas de la semana actual distinta de hoy y "Iniciar sesión" (spec 002) |
 | Sesión activa | `/sesion/:workoutId/:exerciseIndex` | Ejercicio actual, banner de sugerencia, tabla de series (anterior, kg, reps, RIR, check), consejo técnico, temporizador, "Terminar sesión" |
 | Cierre | `/sesion/:workoutId/cierre` | Resumen, selector de dolor 0-10 con mensaje, banderas rojas, próxima sesión, notas, "Guardar sesión" |
 | Progreso | `/progreso` | Selector de ejercicio, gráfica por semana, historial de dolor lumbar, peso corporal |

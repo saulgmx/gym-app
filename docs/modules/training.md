@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.2 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.3 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -66,17 +66,38 @@ interface ExerciseSession {          // salida de getExerciseHistory
 ## 4. API pública (`index.ts`)
 
 ```ts
-// `bus` se añade cuando un módulo escuche los eventos de §5 (fase 4, progression) (P-7).
+// Los puertos entran como dependencias (sin configureTraining, spec 002 plan §6.2). `bus` se añade
+// cuando un módulo escuche los eventos de §5 (fase 4); `painGate`, con finishWorkout (fase 3) (P-7).
 export function createTraining(deps: {
-  db: TrainingDb; clock: Clock; ids: IdGenerator;
+  db: Dexie; clock: Clock; ids: IdGenerator;
   plan: Pick<PlanApi, 'getTodayPlan' | 'getExercises'>;
+  suggestions: SuggestionProvider;
 }): TrainingApi;
 
-export function configureTraining(ports: { suggestions: SuggestionProvider; painGate: PainGate }): void;
+// Tablas propias, para que app/db.ts componga db.version(n).stores({...}).
+export const trainingStores: Record<'workouts' | 'sets', string>;
 
-// Fase 2 implementa startWorkout, logSet, toggleSetDone, addExtraSet, removeSet, chooseExercise,
-// discardWorkout, getActiveWorkout, getWorkout y getExerciseHistory. El resto entra en la fase 3.
+export type TrainingErrorCode =
+  | 'training/workout-not-found' | 'training/workout-already-active' | 'training/workout-closed'
+  | 'training/set-not-found' | 'training/invalid-set-values' | 'training/no-plan-today'
+  | 'training/planned-date-out-of-week' | 'training/max-sets-reached' | 'training/set-not-removable'
+  | 'training/invalid-exercise-choice' | 'training/item-has-done-sets';
+  // 'training/pain-required' entra con finishWorkout (fase 3)
 
+interface InvalidSetValuesDetails {     // details de training/invalid-set-values; app elige el texto
+  field: 'weightKg' | 'reps' | 'rir';
+  reason: 'missing' | 'not-a-number' | 'out-of-range' | 'step' | 'not-allowed';
+}
+interface WorkoutAlreadyActiveDetails { workoutId: ID }
+
+interface WorkoutView {                 // lo que necesita la página de sesión, en una consulta
+  workout: Workout;
+  sets: SetLog[];                       // por ítem y setNumber
+  exercises: Record<ID, Exercise>;      // todas las options de todos los ítems
+}
+
+// Fase 2 implementa estas operaciones. finishWorkout, getWorkoutSummary, listWorkouts,
+// getWorkoutExerciseIds y dataPort entran en TrainingApi en la fase 3, cuando se implementan.
 interface TrainingApi {
   startWorkout(date: LocalDate, opts?: { plannedFor?: LocalDate }): Promise<Result<Workout>>; // RF-10, RN-TRN-14
   logSet(setId: ID, input: { weightKg?: number | null; reps?: number | null; rir?: number | null }): Promise<Result<SetLog>>; // RF-11, RF-13
@@ -84,26 +105,33 @@ interface TrainingApi {
   addExtraSet(workoutId: ID, exerciseId: ID): Promise<Result<SetLog>>;                    // RF-16
   removeSet(setId: ID): Promise<Result<void>>;                                            // RF-16, RN-TRN-10
   chooseExercise(workoutId: ID, fromExerciseId: ID, toExerciseId: ID): Promise<Result<Workout>>; // RN-TRN-13
-  finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;     // RF-20, RF-23
   discardWorkout(workoutId: ID): Promise<Result<void>>;                                   // RN-TRN-15
   getActiveWorkout(): Promise<Workout | undefined>;                                       // RF-19
   getWorkout(id: ID): Promise<Workout | undefined>;
-  getWorkoutSummary(id: ID): Promise<WorkoutSummary | undefined>;                         // RF-20
-  listWorkouts(range?: { from?: LocalDate; to?: LocalDate }): Promise<Workout[]>;         // RF-32
+  getWorkoutView(id: ID): Promise<WorkoutView | undefined>;
   getExerciseHistory(exerciseId: ID, opts?: { limit?: number; before?: LocalDate }): Promise<ExerciseSession[]>;
-  getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;
-  dataPort: DataPort;
 }
 
+// Fase 3
+//   finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;  // RF-20, RF-23
+//   getWorkoutSummary(id: ID): Promise<WorkoutSummary | undefined>;                     // RF-20
+//   listWorkouts(range?: { from?: LocalDate; to?: LocalDate }): Promise<Workout[]>;     // RF-32
+//   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;
+//   dataPort: DataPort;
 interface WorkoutSummary { durationMin: number; setsDone: number; setsPlanned: number; exercises: number }
 
-// Hooks
-export function useWorkout(id: ID): { workout: Workout; sets: SetLog[] } | undefined;
-export function useActiveWorkout(): Workout | null | undefined;
-export function useLastSession(exerciseId: ID, before: LocalDate): ExerciseSession | null | undefined;  // "anterior" de RF-12
+// Hooks (ui, useLiveQuery). Reciben la API, como los de plan. null = no existe; undefined = cargando.
+export function useWorkoutView(training: TrainingApi, id: ID): WorkoutView | null | undefined;
+export function useActiveWorkout(training: TrainingApi): Workout | null | undefined;
+export function useLastSession(training: TrainingApi, exerciseId: ID, before: LocalDate): ExerciseSession | null | undefined; // "anterior" de RF-12
 
-// Componentes
-export { SetRow, SetTable, SessionHeader, RestTimer } from './ui';   // RestTimer en la fase 4
+// Componentes. Los textos de error llegan con describeError desde app (ADR-0010).
+function SetTable(props: {
+  training: TrainingApi; view: WorkoutView; exerciseId: ID;
+  describeError: (error: DomainError) => string;
+}): JSX.Element;
+function SessionHeader(props: { view: WorkoutView; index: number; onNavigate: (index: number) => void }): JSX.Element;
+export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fase 4
 ```
 
 ### Puertos que requiere (`application/ports.ts`)
@@ -120,7 +148,7 @@ export interface PainGate {
 }
 ```
 
-Los implementan `progression` y `health`; los conecta `app/compose.ts`. Hasta la fase 4, `compose` conecta un `SuggestionProvider` nulo (siempre `null`); `PainGate` llega con `finishWorkout` (fase 3).
+Los implementan `progression` y `health`; los pasa `app/compose.ts` en `createTraining`. Hasta la fase 4, `compose` pasa un `SuggestionProvider` nulo (siempre `null`); después, uno que delega en `progression`, asignada tras crear `training`, para no crear un ciclo (spec 002 plan §6.2). `PainGate` llega con `finishWorkout` (fase 3).
 
 ## 5. Eventos
 
@@ -183,3 +211,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 2. **Spec 002, fase 2 (contrato v1.2):** la sesión solo se descarta en esta fase (RN-TRN-15) y `finishWorkout` llega en la fase 3; `SuggestionProvider` nulo y herencia del peso (RN-TRN-11); sin `bus` hasta que alguien escuche; métricas `reps` y `time`, y asistencia con peso negativo (RN-TRN-04); extras hasta `maxSets` (RN-TRN-10).
 3. **Alternativas (spec 002, decisión 4):** `WorkoutItem.options`, un ejercicio por workout (RN-TRN-12) y cambio solo sin series hechas (RN-TRN-13).
 4. **Otra sesión de esta semana (spec 002, decisión 5):** `Workout.plannedFor` y RN-TRN-14.
+5. **Plan de la spec 002 (contrato v1.3):** sin `configureTraining` (puertos en `createTraining`), `trainingStores`, `TrainingErrorCode` con `details` tipados, `WorkoutView` y `getWorkoutView`, hooks con la API como parámetro (`useWorkoutView` reemplaza a `useWorkout`) y `describeError` en los componentes. Las operaciones de la fase 3 salen de `TrainingApi` hasta implementarse.
