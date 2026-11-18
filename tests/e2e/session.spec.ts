@@ -137,7 +137,14 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
   await expect(page).not.toHaveURL(SESSION_URL); // replace: no way back into the discarded one
 });
 
-test('AC-2: dos pestañas que inician a la vez quedan en la misma sesión', async ({ context }) => {
+// Two clicks from Playwright never land at the same instant: the second tab often sees the session
+// of the first one before its click, its button gives way to "Continuar sesión" and the click
+// waits forever (flaky in WebKit). So the e2e checks what a user sees, one tab after the other.
+// Two startWorkout at the same time are covered by dexie-repository.test.ts (AC-2), and a stale
+// "Empezar sesión" that gets already-active by today-session.test.tsx.
+test('AC-2: la segunda pestaña ve la sesión de la primera y entra en la misma', async ({
+  context,
+}) => {
   const [first, second] = [await context.newPage(), await context.newPage()];
   for (const page of [first, second]) {
     await freezeClockAt(page, MONDAY);
@@ -145,11 +152,11 @@ test('AC-2: dos pestañas que inician a la vez quedan en la misma sesión', asyn
     await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
   }
 
-  await Promise.all(
-    [first, second].map((page) => page.getByRole('button', { name: 'Empezar sesión' }).click()),
-  );
+  await startFromToday(first);
+  // Without reloading: "Hoy" follows IndexedDB across tabs (RN-TRN-19).
+  await expect(second.getByRole('button', { name: 'Empezar sesión' })).toBeHidden();
+  await second.getByRole('link', { name: 'Continuar sesión' }).click();
 
-  await expect(first).toHaveURL(SESSION_URL);
   await expect(second).toHaveURL(SESSION_URL);
   const ids = [first, second].map((page) => SESSION_URL.exec(page.url())?.[1]);
   expect(ids[0]).toBeDefined();
