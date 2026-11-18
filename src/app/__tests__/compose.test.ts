@@ -90,18 +90,20 @@ describe('compose', () => {
 });
 
 describe('openDatabase', () => {
-  it("abre 'gym-app' en la versión 1 con las 4 tablas de plan", async () => {
+  it("abre 'gym-app' en la versión 2 con las tablas de plan y training", async () => {
     const db = openDatabase();
     opened.push(db);
     await db.open();
 
     expect(db.name).toBe('gym-app');
-    expect(db.verno).toBe(1);
+    expect(db.verno).toBe(2);
     expect(db.tables.map((t) => t.name).sort()).toEqual([
       'blocks',
       'exercises',
       'programs',
+      'sets',
       'templates',
+      'workouts',
     ]);
   });
 });
