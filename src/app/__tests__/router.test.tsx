@@ -29,6 +29,9 @@ describe('app router', () => {
 
   it('AC-22: tapping Progreso navigates to /progreso and marks only that tab as current', async () => {
     const router = await renderAt('/');
+    // Wait for Hoy to finish loading: a click while its content is still suspended on use(ready)
+    // leaves the navigation pending inside the click's act.
+    await screen.findByRole('list', { name: 'Semana' });
     await userEvent.click(screen.getByRole('link', { name: 'Progreso' }));
 
     expect(router.state.location.pathname).toBe('/progreso');
