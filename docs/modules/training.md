@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.7 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.8 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -181,6 +181,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 | RN-TRN-14 | `startWorkout(date, { plannedFor })`: `plannedFor` (por defecto `date`) está en la misma semana ISO que `date` (`startOfIsoWeek` iguales; si no, `training/planned-date-out-of-week`) y su plan es `workout` (si no, `training/no-plan-today`). Orden: semana, plan del día y, dentro de la transacción, RN-TRN-01. La semana la comprueba el dominio; el plan del día, `application`. | Decisiones 4 y 7 |
 | RN-TRN-16 | Si el `SuggestionProvider` rechaza, la sugerencia es `null` y el fallo se registra con `console.error`, al iniciar y al elegir una alternativa: un fallo del proveedor nunca impide entrenar. Al iniciar, las sugerencias se piden en paralelo. | Decisiones 7 y 9 |
 | RN-TRN-17 | `getWorkoutView`: series por el `order` de su ítem y luego por `setNumber`; `exercises` con todas las `options` de todos los ítems. Si `plan` no devuelve alguno, lanza (dato inconsistente; la página muestra el error genérico). Un workout inexistente → `undefined`. | Spec 002 §7, decisión 9 |
+| RN-TRN-18 | Un fallo del almacenamiento (la base lanza) es un error inesperado: la promesa rechaza, no se devuelve un `Result`, y lo muestra el aviso genérico (ADR-0010). Convertir `QuotaExceededError` en `data/storage-full` llega con el módulo `data` (fase 3). | ADR-0010, RN-PLN-21 |
 | RN-TRN-15 | `discardWorkout` pasa un workout `in_progress` a `discarded` y conserva sus series; no se borra nada ni se fija `finishedAt` (es del cierre). Los workouts `discarded` no aparecen en el historial (RN-TRN-08) ni cuentan para RN-TRN-01. | P-2, decisión 2 |
 
 ## 7. Errores
@@ -218,3 +219,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 7. **Creación del workout, antes de T6 (contrato v1.5):** orden de las comprobaciones de `startWorkout` (RN-TRN-14), orden de los IDs y prellenado defensivo (RN-TRN-02). Funciones del dominio: `checkPlannedFor(date, plannedFor)` y `createWorkout({ session, date, plannedFor, now, ids, exercises, prefill })`, que lanza si falta un ejercicio en `exercises` o si se repite uno (RN-TRN-12).
 8. **Cambios del workout, antes de T8 (contrato v1.6):** la serie extra copia el peso de la última (RN-TRN-10); `chooseExercise` con `from == to` no cambia nada y al cambiar reinicia todos los valores de las series (RN-TRN-13); descartar no fija `finishedAt` (RN-TRN-15). RN-TRN-07 se comprueba antes que cualquier otro error, y RN-TRN-11 solo actúa al marcar. Un `exerciseId` que no es de ningún ítem (`addExtraSet`, `from` de `chooseExercise`) es un bug y lanza, como RN-PLN-16. Funciones del dominio: reciben `{ workout, sets }` y devuelven `Result<{ changes, value }>` con `changes = { workout?, put, remove }`.
 9. **Servicio, antes de T10 (contrato v1.7):** un proveedor que falla cuenta como `null` (RN-TRN-16); orden y contenido de `getWorkoutView` (RN-TRN-17) y de `getExerciseHistory` (RN-TRN-08); varios `in_progress` → el más reciente (RN-TRN-01); un workout o una serie inexistentes → `training/workout-not-found` o `training/set-not-found`. `maxSets` sale de `template.items` emparejando por `order`. `logSet` y `toggleSetDone` leen el workout para pedir a `plan` todas sus `options` y aplican el cambio en `mutate`, que vuelve a leer.
+10. **Almacenamiento, antes de T12 (contrato v1.8):** un fallo de la base rechaza la promesa (RN-TRN-18), como en `plan`.
