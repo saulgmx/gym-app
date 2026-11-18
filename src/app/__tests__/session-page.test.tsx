@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrainingApi, TrainingError, Workout, WorkoutView } from '@/modules/training';
@@ -59,6 +59,11 @@ async function open(path: string, services: AppServices) {
 
 const heading = () => screen.findByRole('heading', { level: 1 });
 
+/** Opens the full card (spec 004 AC-21): the note and "Cambiar a …" live there. */
+async function showDetails(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: 'Ver detalles' }));
+}
+
 function withTraining(services: AppServices, overrides: Partial<TrainingApi>): AppServices {
   return { ...services, training: { ...services.training, ...overrides } };
 }
@@ -75,14 +80,15 @@ function editView(services: AppServices, edit: (view: WorkoutView) => WorkoutVie
 }
 
 describe('el ejercicio', () => {
-  it('AC-22: encabezado, nombre, series y rango, la nota y la tabla', async () => {
+  it('AC-22: encabezado, nombre, series y rango, la nota (en los detalles) y la tabla', async () => {
     const { services, workout } = await withWorkout();
-    await open(`/sesion/${workout.id}/2`, services);
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
 
     expect(await heading()).toHaveTextContent('Press de banca con barra');
     expect(screen.getByRole('button', { name: 'Ejercicio 2 de 7' })).toBeInTheDocument();
-    expect(screen.getByText('2 × 6-10 · RIR 3-4')).toBeInTheDocument();
-    expect(screen.getByText('Costillas abajo, sin arco')).toBeInTheDocument();
+    expect(screen.getByText('2 × 6-10 · RIR 3-4')).toBeVisible();
+    await showDetails(user);
+    expect(screen.getByText('Costillas abajo, sin arco')).toBeVisible();
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Serie 2, kilos' })).toBeInTheDocument();
     expect(document.title).toBe('Sesión · Gym');
@@ -103,8 +109,9 @@ describe('el ejercicio', () => {
         },
       };
     });
-    await open(`/sesion/${workout.id}/1`, withCue);
+    const { user } = await open(`/sesion/${workout.id}/1`, withCue);
     await heading();
+    await showDetails(user);
 
     expect(screen.getByText('Pies a la anchura de la cadera').tagName).toBe('P');
     expect(screen.getByText('Pelvis pegada al respaldo, sin despegar la lumbar').tagName).toBe('P');
@@ -133,6 +140,7 @@ describe('Cambiar a …', () => {
     const { services, workout } = await withWorkout();
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
+    await showDetails(user);
 
     await user.click(
       screen.getByRole('button', { name: 'Cambiar a Press de banca con mancuernas' }),
@@ -153,8 +161,9 @@ describe('Cambiar a …', () => {
   it('AC-24: con una serie hecha está deshabilitado y dice por qué', async () => {
     const { services, workout } = await withWorkout();
     await done(services.training, workout, 2, 1);
-    await open(`/sesion/${workout.id}/2`, services);
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
+    await showDetails(user);
 
     const change = screen.getByRole('button', { name: 'Cambiar a Press de banca con mancuernas' });
     expect(change).toBeDisabled();
@@ -166,8 +175,9 @@ describe('Cambiar a …', () => {
   it('una serie hecha de otro ejercicio no lo bloquea', async () => {
     const { services, workout } = await withWorkout();
     await done(services.training, workout, 1, 1);
-    await open(`/sesion/${workout.id}/2`, services);
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
+    await showDetails(user);
 
     expect(
       screen.getByRole('button', { name: 'Cambiar a Press de banca con mancuernas' }),
@@ -181,6 +191,7 @@ describe('Cambiar a …', () => {
     const { services, workout } = await withWorkout();
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
+    await showDetails(user);
     await user.type(screen.getByRole('textbox', { name: 'Serie 1, kilos' }), 'abc');
 
     // The tap blurs the field first: its draft is rejected, then the exercise changes.
@@ -197,8 +208,9 @@ describe('Cambiar a …', () => {
 
   it('sin alternativa no hay control de cambio', async () => {
     const { services, workout } = await withWorkout();
-    await open(`/sesion/${workout.id}/1`, services);
+    const { user } = await open(`/sesion/${workout.id}/1`, services);
     await heading();
+    await showDetails(user);
 
     expect(screen.queryByRole('button', { name: /^Cambiar a/ })).not.toBeInTheDocument();
   });
@@ -212,14 +224,218 @@ describe('Cambiar a …', () => {
       withTraining(services, { chooseExercise }),
     );
     await heading();
+    await showDetails(user);
 
     await user.click(
       screen.getByRole('button', { name: 'Cambiar a Press de banca con mancuernas' }),
     );
 
+    expect(await screen.findByText('Esta sesión ya terminó y no se puede cambiar.')).toBeVisible();
+    // spec 004 §6.4: the message stays in the compact card too.
+    await user.click(screen.getByRole('button', { name: 'Ocultar detalles' }));
+    expect(screen.getByText('Esta sesión ya terminó y no se puede cambiar.')).toBeVisible();
+  });
+});
+
+describe('la tarjeta del ejercicio (spec 004 AC-20 a AC-25)', () => {
+  const toggle = (name: string) => screen.getByRole('button', { name });
+
+  it('AC-20: empieza compacta: el nombre, la línea y "Ver detalles"; sin nota ni cambio', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(screen.getByText('2 × 6-10 · RIR 3-4')).toBeVisible();
+    expect(screen.getByText('Costillas abajo, sin arco')).not.toBeVisible();
+    expect(screen.queryByRole('button', { name: /^Cambiar a/ })).not.toBeInTheDocument();
+    const button = toggle('Ver detalles');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    const details = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    expect(details).not.toBeNull();
+    expect(details).not.toBeVisible();
+  });
+
+  it('AC-21: completa: chips, la nota sin etiqueta y "Cambiar a …"; "Ocultar detalles"', async () => {
+    const { services, workout } = await withWorkout();
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    await showDetails(user);
+
+    const chips = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(chips.map((chip) => chip.textContent)).toEqual(['2 series', '6-10 reps', 'RIR 3-4']);
+    expect(screen.getByText('Costillas abajo, sin arco')).toBeVisible();
+    expect(screen.queryByText(/Nota de la plantilla/)).not.toBeInTheDocument();
     expect(
-      await screen.findByText('Esta sesión ya terminó y no se puede cambiar.'),
-    ).toBeInTheDocument();
+      screen.getByRole('button', { name: 'Cambiar a Press de banca con mancuernas' }),
+    ).toBeVisible();
+    expect(toggle('Ocultar detalles')).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.queryByText('2 × 6-10 · RIR 3-4')).not.toBeInTheDocument();
+  });
+
+  it('AC-21: un ejercicio de 1 serie dice "1 serie"', async () => {
+    const { services, workout } = await withWorkout();
+    const { user } = await open(`/sesion/${workout.id}/4`, services);
+    await heading();
+    await showDetails(user);
+
+    expect(within(screen.getByRole('list')).getAllByRole('listitem')[0]).toHaveTextContent(
+      /^1 serie$/,
+    );
+  });
+
+  it('AC-22: la elección se conserva al pasar a otro ejercicio, por "Siguiente" y por el menú', async () => {
+    const { services, workout } = await withWorkout();
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+    await showDetails(user);
+
+    await tapToNavigate(user, screen.getByRole('link', { name: 'Siguiente' }));
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Dominadas');
+    });
+    expect(toggle('Ocultar detalles')).toHaveAttribute('aria-expanded', 'true');
+
+    await user.click(toggle('Ocultar detalles'));
+    await user.click(screen.getByRole('button', { name: 'Ejercicio 3 de 7' }));
+    await tapToNavigate(
+      user,
+      within(screen.getByRole('dialog', { name: 'Full body A' })).getByRole('button', {
+        name: /^Curl femoral/,
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Curl femoral');
+    });
+    expect(toggle('Ver detalles')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('AC-22: al abrir la página otra vez vuelve a compacta (no se guarda)', async () => {
+    const { services, workout } = await withWorkout();
+    const first = await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+    await showDetails(first.user);
+    cleanup();
+
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(toggle('Ver detalles')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('AC-23: por tiempo, la línea y el chip van en segundos', async () => {
+    const { services, workout } = await withWorkout();
+    const deadBugId = workout.items[6]?.exerciseId ?? ('' as ID);
+    const asTime = editView(services, (view) => {
+      const deadBug = view.exercises[deadBugId];
+      if (!deadBug) return view;
+      return {
+        ...view,
+        exercises: { ...view.exercises, [deadBugId]: { ...deadBug, metric: 'time' } },
+      };
+    });
+    const { user } = await open(`/sesion/${workout.id}/7`, asTime);
+    await heading();
+
+    expect(screen.getByText('1 × 8-10 s · RIR 3-4')).toBeVisible();
+    await showDetails(user);
+    const chips = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(chips.map((chip) => chip.textContent)).toEqual(['1 serie', '8-10 s', 'RIR 3-4']);
+  });
+
+  it('AC-24: con el mismo mínimo y máximo de RIR, "RIR 4"', async () => {
+    const { services, workout } = await withWorkout();
+    const deload = editView(services, (view) => ({
+      ...view,
+      workout: {
+        ...view.workout,
+        items: view.workout.items.map((i) => ({ ...i, targetRir: [4, 4] as [number, number] })),
+      },
+    }));
+    const { user } = await open(`/sesion/${workout.id}/2`, deload);
+    await heading();
+
+    expect(screen.getByText('2 × 6-10 · RIR 4')).toBeVisible();
+    await showDetails(user);
+    expect(within(screen.getByRole('list')).getByText('RIR 4')).toBeVisible();
+  });
+});
+
+describe('el pie (spec 004 AC-31 a AC-34)', () => {
+  const footer = () => screen.getByRole('navigation', { name: 'Ejercicios' });
+
+  it('AC-31: en el primero, la línea del siguiente y solo "Siguiente"', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/1`, services);
+    await heading();
+
+    expect(
+      within(footer()).getByText('Siguiente: Press de banca con barra · 2 × 6-10'),
+    ).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Siguiente']);
+  });
+
+  it('AC-32: en uno intermedio, la línea, "Anterior" y "Siguiente" en ese orden', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(within(footer()).getByText('Siguiente: Dominadas · 2 × 6-10')).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Anterior', 'Siguiente']);
+  });
+
+  it('AC-33: en el último, "Último ejercicio de hoy", solo "Anterior" y ningún "Terminar"', async () => {
+    const { services, workout } = await withWorkout();
+    await open(`/sesion/${workout.id}/7`, services);
+    await heading();
+
+    expect(within(footer()).getByText('Último ejercicio de hoy')).toBeVisible();
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Anterior']);
+    expect(screen.queryByText(/Terminar/)).not.toBeInTheDocument();
+  });
+
+  it('AC-34: con el siguiente por tiempo, el objetivo va en segundos', async () => {
+    const { services, workout } = await withWorkout();
+    const thirdId = workout.items[2]?.exerciseId ?? ('' as ID);
+    const asTime = editView(services, (view) => {
+      const third = view.exercises[thirdId];
+      if (!third) return view;
+      return { ...view, exercises: { ...view.exercises, [thirdId]: { ...third, metric: 'time' } } };
+    });
+    await open(`/sesion/${workout.id}/2`, asTime);
+    await heading();
+
+    expect(within(footer()).getByText('Siguiente: Dominadas · 2 × 6-10 s')).toBeVisible();
+  });
+
+  it('AC-34: con el siguiente cambiado a su alternativa, su nombre', async () => {
+    const { services, workout } = await withWorkout();
+    const item = workout.items[2];
+    const alternative = item?.options[1];
+    if (!item || !alternative) throw new Error('Dominadas needs an alternative in the seed');
+    const changed = await services.training.chooseExercise(
+      workout.id,
+      item.exerciseId,
+      alternative,
+    );
+    if (!changed.ok) throw new Error(changed.error.code);
+    const name = (await services.training.getWorkoutView(workout.id))?.exercises[alternative]?.name;
+    await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+
+    expect(within(footer()).getByText(`Siguiente: ${String(name)} · 2 × 6-10`)).toBeVisible();
   });
 });
 
@@ -413,8 +629,9 @@ describe('Descartar sesión', () => {
     const { services, workout } = await withWorkout();
     const opened = await open(`/sesion/${workout.id}/2`, services);
     await heading();
-    // Until T10 brings the exit sheet, the arrow opens the discard confirmation (spec 004 T6).
+    // Through the exit sheet (spec 004 AC-15).
     await opened.user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
+    await opened.user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
     return { ...opened, services, workout };
   }
 
@@ -442,6 +659,7 @@ describe('Descartar sesión', () => {
     const { user } = await open(`/sesion/${workout.id}/2`, services);
     await heading();
     await user.click(screen.getByRole('button', { name: 'Salir de la sesión' }));
+    await user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
 
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
     expect(dialog).toHaveAccessibleDescription(
@@ -456,7 +674,9 @@ describe('Descartar sesión', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    // Back to the exit sheet (spec 004 AC-16), nothing changed.
+    expect(screen.queryByRole('dialog', { name: '¿Descartar la sesión?' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: '¿Salir de la sesión?' })).toBeVisible();
     expect(router.state.location.pathname).toBe(`/sesion/${workout.id}/2`);
     expect((await services.training.getWorkout(workout.id))?.status).toBe('in_progress');
   });

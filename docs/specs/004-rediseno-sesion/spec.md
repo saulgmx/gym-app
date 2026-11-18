@@ -148,9 +148,10 @@ No hay reglas nuevas. Cambios de documentos que se hacen al aprobar esta spec:
 
 ### 6.3 Aviso de salida y descarte
 - `<dialog>` modal anclado abajo con la zona segura, como `ConfirmDialog` (spec 003).
-- Texto: "Llevas N de M ejercicios y m:ss de entrenamiento." (N = ítems hechos, RN-TRN-21); sin tiempo en una sesión de otro día.
-- Opciones como botones de ≥ 56 px: "Seguir entrenando" (relleno de acento), "Salir y continuar después" (superficie, con subtítulo) y "Descartar sesión" (borde y texto `--warn`, con subtítulo). El foco inicial va a "Seguir entrenando".
-- "Descartar sesión" cierra el aviso y abre `ConfirmDialog` con `discardDialogText`, `destructive`. "Cancelar", el fondo y Escape vuelven al aviso de salida. Si `discardWorkout` falla, el mensaje de ADR-0010 aparece en la página.
+- Texto: "Llevas N de M ejercicios y m:ss de entrenamiento." (N = ítems hechos, RN-TRN-21); sin tiempo en una sesión de otro día. "ejercicio" concuerda con el total, como en "Hoy" ("Llevas 0 de 1 ejercicio.").
+- El tiempo del texto se calcula al abrir el aviso y no se actualiza cada segundo (es la descripción del diálogo; el reloj del encabezado sigue detrás).
+- Opciones de ≥ 56 px: "Seguir entrenando" (botón, relleno de acento), "Salir y continuar después" (enlace a "Hoy", navegación normal: "atrás" vuelve a la sesión; superficie, con subtítulo) y "Descartar sesión" (botón, borde y texto `--warn`, con subtítulo). El nombre accesible de cada opción es su texto principal y el subtítulo es su descripción (`aria-describedby`). El foco inicial va a "Seguir entrenando", también al volver desde la confirmación.
+- "Descartar sesión" cierra el aviso y abre `ConfirmDialog` con `discardDialogText`, `destructive`. "Cancelar", el fondo y Escape vuelven al aviso de salida. Si `discardWorkout` falla, el aviso y la confirmación se cierran, la sesión sigue y el mensaje de ADR-0010 aparece en la tarjeta del ejercicio.
 - Fondo y Escape en el aviso de salida = "Seguir entrenando".
 
 ### 6.4 Tarjeta del ejercicio
@@ -164,7 +165,7 @@ No hay reglas nuevas. Cambios de documentos que se hacen al aprobar esta spec:
 - Solo cambia lo de AC-26 a AC-30. La pista es el `placeholder` del campo (no un valor): rango de reps y de RIR del ítem, con el contraste de `--text-muted`. La serie actual usa `--accent` en el número y en el borde de sus campos; la señal es visual y redundante (el lector de pantalla ya sabe qué series están hechas).
 
 ### 6.6 Pie
-- Fijo abajo, como hoy. Encima de los botones, una línea en `--text-muted`: "Siguiente: <ejercicio> · series × rango" o, en el último, "Último ejercicio de hoy".
+- Fijo abajo, como hoy. Encima de los botones, una línea en `--text-muted`: "Siguiente: <ejercicio> · series × rango" o, en el último, "Último ejercicio de hoy", también en una sesión de otro día (habla de la sesión en curso).
 - "Anterior" (secundario, borde) y "Siguiente" (principal, relleno de acento, más ancho), como enlaces. Sin "Terminar sesión".
 
 ### 6.7 Estados generales

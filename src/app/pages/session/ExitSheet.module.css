@@ -1,0 +1,63 @@
+/* Exit sheet (spec 004 §6.3). The sheet itself (position, backdrop, safe area) is Dialog's. */
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.375rem;
+}
+
+.summary {
+  margin: 0.125rem 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.keep {
+  min-height: 3.5rem;
+  border: none;
+  border-radius: var(--radius-button);
+  background: var(--accent);
+  color: var(--bg);
+  font: inherit;
+  font-family: var(--font-heading);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.option,
+.discard {
+  display: grid;
+  align-content: center;
+  min-height: 3.75rem;
+  border-radius: var(--radius-button);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+
+.option {
+  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.discard {
+  border: 1px solid var(--warn);
+  background: transparent;
+  color: var(--warn);
+}
+
+.optionTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.optionHint {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}

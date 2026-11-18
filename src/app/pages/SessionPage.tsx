@@ -1,4 +1,4 @@
-import { Suspense, use, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Suspense, use, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import {
   SessionHeader,
@@ -8,11 +8,14 @@ import {
   type WorkoutView,
 } from '@/modules/training';
 import type { ID } from '@/shared/kernel';
-import { ConfirmDialog, cx } from '@/shared/ui';
 import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
-import { discardDialogText } from './discard-dialog';
 import { Elapsed } from './Elapsed';
+import { formatElapsed } from '../format-time';
+import { ExerciseCard } from './session/ExerciseCard';
+import { ExitSheet } from './session/ExitSheet';
+import { SessionFooter } from './session/SessionFooter';
+import { formatExitSummary } from './session/format';
 import styles from './SessionPage.module.css';
 import pageStyles from './pages.module.css';
 
@@ -46,6 +49,8 @@ function SessionContent() {
   // "Today" is read once, when the page opens: a session of another day shows no time, and
   // midnight does not change that until the page opens again (spec 004 §8, decision 9).
   const [today] = useState(() => clock.today());
+  // Compact or full card: kept across exercises, which remount, and lost on reload (plan §6.5).
+  const [expanded, setExpanded] = useState(false);
   const { workoutId = '', exerciseIndex } = useParams();
   const view = useWorkoutView(training, workoutId as ID);
   if (view === undefined) return null;
@@ -55,10 +60,22 @@ function SessionContent() {
   if (index === null)
     return <Navigate to={`/sesion/${workoutId}/${String(resumeIndex(view))}`} replace />;
   const { workout } = view;
-  const elapsed =
-    workout.date === today ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
+  const sameDay = workout.date === today;
+  const elapsed = sameDay ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
   // Keyed by index: each exercise starts fresh (message, dialog) and focuses its name.
-  return <ExerciseScreen key={index} view={view} index={index} elapsed={elapsed} />;
+  return (
+    <ExerciseScreen
+      key={index}
+      view={view}
+      index={index}
+      elapsed={elapsed}
+      sameDay={sameDay}
+      expanded={expanded}
+      onToggleDetails={() => {
+        setExpanded(!expanded);
+      }}
+    />
+  );
 }
 
 function Unavailable() {
@@ -77,24 +94,30 @@ function ExerciseScreen({
   view,
   index,
   elapsed,
+  sameDay,
+  expanded,
+  onToggleDetails,
 }: {
   view: WorkoutView;
   index: number;
   elapsed: ReactNode;
+  /** The session is from the day the page opened: the exit text then carries the time. */
+  sameDay: boolean;
+  expanded: boolean;
+  onToggleDetails: () => void;
 }) {
-  const { training } = useApp();
+  const { training, clock } = useApp();
   const navigate = useNavigate();
-  const [confirming, setConfirming] = useState(false);
+  // The exit sheet and the text it shows, computed when it opens (spec 004 §6.3).
+  const [exitSummary, setExitSummary] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const title = useRef<HTMLHeadingElement>(null);
-  const hintId = useId();
 
   const { workout } = view;
   const item = workout.items[index - 1];
   const exercise = item && view.exercises[item.exerciseId];
   if (!item || !exercise) throw new Error(`No exercise ${String(index)} in workout ${workout.id}`);
   const { exerciseId } = item;
-  const hasDone = view.sets.some((s) => s.exerciseId === exerciseId && s.done);
   const path = (i: number) => `/sesion/${workout.id}/${String(i)}`;
 
   // A new exercise starts at the top, with focus on its name for screen readers.
@@ -107,17 +130,19 @@ function ExerciseScreen({
     setMessage(result.ok ? '' : errorMessages[result.error.code]);
   }
 
+  function openExit() {
+    const progress = workoutProgress(view);
+    const seconds = (Date.parse(clock.now()) - Date.parse(workout.startedAt)) / 1000;
+    const time = sameDay ? formatElapsed(seconds) : null;
+    setExitSummary(formatExitSummary(progress.itemsDone, progress.itemCount, time));
+  }
+
   async function discard() {
-    setConfirming(false);
+    setExitSummary(null);
     const result = await training.discardWorkout(workout.id);
     if (result.ok) void navigate('/', { replace: true });
     else setMessage(errorMessages[result.error.code]);
   }
-
-  const [minReps, maxReps] = item.repRange;
-  const [minRir, maxRir] = item.targetRir;
-  const unit = exercise.metric === 'time' ? ' s' : '';
-  const alternatives = item.options.filter((id) => id !== item.exerciseId);
 
   return (
     <div className={styles.screen}>
@@ -126,42 +151,17 @@ function ExerciseScreen({
         index={index}
         elapsed={elapsed && <TimeLabel>{elapsed}</TimeLabel>}
         onNavigate={(i) => void navigate(path(i))}
-        // Until the exit sheet comes (spec 004 T10), the arrow opens the discard confirmation,
-        // so discarding stays reachable once the menu no longer has it.
-        onExit={() => {
-          setConfirming(true);
-        }}
+        onExit={openExit}
       />
-      <section className={styles.exercise}>
-        <h1 ref={title} tabIndex={-1} className={styles.name}>
-          {exercise.name}
-        </h1>
-        <p className={styles.target}>
-          {`${String(item.plannedSets)} × ${String(minReps)}-${String(maxReps)}${unit} · RIR ${String(minRir)}-${String(maxRir)}`}
-        </p>
-        {exercise.cue && <p className={styles.tip}>{exercise.cue}</p>}
-        {item.note && <p className={styles.tip}>{item.note}</p>}
-        {alternatives.map((id) => (
-          <button
-            key={id}
-            type="button"
-            className={styles.change}
-            disabled={hasDone}
-            aria-describedby={hasDone ? hintId : undefined}
-            onClick={() => void change(id)}
-          >
-            {`Cambiar a ${view.exercises[id]?.name ?? id}`}
-          </button>
-        ))}
-        {hasDone && alternatives.length > 0 && (
-          <p id={hintId} className={styles.hint}>
-            Para cambiar de ejercicio, desmarca las series hechas
-          </p>
-        )}
-        <p className={styles.problem} aria-live="polite">
-          {message}
-        </p>
-      </section>
+      <ExerciseCard
+        view={view}
+        item={item}
+        expanded={expanded}
+        onToggle={onToggleDetails}
+        onChange={(to) => void change(to)}
+        message={message}
+        titleRef={title}
+      />
       <SetTable
         key={item.exerciseId}
         training={training}
@@ -169,26 +169,15 @@ function ExerciseScreen({
         exerciseId={item.exerciseId}
         describeError={describeTrainingError}
       />
-      <nav aria-label="Ejercicios" className={styles.footer}>
-        {index > 1 && (
-          <Link to={path(index - 1)} className={styles.step}>
-            Anterior
-          </Link>
-        )}
-        {index < workout.items.length && (
-          <Link to={path(index + 1)} className={cx(styles.step, styles.next)}>
-            Siguiente
-          </Link>
-        )}
-      </nav>
-      <ConfirmDialog
-        open={confirming}
-        {...discardDialogText(workoutProgress(view))}
-        destructive
-        onConfirm={() => void discard()}
-        onCancel={() => {
-          setConfirming(false);
+      <SessionFooter view={view} index={index} path={path} />
+      <ExitSheet
+        open={exitSummary !== null}
+        summary={exitSummary ?? ''}
+        counts={workoutProgress(view)}
+        onClose={() => {
+          setExitSummary(null);
         }}
+        onDiscard={() => void discard()}
       />
     </div>
   );
