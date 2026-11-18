@@ -16,6 +16,15 @@ export function createPlan(deps: { db: Dexie; clock: Clock }): PlanApi {
   });
 }
 
+export {
+  EXERCISE_CHANGE_SECONDS,
+  SET_WORK_SECONDS,
+  WARMUP_SECONDS,
+  displayMinutes,
+  plannedSessionSeconds,
+  setSeconds,
+} from './domain/duration';
+export { formatRir } from './ui/format';
 export { planStores } from './infrastructure/schema';
 export { useTodayPlan, useWeekPlan } from './ui/hooks';
 export { PlanExerciseList } from './ui/PlanExerciseList';
