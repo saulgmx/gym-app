@@ -42,7 +42,7 @@ const workoutItem = (exerciseId: string, order: number, plannedSets: number): Wo
 function setsOf(exerciseId: string, pattern: Pattern): SetLog[] {
   const [planned = '', extra = ''] = pattern.split('+');
   const make = (marks: string, offset: number, isExtra: boolean) =>
-    [...marks].map((mark, i): SetLog => ({
+    marks.split('').map((mark, i): SetLog => ({
       id: id(`${exerciseId}-${String(offset + i + 1)}`),
       workoutId: id('w'),
       exerciseId: id(exerciseId),
