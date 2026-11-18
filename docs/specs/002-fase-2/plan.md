@@ -193,6 +193,8 @@ El contrato ten铆a `configureTraining(ports)` para romper el ciclo `training` 鈫
 
 Estamos en 168.64 kB de 200 kB y el umbral para cambiar a `zod/mini` es 170 kB (plan 001 搂6.2). `training` no usa Zod, pero la sesi贸n activa a帽ade c贸digo propio y lo m谩s probable es que se pase del umbral. Se mide al terminar el punto de control C (la UI). Si pasa de 170 kB, se cambia `plan/infrastructure/seed-schema.ts` a `zod/mini` en su propia tarea, con las pruebas del esquema sin cambios. No se dividen rutas con `lazy`, porque `.size-limit.json` mide todos los JS de `dist/assets` y la PWA los precachea igual.
 
+- **Medici贸n al cerrar el punto de control B (T16, 17-nov):** 172.32 kB de 200 kB con `training` en el bundle, sin UI todav铆a. Ya pasa el umbral de 170 kB; la decisi贸n sobre `zod/mini` se mantiene en T24, con la UI medida.
+
 ### 6.10 Prellenado y "anterior"
 
 - `nullSuggestions` vive en `app/compose.ts`, no en `training` (es cableado, no regla).
