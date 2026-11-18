@@ -1,31 +1,35 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 import { err, ok, type ID } from '@/shared/kernel';
 import type { SeedParser } from '../application/ports';
 
 // Shape of the plan seed (RN-PLN-24, ADR-0012). Cross-record rules, high risk included,
-// are checked afterwards by validateSeed (RN-PLN-07, 15).
+// are checked afterwards by validateSeed (RN-PLN-07, 15). zod/mini keeps the initial bundle
+// under budget (spec 002 plan §6.9): the same checks, written as functions.
 
 // No eval: the CSP forbids it (architecture §7.10), and Zod's `new Function` probe is reported as
 // a violation even when caught. Read when each object schema is built, so it goes first.
 z.config({ jitless: true });
 
-const id = z
-  .uuidv7()
-  .refine((v) => v === v.toLowerCase(), 'UUID must be lowercase') // (b) one spelling per ID
-  .transform((v) => v as ID);
+const id = z.pipe(
+  z.uuidv7().check(z.refine((v) => v === v.toLowerCase(), 'UUID must be lowercase')), // (b)
+  z.transform((v) => v as ID),
+);
 
-const text = z.string().regex(/\S/, 'Text must not be blank'); // (h)
-const positiveInt = z.int().min(1); // (c)
-const rir = z.int().min(0).max(5); // (d)
+const text = z.string().check(z.regex(/\S/, 'Text must not be blank')); // (h)
+const positiveInt = z.int().check(z.minimum(1)); // (c)
+const rir = z.int().check(z.minimum(0), z.maximum(5)); // (d)
 
 // (e)
-const range = (value: z.ZodNumber) =>
-  z.tuple([value, value]).refine(([min, max]) => min <= max, 'Range min must be <= max');
+const range = (value: z.ZodMiniNumber) =>
+  z.tuple([value, value]).check(z.refine(([min, max]) => min <= max, 'Range min must be <= max'));
 
 // (g) JSON object keys are strings; at runtime `record[1]` reads the key "1".
-const weekKey = z.string().regex(/^[1-9]\d*$/, 'Week key must be a positive integer');
-const byWeek = <T extends z.ZodType>(value: T) =>
-  z.record(weekKey, value).transform((r) => r as Record<number, z.output<T>>);
+const weekKey = z.string().check(z.regex(/^[1-9]\d*$/, 'Week key must be a positive integer'));
+const byWeek = <T extends z.ZodMiniType>(value: T) =>
+  z.pipe(
+    z.record(weekKey, value),
+    z.transform((r) => r as Record<number, z.output<T>>),
+  );
 
 const muscleGroup = z.enum([
   'chest',
@@ -45,13 +49,13 @@ const exercise = z.strictObject({
   id,
   name: text,
   muscleGroup,
-  secondaryMuscles: z.array(muscleGroup).exactOptional(),
+  secondaryMuscles: z.exactOptional(z.array(muscleGroup)),
   equipment: z.enum(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight']),
   metric: z.enum(['weight', 'reps', 'time']),
   lumbarRisk: z.enum(['low', 'medium', 'high']), // (j) RN-PLN-07 rejects 'high'
   isPrimary: z.boolean(),
-  beltRecommended: z.boolean().exactOptional(),
-  cue: text.exactOptional(),
+  beltRecommended: z.exactOptional(z.boolean()),
+  cue: z.exactOptional(text),
   restSeconds: range(positiveInt),
 });
 
@@ -62,7 +66,7 @@ const scheduleEntry = z.discriminatedUnion('kind', [
     weekday,
     kind: z.literal('workout'),
     templateId: id,
-    weekParity: z.enum(['odd', 'even']).exactOptional(),
+    weekParity: z.exactOptional(z.enum(['odd', 'even'])),
   }),
   z.strictObject({ weekday, kind: z.literal('cardio'), note: text }),
   z.strictObject({ weekday, kind: z.literal('rest') }),
@@ -75,39 +79,39 @@ const block = z.strictObject({
   startWeek: positiveInt,
   endWeek: positiveInt,
   targetRir: range(rir),
-  weekRir: byWeek(range(rir)).exactOptional(),
-  weekFactors: byWeek(z.number().gt(0).max(1)), // (f)
+  weekRir: z.exactOptional(byWeek(range(rir))),
+  weekFactors: byWeek(z.number().check(z.gt(0), z.maximum(1))), // (f)
   isDeload: z.boolean(),
-  schedule: z.array(scheduleEntry).min(1),
+  schedule: z.array(scheduleEntry).check(z.minLength(1)),
 });
 
 const templateItem = z.strictObject({
   exerciseId: id,
-  alternatives: z.array(id).min(1).exactOptional(),
+  alternatives: z.exactOptional(z.array(id).check(z.minLength(1))),
   order: positiveInt,
   sets: range(positiveInt),
   reps: range(positiveInt),
-  note: text.exactOptional(),
+  note: z.exactOptional(text),
 });
 
 const template = z.strictObject({
   id,
   blockId: id,
   name: text,
-  items: z.array(templateItem).min(1),
+  items: z.array(templateItem).check(z.minLength(1)),
 });
 
 // (i) every collection has at least one element.
 export const planSeedSchema = z.strictObject({
-  exercises: z.array(exercise).min(1),
+  exercises: z.array(exercise).check(z.minLength(1)),
   program: z.strictObject({
     id,
     name: text,
     totalWeeks: positiveInt,
-    blockIds: z.array(id).min(1),
+    blockIds: z.array(id).check(z.minLength(1)),
   }),
-  blocks: z.array(block).min(1),
-  templates: z.array(template).min(1),
+  blocks: z.array(block).check(z.minLength(1)),
+  templates: z.array(template).check(z.minLength(1)),
 });
 
 // (k)

@@ -198,6 +198,7 @@ El contrato tenía `configureTraining(ports)` para romper el ciclo `training` �
 Estamos en 168.64 kB de 200 kB y el umbral para cambiar a `zod/mini` es 170 kB (plan 001 §6.2). `training` no usa Zod, pero la sesión activa añade código propio y lo más probable es que se pase del umbral. Se mide al terminar el punto de control C (la UI). Si pasa de 170 kB, se cambia `plan/infrastructure/seed-schema.ts` a `zod/mini` en su propia tarea, con las pruebas del esquema sin cambios. No se dividen rutas con `lazy`, porque `.size-limit.json` mide todos los JS de `dist/assets` y la PWA los precachea igual.
 
 - **Medición al cerrar el punto de control B (T16, 17-nov):** 172.32 kB de 200 kB con `training` en el bundle, sin UI todavía. Ya pasa el umbral de 170 kB; la decisión sobre `zod/mini` se mantiene en T24, con la UI medida.
+- **T24 (17-nov):** con la UI de la sesión, 177.22 kB. Con `seed-schema.ts` en `zod/mini`, **160.08 kB** de 200 kB, con las pruebas del esquema sin cambios y el E2E (CSP incluida) en verde en Chromium y WebKit. Las pruebas siguen importando tipos de `zod`, que no entran en el bundle.
 
 ### 6.10 Prellenado y "anterior"
 
