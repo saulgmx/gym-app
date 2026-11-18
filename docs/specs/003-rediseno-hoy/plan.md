@@ -1,6 +1,6 @@
 # Plan técnico: Rediseño de "Hoy"
 
-**Spec:** `specs/003-rediseno-hoy/spec.md` · **Estado:** Aprobado (18-nov-2026)
+**Spec:** `specs/003-rediseno-hoy/spec.md` · **Estado:** Implementado (18-nov-2026)
 
 ## 1. Resumen de la solución
 
