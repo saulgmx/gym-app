@@ -107,7 +107,10 @@ test('AC-8: el sábado se hace la sesión del viernes', async ({ page }) => {
   ).toBeVisible();
   await startFromToday(page);
 
-  await expect(page.getByText('Full body A')).toBeVisible();
+  // The session name is the menu's (spec 004 AC-4).
+  await page.getByRole('button', { name: 'Ejercicio 1 de 7' }).click();
+  await expect(page.getByRole('dialog', { name: 'Full body A' })).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Prensa de piernas');
   await page.goto('/');
   // Started today: no date after "Continuar sesión".
@@ -118,8 +121,12 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
   await freezeClockAt(page, MONDAY);
   await page.goto('/');
   await startFromToday(page);
-  await page.getByRole('button', { name: 'Ver ejercicios' }).click();
-  await page.getByRole('button', { name: 'Descartar sesión' }).click();
+  // Until T10 brings the exit sheet, the arrow opens the discard confirmation (spec 004 T6).
+  // From the keyboard: WebKit, like Safari, does not focus a button on a mouse click, so only a
+  // keyboard (or screen reader) user has a focus to get back.
+  const exit = page.getByRole('button', { name: 'Salir de la sesión' });
+  await exit.focus();
+  await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: '¿Descartar la sesión?' });
 
   // Cancel first: nothing changes, and focus starts on Cancelar (P-2).
@@ -128,8 +135,9 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(SESSION_URL);
 
-  // The list stays open after cancelling.
-  await page.getByRole('button', { name: 'Descartar sesión' }).click();
+  // Focus is back on the arrow after cancelling.
+  await expect(exit).toBeFocused();
+  await exit.click();
   await dialog.getByRole('button', { name: 'Sí, descartar' }).click();
 
   await expect(page).toHaveURL('/');

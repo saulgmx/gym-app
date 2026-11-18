@@ -131,7 +131,8 @@ describe('SessionHeader: la fila', () => {
     expect(toggle()).toHaveAttribute('aria-expanded', 'false');
     expect(toggle()).toHaveAttribute('aria-haspopup', 'dialog');
     expect(screen.getByText('18:42')).toBeInTheDocument();
-    expect(screen.queryByText('Full body A')).not.toBeInTheDocument();
+    // The session name lives in the menu only (a closed dialog), never in the row.
+    expect(screen.queryByText('Full body A', { ignore: 'dialog *' })).not.toBeInTheDocument();
     // The page's h1 is the exercise (spec 002 §6).
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
@@ -145,6 +146,12 @@ describe('SessionHeader: la fila', () => {
   it('AC-3: con elapsed = null no hay tiempo', () => {
     setup({ elapsed: null });
     expect(screen.queryByText('18:42')).not.toBeInTheDocument();
+    // Not even an empty pill: the row is the arrow, the menu button and the (closed) menu.
+    expect([...screen.getByRole('banner').children].map((child) => child.tagName)).toEqual([
+      'BUTTON',
+      'BUTTON',
+      'DIALOG',
+    ]);
   });
 
   it('la flecha llama a onExit', async () => {
