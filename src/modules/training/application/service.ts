@@ -61,6 +61,8 @@ export interface TrainingApi {
   getActiveWorkout(): Promise<Workout | undefined>;
   getWorkout(id: ID): Promise<Workout | undefined>;
   getWorkoutView(id: ID): Promise<WorkoutView | undefined>;
+  // RN-TRN-01 picks the active one; RN-TRN-17 builds its view (spec 003, "Hoy" in D2).
+  getActiveWorkoutView(): Promise<WorkoutView | undefined>;
   getExerciseHistory(
     exerciseId: ID,
     opts?: { limit?: number; before?: LocalDate },
@@ -139,6 +141,32 @@ export function createTrainingService(deps: {
     return mutate(set.workoutId, change(exercises));
   }
 
+  // RN-TRN-01: with broken data, the most recently started one.
+  async function activeWorkout(): Promise<Workout | undefined> {
+    const active = await repository.findInProgress();
+    return active.sort((a, b) => compareInstants(b.startedAt, a.startedAt))[0];
+  }
+
+  // RN-TRN-17
+  async function workoutView(id: ID): Promise<WorkoutView | undefined> {
+    const state = await repository.load(id);
+    if (!state) return undefined;
+    const { workout, sets } = state;
+
+    const wanted = [...new Set(optionsOf(workout))];
+    const found = await plan.getExercises(wanted);
+    const missing = wanted.find((w) => !found.some((e) => e.id === w));
+    if (missing) throw new Error(`Exercise ${missing} missing from plan (RN-TRN-17)`);
+
+    const orderOf = new Map(workout.items.map((i) => [i.exerciseId, i.order]));
+    const position = (s: SetLog) => orderOf.get(s.exerciseId) ?? Number.POSITIVE_INFINITY;
+    return {
+      workout,
+      sets: [...sets].sort((a, b) => position(a) - position(b) || a.setNumber - b.setNumber),
+      exercises: Object.fromEntries(found.map((e) => [e.id, e])),
+    };
+  }
+
   return {
     // RN-TRN-14 order: week, plan of the day, then RN-TRN-01 inside the transaction.
     async startWorkout(date, opts = {}) {
@@ -209,32 +237,15 @@ export function createTrainingService(deps: {
       return result.ok ? ok(undefined) : result;
     },
 
-    // RN-TRN-01: with broken data, the most recently started one.
-    async getActiveWorkout() {
-      const active = await repository.findInProgress();
-      return active.sort((a, b) => compareInstants(b.startedAt, a.startedAt))[0];
-    },
+    getActiveWorkout: activeWorkout,
 
     getWorkout: async (id) => (await repository.load(id))?.workout,
 
-    // RN-TRN-17
-    async getWorkoutView(id) {
-      const state = await repository.load(id);
-      if (!state) return undefined;
-      const { workout, sets } = state;
+    getWorkoutView: workoutView,
 
-      const wanted = [...new Set(optionsOf(workout))];
-      const found = await plan.getExercises(wanted);
-      const missing = wanted.find((w) => !found.some((e) => e.id === w));
-      if (missing) throw new Error(`Exercise ${missing} missing from plan (RN-TRN-17)`);
-
-      const orderOf = new Map(workout.items.map((i) => [i.exerciseId, i.order]));
-      const position = (s: SetLog) => orderOf.get(s.exerciseId) ?? Number.POSITIVE_INFINITY;
-      return {
-        workout,
-        sets: [...sets].sort((a, b) => position(a) - position(b) || a.setNumber - b.setNumber),
-        exercises: Object.fromEntries(found.map((e) => [e.id, e])),
-      };
+    async getActiveWorkoutView() {
+      const active = await activeWorkout();
+      return active ? workoutView(active.id) : undefined;
     },
 
     getExerciseHistory: async (exerciseId, opts) =>

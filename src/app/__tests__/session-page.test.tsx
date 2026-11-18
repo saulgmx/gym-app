@@ -386,15 +386,35 @@ describe('Descartar sesión', () => {
   it('AC-34: confirmar la descarta y vuelve a "Hoy" con replace', async () => {
     const { router, services, user, workout } = await openDiscard();
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
-    expect(dialog).toHaveTextContent('Las series registradas no contarán en tu historial.');
+    expect(dialog).toHaveAccessibleDescription(
+      'No registraste ninguna serie. No se puede deshacer.',
+    );
 
-    await user.click(within(dialog).getByRole('button', { name: 'Descartar' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, descartar' }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
     });
     expect(router.state.historyAction).toBe('REPLACE');
     expect((await services.training.getWorkout(workout.id))?.status).toBe('discarded');
+  });
+
+  it('spec 003 AC-26: el mismo texto que en "Hoy", con las series ya hechas', async () => {
+    const { services, workout } = await withWorkout();
+    await done(services.training, workout, 1, 1);
+    await done(services.training, workout, 1, 2);
+    await done(services.training, workout, 2, 1);
+    const { user } = await open(`/sesion/${workout.id}/2`, services);
+    await heading();
+    await user.click(screen.getByRole('button', { name: 'Ver ejercicios' }));
+    await user.click(screen.getByRole('button', { name: 'Descartar sesión' }));
+
+    const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
+    expect(dialog).toHaveAccessibleDescription(
+      'Las 3 series que registraste en 2 ejercicios no contarán en tu historial. No se puede deshacer.',
+    );
+    expect(within(dialog).getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Sí, descartar' })).toBeInTheDocument();
   });
 
   it('AC-34: cancelar no cambia nada (P-2)', async () => {

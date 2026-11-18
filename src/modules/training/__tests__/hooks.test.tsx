@@ -8,6 +8,7 @@ import {
   createTraining,
   trainingStores,
   useActiveWorkout,
+  useActiveWorkoutView,
   useLastSession,
   useWorkoutView,
   type TrainingApi,
@@ -70,6 +71,34 @@ describe('useActiveWorkout', () => {
     const workout = await start();
     await waitFor(() => {
       expect(result.current?.id).toBe(workout.id);
+    });
+
+    await training.discardWorkout(workout.id);
+    await waitFor(() => {
+      expect(result.current).toBeNull();
+    });
+  });
+});
+
+describe('useActiveWorkoutView (spec 003)', () => {
+  it('RN-TRN-19: undefined mientras carga, null sin sesión; se actualiza al marcar una serie y al descartar', async () => {
+    const { result } = renderHook(() => useActiveWorkoutView(training));
+    expect(result.current).toBeUndefined();
+    await waitFor(() => {
+      expect(result.current).toBeNull();
+    });
+
+    const workout = await start();
+    await waitFor(() => {
+      expect(result.current?.workout.id).toBe(workout.id);
+    });
+    expect(result.current?.sets.some((s) => s.done)).toBe(false);
+
+    const setId = await firstPrensaSet();
+    await training.logSet(setId, { weightKg: 60, reps: 10 });
+    await training.toggleSetDone(setId);
+    await waitFor(() => {
+      expect(result.current?.sets.find((s) => s.id === setId)?.done).toBe(true);
     });
 
     await training.discardWorkout(workout.id);

@@ -1,9 +1,15 @@
+/* Bottom sheet for every use (spec 003 plan §6.12): full width, flush with the bottom edge and
+   clear of the iPhone home indicator. */
 .dialog {
-  width: min(100% - 2rem, 24rem);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: auto 0 0;
   border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+  border-bottom: 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   background: var(--surface);
-  padding: 1.25rem;
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
   color: var(--text);
 }
 
@@ -22,11 +28,11 @@
   color: var(--text-muted);
 }
 
+/* Cancel on the left, the action on the right, each half the width: both within thumb reach. */
 .actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
-  justify-content: flex-end;
 }
 
 .button {

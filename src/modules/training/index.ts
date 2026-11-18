@@ -24,8 +24,9 @@ export function createTraining(deps: {
   });
 }
 
+export { workoutProgress } from './application/progress';
 export { trainingStores } from './infrastructure/schema';
-export { useActiveWorkout, useLastSession, useWorkoutView } from './ui/hooks';
+export { useActiveWorkout, useActiveWorkoutView, useLastSession, useWorkoutView } from './ui/hooks';
 export { SetRow } from './ui/SetRow';
 export { SessionHeader } from './ui/SessionHeader';
 export { SetTable } from './ui/SetTable';
@@ -37,6 +38,7 @@ export type {
   SuggestionProvider,
   WorkoutView,
 } from './application/ports';
+export type { WorkoutProgress } from './domain/progress';
 export type {
   ExerciseSession,
   InvalidSetValuesDetails,

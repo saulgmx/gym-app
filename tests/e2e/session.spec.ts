@@ -128,7 +128,7 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
 
   // The list stays open after cancelling.
   await page.getByRole('button', { name: 'Descartar sesión' }).click();
-  await dialog.getByRole('button', { name: 'Descartar' }).click();
+  await dialog.getByRole('button', { name: 'Sí, descartar' }).click();
 
   await expect(page).toHaveURL('/');
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { TrainingApi, TrainingError, Workout } from '@/modules/training';
+import type { TrainingApi, TrainingError, Workout, WorkoutView } from '@/modules/training';
 import { err, fixedClock, type ID, type LocalDate, type Result } from '@/shared/kernel';
 import type { AppServices } from '../context';
 import { closeTestDatabases, createTestServices, renderRoute } from './test-app';
@@ -34,6 +34,20 @@ async function started(services: AppServices, day: string): Promise<Workout> {
   const result = await services.training.startWorkout(date(day));
   if (!result.ok) throw new Error(result.error.code);
   return result.value;
+}
+
+/** Marks [item index from 0, setNumber] pairs as done, with valid values (RN-TRN-05). */
+async function markDone(training: TrainingApi, workout: Workout, sets: [number, number][]) {
+  for (const [index, setNumber] of sets) {
+    const view = await training.getWorkoutView(workout.id);
+    const exerciseId = workout.items[index]?.exerciseId;
+    const set = view?.sets.find((s) => s.exerciseId === exerciseId && s.setNumber === setNumber);
+    if (!view || !set) throw new Error(`No set ${String(setNumber)} of item ${String(index + 1)}`);
+    const weighted = view.exercises[set.exerciseId]?.metric === 'weight';
+    await training.logSet(set.id, weighted ? { weightKg: 60, reps: 10 } : { reps: 10 });
+    const marked = await training.toggleSetDone(set.id);
+    if (!marked.ok) throw new Error(marked.error.code);
+  }
 }
 
 const startButton = () => screen.queryByRole('button', { name: 'Iniciar sesión' });
@@ -127,8 +141,9 @@ function withTraining(services: AppServices, overrides: Partial<TrainingApi>): A
 describe('Continuar sesión', () => {
   it('mientras carga la sesión activa no hay botones (nunca "Iniciar" de más)', async () => {
     const services = createTestServices({ clock: at('2026-11-16') });
-    const getActiveWorkout = () => new Promise<Workout | undefined>(() => undefined);
-    await renderRoute('/', withTraining(services, { getActiveWorkout }));
+    // "Hoy" reads the active workout through its view (spec 003 plan §6.4).
+    const getActiveWorkoutView = () => new Promise<WorkoutView | undefined>(() => undefined);
+    await renderRoute('/', withTraining(services, { getActiveWorkoutView }));
     // Long enough for the plan queries to answer.
     await new Promise((resolve) => setTimeout(resolve, 50));
 
@@ -181,16 +196,36 @@ describe('Descartar sesión', () => {
     return { ...opened, workout };
   }
 
-  it('AC-34: confirmar la descarta y vuelve a ofrecer "Iniciar sesión"', async () => {
+  it('AC-34, spec 003 AC-24: sin series, "No registraste ninguna serie"; confirmar la descarta', async () => {
     const { services, user, workout } = await openWithSession();
     const dialog = screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
-    expect(dialog).toHaveTextContent('Las series registradas no contarán en tu historial.');
+    expect(dialog).toHaveAccessibleDescription(
+      'No registraste ninguna serie. No se puede deshacer.',
+    );
 
-    await user.click(within(dialog).getByRole('button', { name: 'Descartar' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, descartar' }));
 
     expect(await screen.findByRole('button', { name: 'Iniciar sesión' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Sesión en curso' })).not.toBeInTheDocument();
     expect((await services.training.getWorkout(workout.id))?.status).toBe('discarded');
+  });
+
+  it('spec 003 AC-23: con 3 series hechas en 2 ejercicios, el texto las cuenta', async () => {
+    const services = createTestServices({ clock: at('2026-11-18') });
+    const workout = await started(services, '2026-11-18');
+    await markDone(services.training, workout, [
+      [0, 1],
+      [0, 2],
+      [1, 1],
+    ]);
+    const { user } = await openToday('2026-11-18', services);
+    await user.click(await screen.findByRole('button', { name: 'Descartar sesión' }));
+
+    expect(
+      screen.getByRole('dialog', { name: '¿Descartar la sesión?' }),
+    ).toHaveAccessibleDescription(
+      'Las 3 series que registraste en 2 ejercicios no contarán en tu historial. No se puede deshacer.',
+    );
   });
 
   it('AC-34: cancelar no cambia nada (P-2)', async () => {
@@ -211,7 +246,7 @@ describe('Descartar sesión', () => {
     const { user } = await openToday('2026-11-18', withTraining(services, { discardWorkout }));
     await user.click(await screen.findByRole('button', { name: 'Descartar sesión' }));
 
-    await user.click(screen.getByRole('button', { name: 'Descartar' }));
+    await user.click(screen.getByRole('button', { name: 'Sí, descartar' }));
 
     expect(
       await screen.findByText('Esta sesión ya terminó y no se puede cambiar.'),

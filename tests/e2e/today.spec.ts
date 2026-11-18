@@ -12,7 +12,9 @@ async function expectWednesdayOfWeekOne(page: Page) {
   await expect(page.getByText('Bloque 1 · Full body')).toBeVisible();
   await expect(page.getByText('Semana 1 de 15')).toBeVisible();
   const strip = page.getByRole('list', { name: 'Semana' });
-  await expect(strip.locator('[aria-current="date"]')).toContainText('miércoles, Full body B');
+  await expect(
+    strip.getByRole('img', { name: 'miércoles, hoy, Full body B, pendiente' }),
+  ).toBeVisible();
 }
 
 test('AC-1: first start on Wednesday 2026-11-18 shows Full body B of week 1', async ({ page }) => {

@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.16 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.17 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -221,7 +221,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 | RN-TRN-18 | Un fallo del almacenamiento (la base lanza) es un error inesperado: la promesa rechaza, no se devuelve un `Result`, y lo muestra el aviso genérico (ADR-0010). Convertir `QuotaExceededError` en `data/storage-full` llega con el módulo `data` (fase 3). | ADR-0010, RN-PLN-21 |
 | RN-TRN-19 | Hooks (`useWorkoutView`, `useActiveWorkout`, `useLastSession`, con `useLiveQuery`): devuelven `undefined` mientras cargan y mientras el resultado pertenece a otra clave (otro `id`, o otro ejercicio o fecha), y `null` si no existe; se actualizan solos al cambiar las tablas que leen (también las de `plan` en `useWorkoutView`); un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta. `useLastSession` es `getExerciseHistory(exerciseId, { before, limit: 1 })[0]`. | RN-PLN-26, spec 002 plan §6.4 |
 | RN-TRN-20 | Tiempo restante de un workout `in_progress`: la fórmula de RN-PLN-27 **sin** los 600 s de calentamiento, contando solo las series no hechas (planificadas y extra) y 90 s por cada ítem con al menos una serie no hecha. Usa el ejercicio elegido de cada ítem (RN-TRN-13) y sus `restSeconds` y `metric`, de `WorkoutView.exercises`; las constantes son las de `plan`. Mismo redondeo. Sin series pendientes no hay estimación. No depende del reloj. Función pura del dominio. | Spec 003 |
-| RN-TRN-21 | Avance de un workout `in_progress`: un ítem está **hecho** si todas sus series están hechas (también las extra). El ítem **actual** es el primero, por `order`, con una serie no hecha, y su serie actual es la de menor `setNumber` no hecha; si no hay ninguno, no hay ítem actual. Con esta regla `/sesion/:workoutId` elige el ejercicio (spec 002 AC-4) y "Hoy" muestra "N de M ejercicios hechos" y "Vas en". Función pura del dominio. | Spec 003, spec 002 AC-4 |
+| RN-TRN-21 | Avance de un workout `in_progress`: un ítem está **hecho** si todas sus series están hechas (también las extra). El ítem **actual** es el primero, por `order`, con una serie no hecha, y su serie actual es la de menor `setNumber` no hecha; si no hay ninguno, no hay ítem actual. Un ítem sin series cuenta como hecho (dato inconsistente; RN-TRN-10 lo impide, spec 003 §7). Con esta regla `/sesion/:workoutId` elige el ejercicio (spec 002 AC-4) y "Hoy" muestra "N de M ejercicios hechos" y "Vas en". Función pura del dominio. | Spec 003, spec 002 AC-4 |
 | RN-TRN-15 | `discardWorkout` pasa un workout `in_progress` a `discarded` y conserva sus series; no se borra nada ni se fija `finishedAt` (es del cierre). Los workouts `discarded` no aparecen en el historial (RN-TRN-08) ni cuentan para RN-TRN-01. | P-2, decisión 2 |
 
 ## 7. Errores
@@ -244,7 +244,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 - RN-TRN-14: otro día de la semana (pasado y futuro), otra semana y un día de cardio.
 - P-1: iniciar cada plantilla del seed y elegir cada alternativa → ningún ejercicio `high`.
 - RN-TRN-20: Full body A de la semana 1 sin series hechas → 40 min; con Prensa completa y la 1.ª de Press de banca hecha → 25 min; todo hecho → sin estimación; una serie extra pendiente suma.
-- RN-TRN-21: ítem con una serie extra sin hacer no está hecho; ítem actual y su serie; todo hecho → sin ítem actual.
+- RN-TRN-21: ítem con una serie extra sin hacer no está hecho; ítem sin series cuenta como hecho; ítem actual y su serie; todo hecho → sin ítem actual.
 
 ## 9. Trazabilidad
 
@@ -270,3 +270,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 16. **Asistencia solo en el peso, T26 (contrato v1.14):** en el iPhone las reps y el RIR aparecían con signo menos al activar la asistencia. Lo guardado era correcto (RN-TRN-04 rechaza negativos); el error estaba solo en lo que se mostraba, y la redacción de "cada campo" se precisa.
 17. **Spec 003, rediseño de "Hoy" (contrato v1.15):** tiempo restante (RN-TRN-20) y avance de la sesión en curso (RN-TRN-21), que pasa al dominio desde `app/pages` (hoy `firstPending` en `SessionPage`). La forma exacta de la API la fija el plan técnico.
 18. **Plan de la spec 003 (contrato v1.16):** `getActiveWorkoutView` y `useActiveWorkoutView` para D2; `workoutProgress(view)` exportado, con `progressOf` puro en el dominio que recibe el tiempo por serie (el dominio no importa `plan`, architecture §5.2); `SessionPage` usa `current` en lugar de su `firstPending`. `useActiveWorkout` se queda para `UpdatePrompt` y `DayPreviewPage`.
+19. **Review del punto A de la spec 003 (contrato v1.17):** RN-TRN-21 dice explícitamente que un ítem sin series cuenta como hecho, como ya pedía spec 003 §7; antes solo lo decía la spec.
