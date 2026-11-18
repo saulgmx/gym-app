@@ -87,14 +87,14 @@ describe('TodayPage', () => {
     expect(within(card()).queryByRole('list')).not.toBeInTheDocument();
   });
 
-  it('AC-17: la tira de la semana marca hoy', async () => {
+  it('AC-17, spec 003 AC-12: la tira de la semana marca hoy', async () => {
     await openToday();
 
     const strip = await screen.findByRole('list', { name: 'Semana' });
-    const days = within(strip).getAllByRole('listitem');
+    const days = within(strip).getAllByRole('img');
     expect(days).toHaveLength(7);
-    expect(days[2]).toHaveAttribute('aria-current', 'date');
-    expect(days[2]).toHaveTextContent('miércoles, Full body B');
+    expect(days[2]).toHaveAccessibleName('miércoles, hoy, Full body B, pendiente');
+    expect(days[0]).toHaveAccessibleName('lunes, Full body A, no hecha');
   });
 
   it('AC-18: semana de descarga', async () => {
