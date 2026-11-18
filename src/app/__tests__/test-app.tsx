@@ -25,7 +25,7 @@ export function createTestServices({
   const db = openDatabase({ name: crypto.randomUUID() });
   opened.push(db);
   const app = compose({ db, clock: seedClock, seed });
-  return { plan: app.plan, clock, ready: app.ready };
+  return { plan: app.plan, training: app.training, clock, ready: app.ready };
 }
 
 /** Call from afterEach in files that use createTestServices. */

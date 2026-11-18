@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.9 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.10 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -125,10 +125,12 @@ export function useWorkoutView(training: TrainingApi, id: ID): WorkoutView | nul
 export function useActiveWorkout(training: TrainingApi): Workout | null | undefined;
 export function useLastSession(training: TrainingApi, exerciseId: ID, before: LocalDate): ExerciseSession | null | undefined; // "anterior" de RF-12
 
-// Componentes. Los textos de error llegan con describeError desde app (ADR-0010).
+// Componentes. Los textos de error llegan con describeError desde app (ADR-0010); el contexto
+// dice la métrica del ejercicio y si la asistencia está activa, para elegir el texto del rango.
+interface SetErrorContext { metric: 'weight' | 'reps' | 'time'; assisted: boolean }
 function SetTable(props: {
   training: TrainingApi; view: WorkoutView; exerciseId: ID;
-  describeError: (error: DomainError) => string;
+  describeError: (error: TrainingError, context: SetErrorContext) => string;
 }): JSX.Element;
 function SessionHeader(props: { view: WorkoutView; index: number; onNavigate: (index: number) => void }): JSX.Element;
 export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fase 4
@@ -222,3 +224,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 9. **Servicio, antes de T10 (contrato v1.7):** un proveedor que falla cuenta como `null` (RN-TRN-16); orden y contenido de `getWorkoutView` (RN-TRN-17) y de `getExerciseHistory` (RN-TRN-08); varios `in_progress` → el más reciente (RN-TRN-01); un workout o una serie inexistentes → `training/workout-not-found` o `training/set-not-found`. `maxSets` sale de `template.items` emparejando por `order`. `logSet` y `toggleSetDone` leen el workout para pedir a `plan` todas sus `options` y aplican el cambio en `mutate`, que vuelve a leer.
 10. **Almacenamiento, antes de T12 (contrato v1.8):** un fallo de la base rechaza la promesa (RN-TRN-18), como en `plan`.
 11. **Hooks, antes de T14 (contrato v1.9):** RN-TRN-19, el mismo patrón que RN-PLN-26 con `null` para "no existe".
+12. **Textos de error, T15 (contrato v1.10):** `describeError` recibe `SetErrorContext` (métrica y asistencia) para que `app` elija el texto de `invalid-set-values`; los textos viven en `app/errors/messages.ts` (ADR-0010).

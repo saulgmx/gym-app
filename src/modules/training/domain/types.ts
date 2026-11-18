@@ -110,6 +110,12 @@ export interface InvalidSetValuesDetails {
   reason: SetValueProblem;
 }
 
+/** What app needs to word an invalid-set-values error (ADR-0010: texts live in app). */
+export interface SetErrorContext {
+  metric: ExerciseFacts['metric'];
+  assisted: boolean; // the assistance switch is on (negative weight)
+}
+
 export interface WorkoutAlreadyActiveDetails {
   workoutId: ID;
 }

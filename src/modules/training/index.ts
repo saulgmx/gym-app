@@ -37,6 +37,7 @@ export type {
 export type {
   ExerciseSession,
   InvalidSetValuesDetails,
+  SetErrorContext,
   SetLog,
   TrainingError,
   TrainingErrorCode,

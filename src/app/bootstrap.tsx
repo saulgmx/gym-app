@@ -27,7 +27,12 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
 
   // Not awaited: pages wait for `ready` with use() (spec 001 plan §5).
   const app = compose({ db: openDatabase(), clock: systemClock, seed: planSeed });
-  const services = { plan: app.plan, clock: systemClock, ready: app.ready };
+  const services = {
+    plan: app.plan,
+    training: app.training,
+    clock: systemClock,
+    ready: app.ready,
+  };
 
   const root = createRoot(rootElement);
   root.render(
