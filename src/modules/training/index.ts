@@ -26,6 +26,8 @@ export function createTraining(deps: {
 
 export { trainingStores } from './infrastructure/schema';
 export { useActiveWorkout, useLastSession, useWorkoutView } from './ui/hooks';
+export { SetRow } from './ui/SetRow';
+export { SetTable } from './ui/SetTable';
 
 export type { TrainingApi } from './application/service';
 export type {

@@ -1,0 +1,133 @@
+/* Set table (docs/modules/training.md §4, SetTable). Fits 320 px: a 360 px phone minus gutters. */
+.wrapper {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.assistance {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: var(--touch-min);
+}
+
+.assistance input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--accent);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.table th {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.table thead th:nth-child(1) {
+  width: 2.75rem;
+}
+
+.table thead th:nth-child(2) {
+  width: 4.75rem;
+}
+
+.table thead th:last-child {
+  width: 2.75rem;
+}
+
+.table td {
+  padding: 0.25rem 0.125rem;
+  text-align: center;
+}
+
+.number {
+  display: grid;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.extra {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.previous {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* 1rem keeps iOS from zooming into the field. */
+.field {
+  width: 100%;
+  min-height: var(--touch-min);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.field[aria-invalid='true'] {
+  border-color: var(--warn);
+}
+
+.check {
+  display: grid;
+  place-items: center;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+}
+
+.check input {
+  width: 1.75rem;
+  height: 1.75rem;
+  accent-color: var(--accent);
+}
+
+.done .field {
+  border-color: var(--accent);
+}
+
+.problemRow td {
+  padding: 0;
+}
+
+.problem {
+  margin: 0;
+  color: var(--warn);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.button {
+  min-height: var(--touch-min);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-button);
+  background: transparent;
+  padding: 0 1rem;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+}
+
+.button:disabled {
+  border-color: var(--border);
+  color: var(--text-muted);
+}

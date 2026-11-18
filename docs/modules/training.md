@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.10 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.11 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -136,6 +136,16 @@ function SessionHeader(props: { view: WorkoutView; index: number; onNavigate: (i
 export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer en la fase 4
 ```
 
+### `SetTable` y `SetRow` (spec 002 §6, T18)
+
+- Tabla con columnas Serie, Anterior, kg (o "Asist. kg"), Reps (o "s" si `metric = 'time'`), RIR y el check; sin columna de kg en `reps` y `time`. Números con coma decimal (`62,5`).
+- **Anterior:** la serie con el mismo `setNumber` de `useLastSession(training, exerciseId, workout.date)`: `"60 × 10"`, `"Asist. 20 × 8"`, `"10"` en `reps`, `"40 s"` en `time`; `"—"` sin dato.
+- **Campos:** `<input type="text">` con `inputmode` (`decimal` en kg, `numeric` en reps y RIR) y nombre por fila ("Serie 1, kilos"). Se envían al confirmar (`change` o Enter), solo si cambiaron. Mientras un campo tiene el foco, tiene un error o espera a que la vista traiga lo recién guardado, conserva lo escrito (sin parpadeo: `useLiveQuery` responde después de la escritura); si no, muestra lo guardado (cambios de otra pestaña, peso heredado). Cualquier cambio del valor guardado termina la espera.
+- **Check:** `<input type="checkbox">` con nombre "Serie 1 hecha", ≥ 44 px. Si marcar falla, el motivo aparece bajo la fila (`aria-live="polite"`) y el foco va al campo del error (AC-16).
+- **Errores:** el texto sale de `describeError(error, { metric, assisted })` (ADR-0010).
+- **"Con asistencia"** (solo `equipment: 'bodyweight'` con `metric: 'weight'`): arranca activado si alguna serie del ejercicio tiene peso negativo. Activado, cada campo muestra `−peso` y guarda `−escrito`; al cambiarlo se invierte el signo del peso de las series no hechas (las hechas nunca cambian).
+- **"Añadir serie"** hasta `maxSets` (deshabilitado con "Máximo N series"); **"Quitar serie"** quita la última si no está hecha y se deshabilita si está hecha o es la única. Las series extra llevan "extra".
+
 ### Puertos que requiere (`application/ports.ts`)
 
 ```ts
@@ -225,3 +235,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 10. **Almacenamiento, antes de T12 (contrato v1.8):** un fallo de la base rechaza la promesa (RN-TRN-18), como en `plan`.
 11. **Hooks, antes de T14 (contrato v1.9):** RN-TRN-19, el mismo patrón que RN-PLN-26 con `null` para "no existe".
 12. **Textos de error, T15 (contrato v1.10):** `describeError` recibe `SetErrorContext` (métrica y asistencia) para que `app` elija el texto de `invalid-set-values`; los textos viven en `app/errors/messages.ts` (ADR-0010).
+13. **`SetTable`, antes de T18 (contrato v1.11):** formato de "anterior", check nativo, interruptor de asistencia que invierte el signo de las series no hechas, "Quitar serie" sobre la última y borradores que conservan lo escrito con foco o error.
