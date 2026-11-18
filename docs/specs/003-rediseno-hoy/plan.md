@@ -122,7 +122,9 @@ Alternativa: que `getTodayPlan` devuelva `estimatedSeconds`. Se descarta porque 
 Sin tokens nuevos: acento, `--surface-2`, `--border`, `--text-muted` y `--warn` existentes (ADR-0005). El borde punteado del cardio usa `--text-muted`. Los botones de "Otra sesión" pasan a 48 px con borde `--border`.
 
 ### 6.10 Presupuesto del bundle
-Hoy son 160.08 kB de 200 kB. El cambio son unos pocos componentes y funciones puras, sin dependencias nuevas. Se mide en la última tarea (AC-28).
+Antes del rediseño eran 160.08 kB de 200 kB. El cambio son unos pocos componentes y funciones puras, sin dependencias nuevas.
+
+**Medición (T15, 18-nov, con T1 a T14):** 161.91 kB de 200 kB gzip (`npm run build` y `npm run size`), +1.83 kB. AC-28 se cumple con 38 kB de margen.
 
 ### 6.11 El RIR en la vista previa
 Al quitar el RIR por fila de `PlanExerciseList`, la vista previa de `/dia/:date` lo muestra una vez, en una línea bajo el `h2` con el nombre de la sesión ("RIR 3-4"). No se repite el nombre junto a la fecha del `h1` (decisión del 18-nov en T8). Hasta que T13 traiga el chip, la tarjeta actual de "Hoy" lo muestra igual, para que "Hoy" no se quede sin RIR entre los puntos de control B y C. Alternativas descartadas: una opción del componente para mostrarlo por fila (dos modos para un dato que es igual en todas las filas) y dejar la vista previa sin RIR (pierde información).
