@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { ErrorFallback } from './errors/ErrorFallback';
 import { AppLayout } from './layout/AppLayout';
 import { ClosePage } from './pages/ClosePage';
+import { DayPreviewPage } from './pages/DayPreviewPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SessionPage } from './pages/SessionPage';
 import { TodayPage } from './pages/TodayPage';
@@ -17,6 +18,7 @@ export const routes: RouteObject[] = [
         element: <AppLayout />,
         children: [
           { index: true, element: <TodayPage /> },
+          { path: 'dia/:date', element: <DayPreviewPage /> },
           { path: 'progreso', element: <ProgressPage /> },
         ],
       },

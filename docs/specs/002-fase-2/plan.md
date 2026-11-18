@@ -178,7 +178,7 @@ El contrato tenía `configureTraining(ports)` para romper el ciclo `training` �
 | Ruta | Página | Notas |
 |---|---|---|
 | `/` | `TodayPage` | Con `useActiveWorkout`: "Continuar sesión" (con fecha si es de otro día) y "Descartar sesión"; si no, "Iniciar sesión" en días de pesas y la sección "Otra sesión de esta semana" |
-| `/dia/:date` (nueva, dentro de `AppLayout`) | `DayPreviewPage` | Vista previa de otro día de la semana con `PlanExerciseList` e "Iniciar sesión". Si la fecha no es válida, es de otra semana, es hoy o no es día de pesas, redirige a `/` con `replace` |
+| `/dia/:date` (nueva, dentro de `AppLayout`) | `DayPreviewPage` | Vista previa de otro día de la semana con `PlanExerciseList` e "Iniciar sesión". Si la fecha no es válida, es de otra semana, es hoy, no es día de pesas o ya hay una sesión activa al abrirla, redirige a `/` con `replace`. `h1` con la fecha y "Volver a Hoy"; mientras carga, solo el enlace. "Hoy" sigue marcada en la barra inferior |
 | `/sesion/:workoutId` (nueva) | `SessionPage` | Destino de "Continuar sesión": sin `exerciseIndex`, redirige como un índice inválido |
 | `/sesion/:workoutId/:exerciseIndex` | `SessionPage` | `exerciseIndex` empieza en 1. Si no es un entero de 1 a n, redirige con `replace` al primer ejercicio con series pendientes (o al último si no hay pendientes). Un workout inexistente o cerrado muestra "Esta sesión ya no está disponible." (AC-28) |
 
