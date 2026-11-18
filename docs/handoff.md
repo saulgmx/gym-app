@@ -7,8 +7,8 @@
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.4: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5.
-  - `docs/architecture.md` v1.1: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
+  - `docs/spec.md` v0.5: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date` (spec 002).
+  - `docs/architecture.md` v1.2: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
   - `docs/templates/`: plantillas de spec de feature, plan, tareas y ADR.
@@ -51,7 +51,6 @@
 
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
-| 6 | Workouts cerrados inmutables en v1 | Sí, salvo notas | training.md RN-TRN-07 | 2 |
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
@@ -73,9 +72,12 @@
 7. ~~Punto de control C, "Hoy"~~ (T15–T18, PR #10, 17-nov): contrato `plan` v1.9 (hooks: el resultado lleva su fecha, errores al *error boundary*, RN-PLN-26) y v1.10 (`ProgramPosition` con `startDate` y `totalWeeks`); `WeekStrip` con indicador de texto y nombre accesible; `TodayPage` con `Suspense` y `use(ready)`; E2E con `page.clock` en la zona del usuario, sin conexión y axe. Se mantiene Zod clásico (168.64 kB < 170 kB, plan §6.2).
 8. ~~Punto de control D, cierre~~ (T19–T20, 17-nov): verificado en el iPhone (aviso de actualización, datos y modo avión); spec y plan 001 marcados como implementados.
 9. **Siguiente: fase 2, sesión activa** (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
-   1. Resolver la pregunta 6 (workouts cerrados inmutables, RN-TRN-07), que bloquea la fase 2.
-   2. Escribir la spec 002 (`docs/specs/002-.../spec.md`) con sus criterios de aceptación, revisar el contrato `training.md` y luego plan y tareas, como en la fase 1.
-   3. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
+   1. ~~Pregunta 6~~ (17-nov, `modules/training.md` v1.1 §10): `completed` y `discarded` son finales, también las notas (RN-TRN-07); corregir llega en v1.1.
+   2. ~~Spec 002~~ aprobada (17-nov): `docs/specs/002-fase-2/spec.md` (AC-1 a AC-41). La sesión solo se descarta en esta fase (Cierre en la fase 3); `SuggestionProvider` nulo y la serie siguiente hereda el peso (RN-TRN-11); entran RF-14, RF-16 y RF-17; alternativas solo sin series hechas (RN-TRN-13); "Otra sesión de esta semana" con `plannedFor` (RN-TRN-14); asistencia con peso negativo (RN-TRN-04); sin `bus` hasta la fase 4. Reglas ya en `modules/training.md` v1.2, `modules/plan.md` v1.11 (`PlannedItem.alternatives`, `getExercise(s)`, RN-PLN-15 (i)) y `modules/progression.md` §9.4.
+   3. ~~Plan técnico~~ aprobado (17-nov): `docs/specs/002-fase-2/plan.md`. Escritura con `repository.mutate` (transacción que relee y llama al dominio puro), sin `configureTraining`, bus ni Zustand; `useWorkoutView`; coma decimal; `describeError` desde `app`; ruta `/dia/:date`; `zod/mini` si el bundle pasa de 170 kB. Contrato `training` v1.3, spec v0.5 (§7.2) y architecture v1.2 (§6.4, §7.8).
+   4. ~~Tareas~~ (17-nov): `docs/specs/002-fase-2/tasks.md`, T1 a T27 en 4 puntos de control (A dominio y `plan`, B persistencia y composición, C interfaz, D verificación y cierre). La prueba P-1 sobre el seed real vive en `app/seed` (fronteras, plan §7).
+   5. **Siguiente:** fusionar el PR de docs (`docs/002-phase-2-spec`) y empezar T1 en `feat/002-phase-2-a`.
+   6. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
 10. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:

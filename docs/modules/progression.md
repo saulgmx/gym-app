@@ -156,3 +156,4 @@ RF-12 (vía puerto), RF-24, RF-30, RF-35, RF-36, RF-50, spec §6.1, §6.3.
 1. Porcentajes de bajada: propuesta 5% por bajo rendimiento y 10% por dolor (la spec dice 5-10%).
 2. Ejercicios `isPrimary`: propuesta: press de banca, press inclinado, dominadas, remo con apoyo de pecho, prensa, hack squat.
 3. Ejercicios por tiempo (plancha): ¿sin sugerencia numérica, o +5 s por serie hasta el tope?
+4. Asistencia (spec 002, decisión 7): en Dominadas y Fondos un `weightKg` negativo es ayuda de la máquina o la banda (RN-TRN-04). La progresión debe tratar "subir" como menos asistencia (−20 → −17.5 → … → 0 → lastre) y no aplicar el +2.5% a un valor negativo. Resolver antes de la fase 4.

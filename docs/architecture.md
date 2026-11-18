@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.1 · **Fecha:** 17-nov-2026 · **Basado en:** `spec.md` v0.4 · **Formato:** arc42 reducido
+**Versión:** 1.2 · **Fecha:** 17-nov-2026 · **Basado en:** `spec.md` v0.5 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -205,7 +205,7 @@ Si `recordPain` falla, no se llama a `finishWorkout`: la sesión sigue `in_progr
 
 ### 6.4 Recuperar sesión en curso (RF-19)
 
-Al abrir la app, `TodayPage` consulta `training.getActiveWorkout()`. Si existe un `Workout` con `status: 'in_progress'`, ofrece "Continuar sesión" y navega a `/sesion/:workoutId/:exerciseIndex` usando el primer ejercicio con series pendientes. Zustand se rehidrata desde Dexie; nunca es la fuente de verdad.
+Al abrir la app, `TodayPage` consulta `training.getActiveWorkout()`. Si existe un `Workout` con `status: 'in_progress'`, ofrece "Continuar sesión" y navega a `/sesion/:workoutId/:exerciseIndex` usando el primer ejercicio con series pendientes (o el último si no quedan). El ejercicio actual vive en la URL; Zustand se rehidrata desde Dexie y nunca es la fuente de verdad. Desde "Hoy" también se puede iniciar otra sesión de pesas de la semana actual en `/dia/:date` (spec 002, RN-TRN-14).
 
 ### 6.5 Importar datos
 
@@ -332,7 +332,7 @@ El dominio guarda siempre **kilogramos**. `lb` es solo una preferencia de visual
 | Tipo | Dónde | Regla |
 |---|---|---|
 | Persistente | Dexie vía hooks del módulo | Fuente de verdad |
-| Sesión activa (ejercicio actual, serie enfocada) | Zustand `useSessionStore` en `app` | Derivable de Dexie; se rehidrata |
+| Sesión activa (temporizador y lo que deba sobrevivir a la navegación) | Zustand `useSessionStore` en `app`, desde la fase 4 | Derivable de Dexie; se rehidrata. El ejercicio actual va en la URL y los borradores de los campos en estado local (spec 002, plan §6.3) |
 | Efímero (temporizador, selección de gráfica) | Zustand o `useState` | Se puede perder sin consecuencia |
 
 El temporizador guarda `endsAt` (instante), no un contador, para sobrevivir a la app en segundo plano.
