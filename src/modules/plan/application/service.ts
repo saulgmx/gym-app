@@ -1,10 +1,17 @@
-import { ok, startOfIsoWeek, type Clock, type LocalDate, type Result } from '@/shared/kernel';
+import {
+  ok,
+  startOfIsoWeek,
+  type Clock,
+  type ID,
+  type LocalDate,
+  type Result,
+} from '@/shared/kernel';
 import { getDayPlan, getPosition, getWeekPlan, type PlanSnapshot } from '../domain/schedule';
 import { validateSeed } from '../domain/seed-rules';
-import type { PlanError, ProgramPosition, TodayPlan } from '../domain/types';
+import type { Exercise, PlanError, ProgramPosition, TodayPlan } from '../domain/types';
 import type { PlanRepository, SeedParser } from './ports';
 
-// Use cases of the plan module (docs/modules/plan.md §4, phase 1 operations).
+// Use cases of the plan module (docs/modules/plan.md §4, phase 1 and 2 operations).
 // Only repository promises are awaited, so useLiveQuery can track the tables (plan §6.4).
 
 export interface PlanApi {
@@ -12,6 +19,9 @@ export interface PlanApi {
   getPosition(date: LocalDate): Promise<ProgramPosition>;
   getTodayPlan(date: LocalDate): Promise<TodayPlan>;
   getWeekPlan(weekStart: LocalDate): Promise<TodayPlan[]>;
+  getExercise(id: ID): Promise<Exercise | undefined>;
+  // One entry per requested ID, in order, skipping missing ones.
+  getExercises(ids: ID[]): Promise<Exercise[]>;
 }
 
 export function createPlanService(deps: {
@@ -44,5 +54,10 @@ export function createPlanService(deps: {
     getPosition: async (date) => getPosition(await load(), date),
     getTodayPlan: async (date) => getDayPlan(await load(), date),
     getWeekPlan: async (weekStart) => getWeekPlan(await load(), weekStart),
+    getExercise: async (id) => (await load()).exercises.find((e) => e.id === id),
+    async getExercises(ids) {
+      const byId = new Map((await load()).exercises.map((e) => [e.id, e]));
+      return ids.flatMap((id) => byId.get(id) ?? []);
+    },
   };
 }

@@ -439,4 +439,62 @@ describe('validateSeed', () => {
       );
     });
   });
+
+  describe('RN-PLN-15 (i): un ejercicio en un solo ítem por plantilla', () => {
+    const secondItem = (seed: PlanSeed) => must(templateA(seed).items[1]);
+
+    it('la alternativa de un ítem es el principal de otro → plan/invalid-seed con sus IDs', () => {
+      const error = expectError(
+        broken((s) => {
+          secondItem(s).exerciseId = id('jalon');
+        }),
+        'plan/invalid-seed',
+      );
+      expect(error?.details).toEqual({ templateId: 'tpl-a', exerciseId: 'jalon' });
+    });
+
+    it('la alternativa de un ítem es la alternativa de otro → plan/invalid-seed', () => {
+      const error = expectError(
+        broken((s) => {
+          secondItem(s).alternatives = [id('jalon')];
+        }),
+        'plan/invalid-seed',
+      );
+      expect(error?.details).toEqual({ templateId: 'tpl-a', exerciseId: 'jalon' });
+    });
+
+    it('el mismo principal en dos ítems → plan/invalid-seed', () => {
+      const error = expectError(
+        broken((s) => {
+          secondItem(s).exerciseId = id('dominadas');
+        }),
+        'plan/invalid-seed',
+      );
+      expect(error?.details).toEqual({ templateId: 'tpl-a', exerciseId: 'dominadas' });
+    });
+
+    it('el mismo ejercicio en plantillas distintas es válido', () => {
+      const seed = broken((s) => {
+        must(must(s.templates[1]).items[0]).order = 1;
+        must(s.templates[1]).items.push({
+          exerciseId: id('dominadas'),
+          order: 2,
+          sets: [3, 3],
+          reps: [6, 10],
+        });
+      });
+      expect(validateSeed(seed)).toEqual({ ok: true, value: undefined });
+    });
+
+    it('RN-PLN-19: con un order repetido y un ejercicio repetido → gana (h)', () => {
+      const error = expectError(
+        broken((s) => {
+          secondItem(s).order = 1;
+          secondItem(s).exerciseId = id('dominadas');
+        }),
+        'plan/invalid-seed',
+      );
+      expect(error?.details).toEqual({ templateId: 'tpl-a' });
+    });
+  });
 });

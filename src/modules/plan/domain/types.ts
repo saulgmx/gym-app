@@ -95,6 +95,7 @@ export interface ProgramPosition {
 
 export interface PlannedItem {
   exercise: Exercise;
+  alternatives: Exercise[]; // resolved, in seed order; [] when there are none (RN-PLN-11)
   order: number;
   plannedSets: number; // after the volume factor (RN-PLN-05)
   repRange: [number, number];
