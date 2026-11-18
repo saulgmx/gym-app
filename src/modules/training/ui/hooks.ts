@@ -24,6 +24,15 @@ export function useActiveWorkout(training: TrainingApi): Workout | null | undefi
   return useKeyedQuery('active', async () => (await training.getActiveWorkout()) ?? null, training);
 }
 
+// "Hoy" in D2 (spec 003): the view of the active workout (RN-TRN-01), with its sets.
+export function useActiveWorkoutView(training: TrainingApi): WorkoutView | null | undefined {
+  return useKeyedQuery(
+    'active-view',
+    async () => (await training.getActiveWorkoutView()) ?? null,
+    training,
+  );
+}
+
 // "anterior" of RF-12: the last completed session of the exercise before a day.
 export function useLastSession(
   training: TrainingApi,
