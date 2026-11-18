@@ -117,9 +117,10 @@ function Dialog(props: {
 ```
 
 - `<dialog>` nativo con `showModal()`: el resto de la página queda inerte. Escape no cierra solo: llama a `onClose` y decide quien lo usa.
-- Al abrir, el foco va a `initialFocus` o al primer control; al cerrarse, vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace).
-- Tocar el fondo: el `<dialog>` no tiene relleno y su contenido llena la caja, así que un clic cuyo `target` es el propio `<dialog>` cayó en `::backdrop`. Solo llama a `onClose` con `dismissOnBackdrop`.
-- `bottom`: a todo el ancho, anclado abajo con `env(safe-area-inset-bottom)` (como `ConfirmDialog`). `top`: bajo el encabezado, con los márgenes de la página, `max-height` y desplazamiento propio.
+- **Foco al abrir:** a `initialFocus` si llega; si no, al primer `button`, `a[href]`, `input` o `[tabindex]` sin `disabled`, en el orden del documento; si no hay ninguno, al propio `<dialog>` (`tabIndex={-1}`). No se deja al navegador, porque Safari y Chromium no enfocan lo mismo (spec 004, antes de T1).
+- **Foco al cerrar** (también al desmontarse abierto): vuelve al elemento que lo tenía al abrir (explícito: WebKit no siempre lo hace), solo si sigue en el documento (`isConnected`). Si ya no está (por ejemplo, la pantalla del menú se montó de nuevo al navegar), no se toca: lo toma la pantalla nueva.
+- **Tocar el fondo:** el `<dialog>` no tiene relleno y su contenido llena la caja, así que un toque en `::backdrop` llega con `target` = el propio `<dialog>`. Cuenta como toque en el fondo solo si `pointerdown` y `click` caen los dos en el `<dialog>`: un arrastre que empieza dentro (desplazar la lista) y se suelta fuera no cierra. Solo llama a `onClose` con `dismissOnBackdrop`.
+- **Posición:** atributo `data-placement="bottom" | "top"`, que usan el CSS y las pruebas. `bottom`: a todo el ancho, anclado abajo con `env(safe-area-inset-bottom)` (como `ConfirmDialog`). `top`: bajo el encabezado, con los márgenes de la página, `max-height` y desplazamiento propio.
 - Lo usan `ConfirmDialog`, el menú de `SessionHeader` (`training/ui`) y el aviso de salida de la sesión (`app`).
 
 ### `ConfirmDialog` (spec 002, T17)
