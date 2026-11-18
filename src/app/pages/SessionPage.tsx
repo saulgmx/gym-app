@@ -1,6 +1,12 @@
 import { Suspense, use, useEffect, useId, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
-import { SessionHeader, SetTable, useWorkoutView, type WorkoutView } from '@/modules/training';
+import {
+  SessionHeader,
+  SetTable,
+  useWorkoutView,
+  workoutProgress,
+  type WorkoutView,
+} from '@/modules/training';
 import type { ID } from '@/shared/kernel';
 import { ConfirmDialog, cx } from '@/shared/ui';
 import { useApp } from '../context';
@@ -28,13 +34,9 @@ function parseIndex(text: string | undefined, n: number): number | null {
   return index >= 1 && index <= n ? index : null;
 }
 
-/** The first exercise with a set not done yet, or the last one (AC-4, AC-27). */
-function firstPending(view: WorkoutView): number {
-  const { items } = view.workout;
-  const pending = items.findIndex((item) =>
-    view.sets.some((s) => s.exerciseId === item.exerciseId && !s.done),
-  );
-  return pending === -1 ? items.length : pending + 1;
+/** The current exercise of RN-TRN-21 ("Vas en" in Hoy), or the last one (AC-4, AC-27). */
+function resumeIndex(view: WorkoutView): number {
+  return workoutProgress(view).current?.itemIndex ?? view.workout.items.length;
 }
 
 function SessionContent() {
@@ -47,7 +49,7 @@ function SessionContent() {
 
   const index = parseIndex(exerciseIndex, view.workout.items.length);
   if (index === null)
-    return <Navigate to={`/sesion/${workoutId}/${String(firstPending(view))}`} replace />;
+    return <Navigate to={`/sesion/${workoutId}/${String(resumeIndex(view))}`} replace />;
   // Keyed by index: each exercise starts fresh (message, dialog) and focuses its name.
   return <ExerciseScreen key={index} view={view} index={index} />;
 }
