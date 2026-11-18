@@ -27,7 +27,7 @@ Combinación de A (foco) y B (check-in previo; el chequeo de espalda se quitó p
 
 ### Días de descanso y de cardio (decidido)
 La tarjeta ocupa el mismo lugar y cambia su contenido (misma posición, sin reorganizar la pantalla):
-- **Eyebrow "Hoy"** y título en 44 px: **"Cardio"** o **"Descanso"**.
+- **Eyebrow "Tu sesión de hoy"** (el mismo que en los días de pesas; cambio acordado con la spec 003, que antes aprobaba "Hoy") y título en 44 px: **"Cardio"** o **"Descanso"**.
 - **Texto:** la **nota del seed tal cual** (spec 003). Cardio: "Cardio suave 30-40 min (bici, elíptica o caminata inclinada)". Descanso: "Recupera: dormir y comer bien también es entrenar."
 - **Idea futura:** título "Cardio suave" y un texto "30-40 min · ritmo suave" por separado. Exige campos nuevos en el seed (título y duración), que hoy no existen.
 - **Chips:** el nombre del bloque (sin RIR). El chip de espalda sigue aplicando si hay lectura.
