@@ -1,4 +1,4 @@
-import { Suspense, use, useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Suspense, use, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import {
   SessionHeader,
@@ -13,6 +13,7 @@ import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
 import { discardDialogText } from './discard-dialog';
 import { Elapsed } from './Elapsed';
+import { ExerciseCard } from './session/ExerciseCard';
 import styles from './SessionPage.module.css';
 import pageStyles from './pages.module.css';
 
@@ -46,6 +47,8 @@ function SessionContent() {
   // "Today" is read once, when the page opens: a session of another day shows no time, and
   // midnight does not change that until the page opens again (spec 004 §8, decision 9).
   const [today] = useState(() => clock.today());
+  // Compact or full card: kept across exercises, which remount, and lost on reload (plan §6.5).
+  const [expanded, setExpanded] = useState(false);
   const { workoutId = '', exerciseIndex } = useParams();
   const view = useWorkoutView(training, workoutId as ID);
   if (view === undefined) return null;
@@ -58,7 +61,18 @@ function SessionContent() {
   const elapsed =
     workout.date === today ? <Elapsed startedAt={workout.startedAt} clock={clock} /> : null;
   // Keyed by index: each exercise starts fresh (message, dialog) and focuses its name.
-  return <ExerciseScreen key={index} view={view} index={index} elapsed={elapsed} />;
+  return (
+    <ExerciseScreen
+      key={index}
+      view={view}
+      index={index}
+      elapsed={elapsed}
+      expanded={expanded}
+      onToggleDetails={() => {
+        setExpanded(!expanded);
+      }}
+    />
+  );
 }
 
 function Unavailable() {
@@ -77,24 +91,26 @@ function ExerciseScreen({
   view,
   index,
   elapsed,
+  expanded,
+  onToggleDetails,
 }: {
   view: WorkoutView;
   index: number;
   elapsed: ReactNode;
+  expanded: boolean;
+  onToggleDetails: () => void;
 }) {
   const { training } = useApp();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState('');
   const title = useRef<HTMLHeadingElement>(null);
-  const hintId = useId();
 
   const { workout } = view;
   const item = workout.items[index - 1];
   const exercise = item && view.exercises[item.exerciseId];
   if (!item || !exercise) throw new Error(`No exercise ${String(index)} in workout ${workout.id}`);
   const { exerciseId } = item;
-  const hasDone = view.sets.some((s) => s.exerciseId === exerciseId && s.done);
   const path = (i: number) => `/sesion/${workout.id}/${String(i)}`;
 
   // A new exercise starts at the top, with focus on its name for screen readers.
@@ -114,11 +130,6 @@ function ExerciseScreen({
     else setMessage(errorMessages[result.error.code]);
   }
 
-  const [minReps, maxReps] = item.repRange;
-  const [minRir, maxRir] = item.targetRir;
-  const unit = exercise.metric === 'time' ? ' s' : '';
-  const alternatives = item.options.filter((id) => id !== item.exerciseId);
-
   return (
     <div className={styles.screen}>
       <SessionHeader
@@ -132,36 +143,15 @@ function ExerciseScreen({
           setConfirming(true);
         }}
       />
-      <section className={styles.exercise}>
-        <h1 ref={title} tabIndex={-1} className={styles.name}>
-          {exercise.name}
-        </h1>
-        <p className={styles.target}>
-          {`${String(item.plannedSets)} × ${String(minReps)}-${String(maxReps)}${unit} · RIR ${String(minRir)}-${String(maxRir)}`}
-        </p>
-        {exercise.cue && <p className={styles.tip}>{exercise.cue}</p>}
-        {item.note && <p className={styles.tip}>{item.note}</p>}
-        {alternatives.map((id) => (
-          <button
-            key={id}
-            type="button"
-            className={styles.change}
-            disabled={hasDone}
-            aria-describedby={hasDone ? hintId : undefined}
-            onClick={() => void change(id)}
-          >
-            {`Cambiar a ${view.exercises[id]?.name ?? id}`}
-          </button>
-        ))}
-        {hasDone && alternatives.length > 0 && (
-          <p id={hintId} className={styles.hint}>
-            Para cambiar de ejercicio, desmarca las series hechas
-          </p>
-        )}
-        <p className={styles.problem} aria-live="polite">
-          {message}
-        </p>
-      </section>
+      <ExerciseCard
+        view={view}
+        item={item}
+        expanded={expanded}
+        onToggle={onToggleDetails}
+        onChange={(to) => void change(to)}
+        message={message}
+        titleRef={title}
+      />
       <SetTable
         key={item.exerciseId}
         training={training}
