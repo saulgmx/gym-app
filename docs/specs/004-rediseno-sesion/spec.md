@@ -1,6 +1,6 @@
 # Spec: Rediseño de la sesión activa
 
-**ID:** 004 · **Estado:** Aprobada (18-nov-2026) · **Fecha:** 18-nov-2026
+**ID:** 004 · **Estado:** Implementada (18-nov-2026) · **Fecha:** 18-nov-2026
 **Requerimientos cubiertos:** RF-11, RF-14, RF-17, RF-19, RNF-02, RNF-05 · **Fase:** entre la 2 y la 3 (no está en spec §13; ver §2)
 **Fuente de diseño:** [`docs/design-sesion-activa.md`](../../design-sesion-activa.md), tablero "Sesión activa A3" (`SesionA3.dc.html`) del lienzo de diseño
 **ADRs aplicados:** 0005, 0006, 0010
