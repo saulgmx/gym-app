@@ -19,7 +19,7 @@ const SATURDAY = '2026-11-21T08:00:00-06:00';
 const SESSION_URL = /\/sesion\/([^/]+)\/(\d+)$/;
 
 async function startFromToday(page: Page) {
-  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await page.getByRole('button', { name: 'Empezar sesión' }).click();
   await expect(page).toHaveURL(SESSION_URL);
   await expect(page.getByText('Ejercicio 1 de 7')).toBeVisible();
 }
@@ -79,7 +79,7 @@ test('AC-36: sin conexión se inicia, se registra y se conserva al recargar', as
 }) => {
   await freezeClockAt(page, MONDAY);
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
   await waitForControllingWorker(page);
 
   await context.setOffline(true);
@@ -131,7 +131,7 @@ test('AC-34: descartar pide confirmación, vuelve a "Hoy" y deja iniciar otra', 
   await dialog.getByRole('button', { name: 'Sí, descartar' }).click();
 
   await expect(page).toHaveURL('/');
-  await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
   await page.goBack();
   await expect(page).not.toHaveURL(SESSION_URL); // replace: no way back into the discarded one
 });
@@ -141,11 +141,11 @@ test('AC-2: dos pestañas que inician a la vez quedan en la misma sesión', asyn
   for (const page of [first, second]) {
     await freezeClockAt(page, MONDAY);
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
   }
 
   await Promise.all(
-    [first, second].map((page) => page.getByRole('button', { name: 'Iniciar sesión' }).click()),
+    [first, second].map((page) => page.getByRole('button', { name: 'Empezar sesión' }).click()),
   );
 
   await expect(first).toHaveURL(SESSION_URL);

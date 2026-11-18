@@ -9,7 +9,6 @@ import { useToday } from '../hooks/useToday';
 import { StartWorkoutButton } from './StartWorkoutButton';
 import { SessionRir } from './SessionRir';
 import styles from './pages.module.css';
-import todayStyles from './TodayPage.module.css';
 
 /** The route's date if it is a real calendar day ("2026-02-30" is not). */
 function parseDate(text: string | undefined): LocalDate | null {
@@ -57,7 +56,7 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
   return (
     <>
       <h1>{formatLongDateTitle(date)}</h1>
-      <section className={todayStyles.card}>
+      <section className={styles.card}>
         <h2>{day.template.name}</h2>
         <SessionRir items={day.plannedItems} />
         <PlanExerciseList items={day.plannedItems} />

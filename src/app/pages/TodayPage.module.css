@@ -1,37 +1,4 @@
-.header {
-  margin-bottom: 1.25rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.header p {
-  margin: 0;
-}
-
-.date {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.card {
-  margin-top: 1.25rem;
-  padding: 1rem 1rem 0.5rem;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-}
-
-.card h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.0625rem;
-}
-
-.card p {
-  margin: 0 0 0.5rem;
-  color: var(--text-muted);
-}
-
+/* "Sesión en curso" card, until spec 003 T14 replaces it with ActiveSessionCard. */
 .active {
   display: grid;
   gap: 0.5rem;
@@ -84,25 +51,4 @@
 .problem {
   color: var(--warn);
   font-size: 0.875rem;
-}
-
-.others {
-  margin-top: 1.25rem;
-}
-
-.others h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.0625rem;
-}
-
-.otherList {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.otherList a {
-  width: 100%;
 }

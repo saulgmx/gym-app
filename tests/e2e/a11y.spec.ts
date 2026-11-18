@@ -51,7 +51,7 @@ test.describe('AC-39: la sesión activa', () => {
   test('la sesión, con un error y con la lista de ejercicios abierta', async ({ page }) => {
     await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
     await page.goto('/');
-    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await page.getByRole('button', { name: 'Empezar sesión' }).click();
     // Dominadas: the assistance switch is on screen too.
     await page.getByRole('link', { name: 'Siguiente' }).click();
     await page.getByRole('link', { name: 'Siguiente' }).click();
@@ -72,7 +72,7 @@ test.describe('AC-39: la sesión activa', () => {
   test('"Hoy" con sesión activa y el diálogo de descarte', async ({ page }) => {
     await freezeClockAt(page, '2026-11-16T08:00:00-06:00');
     await page.goto('/');
-    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+    await page.getByRole('button', { name: 'Empezar sesión' }).click();
     await expect(page.getByText('Ejercicio 1 de 7')).toBeVisible();
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'Continuar sesión' })).toBeVisible();
@@ -86,7 +86,7 @@ test.describe('AC-39: la sesión activa', () => {
   test('otro día de la semana', async ({ page }) => {
     await freezeClockAt(page, '2026-11-21T08:00:00-06:00');
     await page.goto('/dia/2026-11-20');
-    await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
     await expectAccessible(page);
   });
 });

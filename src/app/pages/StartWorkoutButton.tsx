@@ -5,7 +5,7 @@ import { useApp } from '../context';
 import { errorMessages } from '../errors/messages';
 import styles from './StartWorkoutButton.module.css';
 
-// "Iniciar sesión" for today or another day of the week (spec 002 plan §6.7), shared by
+// "Empezar sesión" for today or another day of the week (spec 002 plan §6.7), shared by
 // TodayPage and DayPreviewPage.
 export function StartWorkoutButton({
   date,
@@ -42,7 +42,7 @@ export function StartWorkoutButton({
         disabled={starting}
         onClick={() => void start()}
       >
-        Iniciar sesión
+        Empezar sesión
       </button>
       <p className={styles.problem} aria-live="polite">
         {message}

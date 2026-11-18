@@ -1,32 +1,30 @@
 import { Suspense, use, useId, useState } from 'react';
 import { Link } from 'react-router';
-import {
-  PlanExerciseList,
-  useTodayPlan,
-  useWeekPlan,
-  WeekStrip,
-  type TodayPlan,
-} from '@/modules/plan';
+import { useTodayPlan, useWeekPlan } from '@/modules/plan';
 import { useActiveWorkoutView, workoutProgress, type WorkoutView } from '@/modules/training';
 import { addDays, startOfIsoWeek, type LocalDate } from '@/shared/kernel';
 import { ConfirmDialog } from '@/shared/ui';
 import { useApp } from '../context';
 import { errorMessages } from '../errors/messages';
-import { formatLongDate, formatLongDateTitle, formatShortDay } from '../format-date';
+import { formatLongDate } from '../format-date';
 import { useToday } from '../hooks/useToday';
 import { discardDialogText } from './discard-dialog';
-import { SessionRir } from './SessionRir';
-import { StartWorkoutButton } from './StartWorkoutButton';
+import { DayCard } from './today/DayCard';
+import { ExerciseDetails } from './today/ExerciseDetails';
+import { OtherDays } from './today/OtherDays';
+import { TodayHeader } from './today/TodayHeader';
+import { WeekSection } from './today/WeekSection';
 import styles from './TodayPage.module.css';
 
-// "Hoy" (spec 001 §6, AC-15 to AC-21, plan §6.11). Only the title shows until the plan is ready
-// and the queries answer, so the page never flashes an empty or partial state. A rejected
-// `ready` is thrown by use() and shown by the route's ErrorFallback.
+// "Hoy" (spec 003 §6, plan §6.6). The container: it runs the queries and picks the state; the
+// parts live in ./today. Nothing shows until every query answers, so "Empezar sesión" never
+// flashes before "Continuar" (§6.7). A rejected `ready` is thrown by use() and shown by the
+// route's ErrorFallback. The h1 stays for screen readers; the date is the first thing seen.
 export function TodayPage() {
   return (
     <>
       <title>Hoy · Gym</title>
-      <h1>Hoy</h1>
+      <h1 className="visually-hidden">Hoy</h1>
       <Suspense fallback={null}>
         <TodayContent />
       </Suspense>
@@ -43,34 +41,10 @@ function TodayContent() {
   const week = useWeekPlan(plan, weekStart);
   // The view, not only the workout: the discard dialog counts its sets (spec 003 plan §6.4).
   const active = useActiveWorkoutView(training);
-  // Nothing until every query answers, so "Iniciar sesión" never flashes before "Continuar".
   if (!today || !week || active === undefined) return null;
 
-  const { position } = today;
-  const dateLine = <p className={styles.date}>{formatLongDateTitle(date)}</p>;
-  // An active session can always be continued, even if it is from a day outside the program.
-  const current = active && <ActiveWorkout view={active} today={date} />;
-
-  if (position.status === 'not_started') {
-    return (
-      <>
-        {current}
-        {dateLine}
-        <p>{`El plan empieza el ${formatLongDate(position.startDate)}.`}</p>
-      </>
-    );
-  }
-  if (position.status === 'finished') {
-    return (
-      <>
-        {current}
-        {dateLine}
-        <p>{`Terminaste el plan de ${String(position.totalWeeks)} semanas.`}</p>
-      </>
-    );
-  }
-
-  // Other workout days of this week, past or future (RN-TRN-14, AC-9).
+  const inProgram = today.position.status === 'active';
+  // Other workout days of this week, past or future (RN-TRN-14, spec 002 AC-9).
   const others = week.flatMap((day, i) => {
     const dayDate = addDays(weekStart, i);
     return day.kind === 'workout' && dayDate !== date
@@ -80,23 +54,14 @@ function TodayContent() {
 
   return (
     <>
-      {current}
-      <div className={styles.header}>
-        {dateLine}
-        <p>{position.block?.name}</p>
-        <p>
-          {`Semana ${String(position.week)} de ${String(position.totalWeeks)}`}
-          {position.isDeloadWeek && ' · Semana de descarga'}
-        </p>
-      </div>
-      <WeekStrip days={week} weekStart={weekStart} today={date} />
-      <section className={styles.card}>
-        <DayBody today={today} />
-        {!active && today.kind === 'workout' && (
-          <StartWorkoutButton date={date} plannedFor={date} />
-        )}
-      </section>
-      {!active && others.length > 0 && <OtherDays days={others} />}
+      {/* An active session can always be continued, even from a day outside the program. Until
+          T14 brings the D2 card, it shows above the day card, which then has no CTA. */}
+      {active && <ActiveWorkout view={active} today={date} />}
+      <TodayHeader date={date} position={today.position} />
+      <DayCard today={today} date={date} canStart={!active} />
+      {!active && today.kind === 'workout' && <ExerciseDetails items={today.plannedItems} />}
+      {inProgram && <WeekSection days={week} weekStart={weekStart} today={date} />}
+      {!active && inProgram && others.length > 0 && <OtherDays days={others} />}
     </>
   );
 }
@@ -150,51 +115,4 @@ function ActiveWorkout({ view, today }: { view: WorkoutView; today: LocalDate })
       />
     </section>
   );
-}
-
-function OtherDays({ days }: { days: { date: LocalDate; name: string }[] }) {
-  const titleId = useId();
-  return (
-    <section className={styles.others} aria-labelledby={titleId}>
-      <h2 id={titleId}>Otra sesión de esta semana</h2>
-      <ul className={styles.otherList}>
-        {days.map((day) => (
-          <li key={day.date}>
-            <Link to={`/dia/${day.date}`} className={styles.secondary}>
-              {`${formatShortDay(day.date)} · ${day.name}`}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function DayBody({ today }: { today: TodayPlan }) {
-  switch (today.kind) {
-    case 'workout':
-      return (
-        <>
-          <h2>{today.template.name}</h2>
-          <SessionRir items={today.plannedItems} />
-          <PlanExerciseList items={today.plannedItems} />
-        </>
-      );
-    case 'cardio':
-      return (
-        <>
-          <h2>Cardio</h2>
-          <p>{today.note}</p>
-        </>
-      );
-    case 'rest':
-      return (
-        <>
-          <h2>Descanso</h2>
-          <p>Recupera: dormir y comer bien también es entrenar.</p>
-        </>
-      );
-    case 'none':
-      return null; // outside the program, handled above
-  }
 }
