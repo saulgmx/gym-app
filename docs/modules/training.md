@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.0 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.1 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -132,7 +132,7 @@ No escucha eventos.
 | RN-TRN-04 | Para marcar `done`: `reps` no nulo; `weightKg` no nulo si `metric = 'weight'`. Rangos: `0 ≤ weightKg ≤ 500`, `0 ≤ reps ≤ 100`, `0 ≤ rir ≤ 10`, `weightKg` múltiplo de 0.25. | RF-11 |
 | RN-TRN-05 | Al marcar `done` se fija `completedAt = clock.now()`; al desmarcar se borra. | RF-11 |
 | RN-TRN-06 | `finishWorkout` exige `painGate.hasPainEntry(workoutId)`; si no, `training/pain-required`. | RF-21 |
-| RN-TRN-07 | Un workout `completed` o `discarded` no admite cambios de series en v1 (solo `notes`). [PROPUESTO] | — |
+| RN-TRN-07 | `completed` y `discarded` son estados finales en v1: ninguna operación cambia sus series ni sus `notes`, y todas devuelven `training/workout-closed`. Un workout `discarded` no se recupera. Mientras está `in_progress` todo se puede editar, también las series ya hechas. | P-7, decisión 1 |
 | RN-TRN-08 | `getExerciseHistory` devuelve solo workouts `completed` y series `done`, del más reciente al más antiguo. | RF-12, RF-31 |
 | RN-TRN-09 | `date` del workout es el día local en que empezó, aunque termine después de medianoche. | ADR-0009 |
 | RN-TRN-10 | `removeSet` solo aplica a series extra o no completadas; renumera `setNumber`. | RF-16 |
@@ -152,3 +152,7 @@ No escucha eventos.
 ## 9. Trazabilidad
 
 RF-10 a RF-16, RF-19, RF-20, RF-23, RF-32.
+
+## 10. Decisiones (17-nov-2026)
+
+1. **Workouts cerrados inmutables (pregunta 6, contrato v1.1):** sin excepción para las notas, que no tienen operación de edición ni pantalla hasta Historial (v1.0). Riesgo aceptado: un error de dedo en una serie cerrada queda en la gráfica (RF-31) y la exportación; la progresión se corrige sola en la siguiente sesión porque usa la más reciente. Corregir workouts cerrados llega en v1.1 con su propia spec y un evento para que `progression` recalcule (RN-TRN-07).

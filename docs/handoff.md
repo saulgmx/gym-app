@@ -51,7 +51,6 @@
 
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
-| 6 | Workouts cerrados inmutables en v1 | Sí, salvo notas | training.md RN-TRN-07 | 2 |
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 | 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones" | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
@@ -73,7 +72,7 @@
 7. ~~Punto de control C, "Hoy"~~ (T15–T18, PR #10, 17-nov): contrato `plan` v1.9 (hooks: el resultado lleva su fecha, errores al *error boundary*, RN-PLN-26) y v1.10 (`ProgramPosition` con `startDate` y `totalWeeks`); `WeekStrip` con indicador de texto y nombre accesible; `TodayPage` con `Suspense` y `use(ready)`; E2E con `page.clock` en la zona del usuario, sin conexión y axe. Se mantiene Zod clásico (168.64 kB < 170 kB, plan §6.2).
 8. ~~Punto de control D, cierre~~ (T19–T20, 17-nov): verificado en el iPhone (aviso de actualización, datos y modo avión); spec y plan 001 marcados como implementados.
 9. **Siguiente: fase 2, sesión activa** (spec §13: `SetRow`, guardado por serie, recuperación de sesión; módulo `training`). Pasos:
-   1. Resolver la pregunta 6 (workouts cerrados inmutables, RN-TRN-07), que bloquea la fase 2.
+   1. ~~Pregunta 6~~ (17-nov, `modules/training.md` v1.1 §10): `completed` y `discarded` son finales, también las notas (RN-TRN-07); corregir llega en v1.1.
    2. Escribir la spec 002 (`docs/specs/002-.../spec.md`) con sus criterios de aceptación, revisar el contrato `training.md` y luego plan y tareas, como en la fase 1.
    3. Tener en cuenta: elegir la alternativa de un ejercicio llega en esta fase (contrato `plan`, decisión 2); `getExercise(s)` y `listExercises` entran en `PlanApi` cuando `training` las use (contrato v1.6); el bundle está a 1.4 kB del umbral de `zod/mini` (plan 001 §6.2), así que medir pronto.
 10. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
