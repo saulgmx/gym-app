@@ -139,19 +139,40 @@ Los textos de salud viven en `health/domain/messages.ts` (son reglas de spec §6
 - Guardar: `recordPain` con `date = workout.date` y luego `finishWorkout`; si los dos van bien, `navigate('/', { replace: true })`. `saving` deshabilita el botón (AC-27).
 - La sesión ya guardada en `/sesion/:id/N` (AC-28): `SessionPage` distingue `completed` de los demás estados no disponibles.
 
+Detalle aprobado antes de T16 (18-nov):
+- **Contexto:** `AppServices` gana `health: HealthApi`; `bootstrap` y `test-app.tsx` lo pasan desde `compose`.
+- **Estados, en este orden:** cargando → nada; inexistente o `discarded` → "Esta sesión ya no está disponible." (AC-29); `completed` → "Esta sesión ya está guardada." (AC-28); sin series hechas → "No hay series hechas para guardar." (AC-30); si no, el formulario. En los tres primeros el `h1` es "Cierre de sesión"; los dos primeros llevan "Volver a Hoy" y el de sin series "Volver a la sesión". `<title>` siempre "Cierre de sesión · Gym".
+- **Sin parpadeo al guardar:** cuando esta página cierra el workout, la vista en vivo pasa a `completed` antes de navegar; mientras tanto la página no pinta nada, en vez de "ya guardada".
+- **Encabezado:** check decorativo (`aria-hidden`), `h1` "Sesión terminada" y la línea `formatLongDateTitle(workout.date) · workout.name`.
+- **Resumen:** `<dl>` con un `<dt>` oculto ("Duración", "Series hechas", "Ejercicios") y un `<dd>` con el texto de la spec y el número grande: "52 min", "10 series" ("1 serie"), "7 ejercicios" ("1 ejercicio") o "3 de 7 ejercicios" ("1 de 7 ejercicios"). Sin el par de la duración si `workout.date` no es hoy (AC-9). `now` y hoy se leen al montar; series y ejercicios siguen la vista en vivo (spec §7).
+- **Sin nivel:** "Guardar sesión" `disabled` con la ayuda "Elige el nivel de dolor para poder guardar" encima, enlazada por `aria-describedby`; al elegir, la ayuda desaparece.
+- **Guardar:** `recordPain(id, { level, redFlags, date: workout.date })` y, si va bien, `finishWorkout(id, { notes })`, con las notas tal cual (el dominio las recorta; el campo tiene `maxLength` 2000). Bien → `navigate('/', { replace: true })`. Mientras guarda, el botón dice "Guardando…" y está `disabled` (AC-27); con un error vuelve a "Guardar sesión" y lo elegido se conserva.
+- **Errores**, en una región `role="alert"` sobre el pie, que se borra al reintentar: un `Result` con error → `errorMessages[code]`; una promesa que rechaza → `GENERIC_ERROR_MESSAGE`, capturada en la página (no llega también al aviso global). `training/workout-closed` no muestra texto: la vista en vivo ya pasa a "Esta sesión ya está guardada." (AC-31).
+- Fuera de las pruebas de página: el pie fijo con la zona segura, 56 y 48 px y 320 px (E2E de T22).
+
 ### 6.6 A qué ejercicio vuelve "Volver a la sesión"
-Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage` lo acepta solo si es un entero entre 1 y el número de ítems; si no (URL escrita, recarga), usa `workoutProgress(view).current?.itemIndex ?? 1` (AC-21 a AC-23). No se guarda en ningún sitio.
+Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage` lo acepta solo si es un entero entre 1 y el número de ítems; si no (URL escrita, recarga), usa `workoutProgress(view).current?.itemIndex ?? 1` (AC-21 a AC-23). No se guarda en ningún sitio. Con todo hecho vuelve al **1**, como dice AC-23, aunque `SessionPage` sin índice abra el último. Es un `Link` normal, sin `replace`.
 
 ### 6.7 "Hoy"
 `TodayContent` añade dos consultas y sigue sin pintar hasta que todas respondan (spec 003 plan §6.7):
 - `useCompletedWorkouts(training, { from: weekStart, to: addDays(weekStart, 6) })` → `done = new Set(workouts.map(w => w.plannedFor))` para `WeekSection` (N y tira), `OtherDays` (filas "hecha ✓") y la tarjeta.
 - `usePainSummary(health)` → `PainNotice` arriba de la tarjeta y `back` (nivel) para el chip de `DayCard`, solo en el estado D.
 - **Día hecho:** si `done` tiene hoy, `DoneDayCard` (nuevo, en `app/pages/today/`) llama a `useWorkoutView` con el workout de hoy y muestra "Hecha ✓" y "52 min · 10 series" con `workoutSummary(view, finishedAt)`; si hay dos, el más reciente (spec §7). `ExerciseDetails` no se muestra.
-- **Vista previa** (`/dia/:date`): con el día en `done`, "Ya hiciste esta sesión." en lugar de `StartWorkoutButton`. `training/already-done` tiene su texto en `app/errors/messages.ts` por si llega igual (otra pestaña).
+- Detalle aprobado antes de T19 (18-nov):
+  - **Tres consultas nuevas**, todas antes de pintar: `useCompletedWorkouts`, `usePainSummary` y `useWorkoutView` del workout de hoy si está hecho. Esta última vive en `TodayContent`, con un id vacío si no hay, para que `DoneDayCard` no aparezca a medias.
+  - **"N" de "N de M"** cuenta los días de pesas de la semana que están en `done`, no el tamaño del conjunto: dos workouts del mismo día (dato roto) cuentan una vez. `WeekSection` recibe `done` y se lo pasa a `WeekStrip`, en lugar del conjunto vacío de T15.
+  - **`DoneDayCard`**, si hoy es de pesas y está en `done`: el workout más reciente con ese `plannedFor` (el primero de `listWorkouts`). Lleva el eyebrow "Tu sesión de hoy", el título, los chips (bloque, RIR, "Descarga", "Espalda") con "Hecha ✓" como un chip más (el ✓ `aria-hidden`, se lee "Hecha") y la línea "52 min · 10 series" de `workoutSummary(view, ahora)`, que usa `finishedAt`. Sin "Empezar sesión" ni `ExerciseDetails`. Sin vista (dato roto), sin esa línea.
+  - **`OtherDays`:** cada día lleva `done`. Uno hecho es texto gris (`--text-muted`), no un enlace: "Lun 16 · Full body A · hecha ✓", con el ✓ `aria-hidden`. La sección sigue aunque todos estén hechos.
+  - **`PainNotice`** entre la fila superior y la tarjeta, en todos los estados de D (pesas, hecho, cardio, descanso, fuera del programa), si `notice` no es `null`; nunca en D2 (AC-44).
+  - **Chip "Espalda N/10"** con la última entrada, en las tarjetas con chips (pesas, hecho, cardio, descanso; "fuera del programa" no tiene); desde 4 lleva `data-warn` y el CSS lo pinta en `--warn`. Sin entradas no hay chip (AC-37); en D2 tampoco (AC-44).
+  - Pruebas: `today-page.test.tsx` (AC-32 a AC-34, AC-36 a AC-45, sobre el seed real) y `day-card.test.tsx` (chip y `data-warn`); las de la spec 003 siguen igual sin sesiones hechas ni dolor.
+- **Vista previa** (`/dia/:date`): con el día en `done`, "Ya hiciste esta sesión." en lugar de `StartWorkoutButton`. `training/already-done` tiene su texto en `app/errors/messages.ts` por si llega igual (otra pestaña). Detalle aprobado antes de T20 (18-nov): `DayPreview` también espera a `useCompletedWorkouts` de la semana; un día hecho (por `plannedFor`) conserva título, RIR y lista de ejercicios, con el texto en lugar del botón; "hecho" se sigue en vivo (si otra pestaña lo cierra, el botón pasa al texto), no se fija al abrir como `blocked`, porque empezar desde aquí deja el workout `in_progress`. Hoy sigue redirigiendo a "Hoy" (spec §8, decisión 17).
 
 ### 6.8 Sesión activa
 - `SessionFooter` recibe `closeTo: string | null`: en el último ejercicio, si `progress.setsDone > 0`, el enlace principal "Terminar sesión" con `state: { from: index }` (AC-1 a AC-3).
-- `ExitSheet` recibe `onFinish?: () => void`: con al menos una serie hecha añade "Terminar y guardar lo hecho" con su subtítulo, en segundo lugar (AC-4 a AC-6). Es un enlace, como "Salir y continuar después".
+- `ExitSheet` recibe `finishTo: string | null` (antes `onFinish?`; aprobado antes de T18, porque la opción es un enlace, como "Salir y continuar después"): con al menos una serie hecha añade "Terminar y guardar lo hecho" con su subtítulo "Irás al cierre para registrar el dolor", en segundo lugar, con el estilo de "Salir y continuar después" y todo su texto visible como nombre (WCAG 2.5.3) (AC-4 a AC-6). Llevan `state: { from: index }` los dos enlaces al Cierre; navegar desmonta el aviso, así que no hace falta cerrarlo a mano.
+- `setsDone` sale de `workoutProgress(view)` (cuenta las extra). `closeTo` solo se usa en el último ejercicio; con `null`, el pie queda con "Anterior" (AC-3).
+- Las pruebas de la spec 004 AC-12 (`session-exit.test.tsx`, tres opciones) y AC-33 (`session-page.test.tsx`, "ningún Terminar") quedan reemplazadas por AC-4 y AC-6, y por AC-1 y AC-3 de esta spec (§5).
 
 ### 6.9 Componentes de `health/ui`
 - `PainSelector`: `role="group"` con nombre "Dolor lumbar", 11 botones `aria-pressed`, el mensaje (`bandMessage(value)`) en `aria-live="polite"`; `data-band` para el color (`--warn` desde 4) y la barra en 7-10 (las pruebas no dependen de clases).
@@ -163,7 +184,7 @@ Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage
 `app/errors/messages.ts` añade `training/nothing-done` ("No hay series hechas para guardar."), `training/notes-too-long`, `training/already-done` ("Ya hiciste esta sesión."), `training/pain-required`, `health/pain-out-of-range` y `health/invalid-red-flag` (ADR-0010). Desde la interfaz solo pueden llegar los dos primeros y `already-done`; los demás protegen la API.
 
 ### 6.11 Presupuesto del bundle
-Bundle inicial actual: 163.58 kB de 200 kB. `health` entra en el bundle inicial porque "Hoy" usa `usePainSummary`; son funciones y componentes pequeños, sin dependencias nuevas. Se mide en la tarea de cierre del punto de control C. **Medido al cerrar el punto de control C (18-nov): 165.8 kB** (`health` y el cierre de `training`, sin páginas nuevas todavía).
+Bundle inicial actual: 163.58 kB de 200 kB. `health` entra en el bundle inicial porque "Hoy" usa `usePainSummary`; son funciones y componentes pequeños, sin dependencias nuevas. Se mide en la tarea de cierre del punto de control C. **Medido al cerrar el punto de control C (18-nov): 165.8 kB** (`health` y el cierre de `training`, sin páginas nuevas todavía). **Medido al cerrar el punto de control E (T21, 18-nov): 168.76 kB** (con el Cierre, sus entradas y "Hoy" con sesiones hechas y dolor), 31.24 kB por debajo del límite.
 
 ## 7. Estrategia de pruebas
 

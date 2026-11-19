@@ -30,6 +30,7 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
   const services = {
     plan: app.plan,
     training: app.training,
+    health: app.health,
     clock: systemClock,
     ready: app.ready,
   };

@@ -53,6 +53,8 @@ const arrow = () => screen.getByRole('button', { name: 'Salir de la sesión' });
 const exitSheet = () => screen.getByRole('dialog', { name: '¿Salir de la sesión?' });
 const confirmation = () => screen.getByRole('dialog', { name: '¿Descartar la sesión?' });
 const keepTraining = () => within(exitSheet()).getByRole('button', { name: 'Seguir entrenando' });
+const finishOption = () =>
+  within(exitSheet()).getByRole('link', { name: /^Terminar y guardar lo hecho/ });
 const discardOption = () => within(exitSheet()).getByRole('button', { name: /^Descartar sesión/ });
 
 function withTraining(services: AppServices, overrides: Partial<TrainingApi>): AppServices {
@@ -60,7 +62,8 @@ function withTraining(services: AppServices, overrides: Partial<TrainingApi>): A
 }
 
 describe('el aviso de salida', () => {
-  it('AC-12: título, texto con el avance y el tiempo, y tres opciones en orden', async () => {
+  // Spec 005 AC-4 replaces spec 004 AC-12 when a set is done: four options.
+  it('spec 005 AC-4: título, texto con el avance y el tiempo, y cuatro opciones en orden', async () => {
     const { services, workout } = await example();
     await openExit(services, workout);
 
@@ -71,10 +74,48 @@ describe('el aviso de salida', () => {
     const leave = within(exitSheet()).getByRole('link', { name: /^Salir y continuar después/ });
     expect([...exitSheet().querySelectorAll('a, button')]).toEqual([
       keepTraining(),
+      finishOption(),
       leave,
       discardOption(),
     ]);
-    expect(screen.queryByText(/Terminar y guardar/)).not.toBeInTheDocument();
+  });
+
+  it('spec 005 AC-4: "Terminar y guardar lo hecho" se nombra con todo su texto visible (WCAG 2.5.3)', async () => {
+    const { services, workout } = await example();
+    await openExit(services, workout);
+
+    expect(finishOption()).toHaveAccessibleName(
+      'Terminar y guardar lo hecho Irás al cierre para registrar el dolor',
+    );
+    expect(finishOption()).toHaveAttribute('href', `/sesion/${workout.id}/cierre`);
+    expect(finishOption()).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('spec 005 AC-5: "Terminar y guardar lo hecho" va al Cierre desde el ejercicio 2, sin cerrar nada', async () => {
+    const { services, workout } = await example();
+    const { router, user } = await openExit(services, workout);
+
+    await tapToNavigate(user, finishOption());
+
+    expect(router.state.location.pathname).toBe(`/sesion/${workout.id}/cierre`);
+    expect(router.state.location.state).toEqual({ from: 2 });
+    expect((await services.training.getWorkout(workout.id))?.status).toBe('in_progress');
+  });
+
+  it('spec 005 AC-6: sin series hechas, el aviso no tiene "Terminar y guardar lo hecho"', async () => {
+    const services = createTestServices({
+      seedClock: STARTED,
+      clock: fixedClock('2026-11-16T18:18:42-06:00'),
+    });
+    await services.ready;
+    const started = await services.training.startWorkout(MONDAY);
+    if (!started.ok) throw new Error(started.error.code);
+    await openExit(services, started.value);
+
+    expect(exitSheet().querySelectorAll('a, button')).toHaveLength(3);
+    expect(
+      within(exitSheet()).queryByRole('link', { name: /^Terminar y guardar/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('AC-12, AC-35: el nombre de cada opción es todo su texto visible (WCAG 2.5.3)', async () => {

@@ -392,6 +392,48 @@ describe('el pie (spec 004 AC-31 a AC-34)', () => {
     ).toEqual(['Anterior', 'Siguiente']);
   });
 
+  // Spec 005: with a done set the last exercise gets "Terminar sesión" (AC-1, AC-2); without one
+  // it stays as spec 004 AC-33 says (spec 005 AC-3).
+  it('spec 005 AC-1: en el último, con una serie hecha, "Anterior" y "Terminar sesión" en lugar de "Siguiente"', async () => {
+    const { services, workout } = await withWorkout();
+    await done(services.training, workout, 1, 1);
+    await open(`/sesion/${workout.id}/7`, services);
+    await heading();
+
+    expect(within(footer()).getByText('Último ejercicio de hoy')).toBeVisible();
+    const links = within(footer()).getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual(['Anterior', 'Terminar sesión']);
+    expect(links[1]).toHaveAttribute('href', `/sesion/${workout.id}/cierre`);
+    expect(within(footer()).queryByRole('link', { name: 'Siguiente' })).not.toBeInTheDocument();
+  });
+
+  it('spec 005 AC-2: "Terminar sesión" lleva al Cierre con el ejercicio de origen y no cierra nada', async () => {
+    const { services, workout } = await withWorkout();
+    await done(services.training, workout, 1, 1);
+    const { router, user } = await open(`/sesion/${workout.id}/7`, services);
+    await heading();
+
+    await tapToNavigate(user, within(footer()).getByRole('link', { name: 'Terminar sesión' }));
+
+    expect(router.state.location.pathname).toBe(`/sesion/${workout.id}/cierre`);
+    expect(router.state.location.state).toEqual({ from: 7 });
+    expect((await services.training.getWorkout(workout.id))?.status).toBe('in_progress');
+  });
+
+  it('spec 005 AC-1: en un ejercicio que no es el último, sigue "Siguiente" aunque haya series hechas', async () => {
+    const { services, workout } = await withWorkout();
+    await done(services.training, workout, 1, 1);
+    await open(`/sesion/${workout.id}/6`, services);
+    await heading();
+
+    expect(
+      within(footer())
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Anterior', 'Siguiente']);
+  });
+
+  // Spec 005 AC-3: with no done set, the last exercise is as spec 004 AC-33.
   it('AC-33: en el último, "Último ejercicio de hoy", solo "Anterior" y ningún "Terminar"', async () => {
     const { services, workout } = await withWorkout();
     await open(`/sesion/${workout.id}/7`, services);
@@ -572,7 +614,8 @@ describe('sesión no disponible', () => {
     await expectUnavailable();
   });
 
-  it('AC-28: un workout completado', async () => {
+  // Spec 005 AC-28 replaces spec 002 AC-28 for a completed workout: it says it was saved.
+  it('spec 005 AC-28: un workout completado dice que ya está guardado', async () => {
     const { services, workout } = await withWorkout();
     const completed = editView(services, (view) => ({
       ...view,
@@ -580,7 +623,8 @@ describe('sesión no disponible', () => {
     }));
     await open(`/sesion/${workout.id}/1`, completed);
 
-    await expectUnavailable();
+    expect(await screen.findByText('Esta sesión ya está guardada.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver a Hoy' })).toHaveAttribute('href', '/');
   });
 
   it('mientras carga, nada más que el título de la pestaña', () => {

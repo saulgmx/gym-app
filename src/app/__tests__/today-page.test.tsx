@@ -242,13 +242,13 @@ describe('TodayPage', () => {
     const container = document.body.appendChild(document.createElement('div'));
     const root = createRoot(container);
     try {
-      const { plan, training, clock } = createTestServices({ seed: {} });
+      const { plan, training, health, clock } = createTestServices({ seed: {} });
       let markReady: () => void = () => undefined;
       const ready = new Promise<void>((resolve) => {
         markReady = resolve;
       });
       root.render(
-        <AppContext value={{ plan, training, clock, ready }}>
+        <AppContext value={{ plan, training, health, clock, ready }}>
           <RouterProvider router={createMemoryRouter(routes, { initialEntries: ['/'] })} />
         </AppContext>,
       );

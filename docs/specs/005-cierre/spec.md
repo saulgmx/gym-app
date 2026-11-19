@@ -211,6 +211,7 @@ Decisiones cerradas el 18-nov-2026 (conversación con el dueño del producto):
 14. **Notas:** recortadas, vacías = sin notas, máximo 2000 caracteres (RN-TRN-22).
 15. **Riesgo aceptado:** la entrada de dolor que queda si `finishWorkout` falla y la sesión se descarta después (§7).
 16. **Subtítulo** de "Terminar y guardar lo hecho": "Irás al cierre para registrar el dolor".
+17. **AC-35 y la vista previa de hoy** (18-nov, durante T20): la vista previa sigue redirigiendo a "Hoy" cuando la fecha es hoy (spec 002, plan §6.7), así que el ejemplo literal de AC-35 (`/dia/2026-11-18` el mismo miércoles) lleva a "Hoy", donde AC-34 ya muestra el día hecho. AC-35 se lee como "la vista previa de un día ya hecho de esta semana" y se prueba con el lunes hecho, abierto el miércoles por URL (desde "Otra sesión" ese día ya no es un enlace, AC-32).
 
 ## 9. Checklist de la constitución
 

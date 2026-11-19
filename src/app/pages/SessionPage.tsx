@@ -12,6 +12,7 @@ import { useApp } from '../context';
 import { describeTrainingError, errorMessages } from '../errors/messages';
 import { Elapsed } from './Elapsed';
 import { formatElapsed } from '../format-time';
+import { CLOSE_TEXTS } from './close/format';
 import { ExerciseCard } from './session/ExerciseCard';
 import { ExitSheet } from './session/ExitSheet';
 import { SessionFooter } from './session/SessionFooter';
@@ -54,7 +55,9 @@ function SessionContent() {
   const { workoutId = '', exerciseIndex } = useParams();
   const view = useWorkoutView(training, workoutId as ID);
   if (view === undefined) return null;
-  if (view?.workout.status !== 'in_progress') return <Unavailable />;
+  if (view?.workout.status !== 'in_progress') {
+    return <Unavailable saved={view?.workout.status === 'completed'} />;
+  }
 
   const index = parseIndex(exerciseIndex, view.workout.items.length);
   if (index === null)
@@ -78,11 +81,12 @@ function SessionContent() {
   );
 }
 
-function Unavailable() {
+// A closed session says it was saved (spec 005 AC-28); a discarded or missing one, unavailable.
+function Unavailable({ saved }: { saved: boolean }) {
   return (
     <>
       <h1>Sesión</h1>
-      <p>{errorMessages['training/workout-not-found']}</p>
+      <p>{saved ? CLOSE_TEXTS.saved : errorMessages['training/workout-not-found']}</p>
       <Link to="/" className={pageStyles.backLink}>
         Volver a Hoy
       </Link>
@@ -119,6 +123,8 @@ function ExerciseScreen({
   if (!item || !exercise) throw new Error(`No exercise ${String(index)} in workout ${workout.id}`);
   const { exerciseId } = item;
   const path = (i: number) => `/sesion/${workout.id}/${String(i)}`;
+  // Spec 005 AC-1 to AC-6: the Cierre only once there is something to save (extras count).
+  const closeTo = workoutProgress(view).setsDone > 0 ? `/sesion/${workout.id}/cierre` : null;
 
   // A new exercise starts at the top, with focus on its name for screen readers.
   useEffect(() => {
@@ -169,7 +175,7 @@ function ExerciseScreen({
         exerciseId={item.exerciseId}
         describeError={describeTrainingError}
       />
-      <SessionFooter view={view} index={index} path={path} />
+      <SessionFooter view={view} index={index} path={path} closeTo={closeTo} />
       <ExitSheet
         open={exitSummary !== null}
         summary={exitSummary ?? ''}
@@ -178,6 +184,7 @@ function ExerciseScreen({
           setExitSummary(null);
         }}
         onDiscard={() => void discard()}
+        finishTo={closeTo === null ? null : { path: closeTo, from: index }}
       />
     </div>
   );

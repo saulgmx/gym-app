@@ -1,4 +1,5 @@
 import { createContext, use } from 'react';
+import type { HealthApi } from '@/modules/health';
 import type { PlanApi } from '@/modules/plan';
 import type { TrainingApi } from '@/modules/training';
 import type { Clock } from '@/shared/kernel';
@@ -8,6 +9,7 @@ import type { Clock } from '@/shared/kernel';
 export interface AppServices {
   plan: PlanApi;
   training: TrainingApi;
+  health: HealthApi; // spec 005: the Cierre and "Hoy"
   clock: Clock;
   ready: Promise<void>;
 }

@@ -52,7 +52,10 @@ describe('app router', () => {
 
   it('AC-24: /sesion/:workoutId/cierre shows the close page, not an exercise index', async () => {
     await renderAt('/sesion/w1/cierre');
-    expect(screen.getByRole('heading', { level: 1, name: 'Cierre de sesión' })).toBeInTheDocument();
+    // Since spec 005 the page reads the workout first (w1 does not exist: AC-29).
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Cierre de sesión' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Sesión' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Volver a Hoy' })).toHaveAttribute('href', '/');
     expect(tabBar()).not.toBeInTheDocument();

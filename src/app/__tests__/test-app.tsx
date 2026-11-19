@@ -26,7 +26,7 @@ export function createTestServices({
   const db = openDatabase({ name: crypto.randomUUID() });
   opened.push(db);
   const app = compose({ db, clock: seedClock, seed });
-  return { plan: app.plan, training: app.training, clock, ready: app.ready };
+  return { plan: app.plan, training: app.training, health: app.health, clock, ready: app.ready };
 }
 
 /** Call from afterEach in files that use createTestServices. */
@@ -36,7 +36,10 @@ export async function closeTestDatabases() {
   await Promise.all(dbs.map((db) => Dexie.delete(db.name)));
 }
 
-function renderTree(path: string, services: AppServices) {
+/** A path, or a path with navigation state (spec 005: the Cierre reads `state.from`). */
+export type Entry = string | { pathname: string; state: unknown };
+
+function renderTree(path: Entry, services: AppServices) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
     <AppContext value={services}>
@@ -51,7 +54,7 @@ function renderTree(path: string, services: AppServices) {
  * only retries a component suspended on use(ready) within an awaited act, and a plain render()
  * leaves the page on its Suspense fallback forever.
  */
-export async function renderRoute(path: string, services: AppServices = createTestServices()) {
+export async function renderRoute(path: Entry, services: AppServices = createTestServices()) {
   await services.ready.catch(() => undefined);
   let router!: ReturnType<typeof renderTree>;
   await act(async () => {
@@ -62,7 +65,7 @@ export async function renderRoute(path: string, services: AppServices = createTe
 }
 
 /** Synchronous render, for a page whose `ready` never settles (loading state). */
-export function renderRouteWhileLoading(path: string, services: AppServices) {
+export function renderRouteWhileLoading(path: Entry, services: AppServices) {
   return renderTree(path, services);
 }
 
