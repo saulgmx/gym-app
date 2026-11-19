@@ -58,6 +58,9 @@ function TodayContent() {
       : [];
   });
   const isDone = today.kind === 'workout' && doneToday !== undefined;
+  // Spec 005b (RN-TRN-27): a session closed today, by date (not plannedFor, unlike doneToday). The
+  // week range filters by date (RN-TRN-26), so it is in `completed`; the latest first if two.
+  const closedToday = completed.find((w) => w.date === date);
 
   return (
     <>
@@ -75,12 +78,19 @@ function TodayContent() {
             date={date}
             back={pain.latest?.level ?? null}
             done={isDone ? { view: doneView, now: clock.now() } : null}
+            trained={
+              !isDone && closedToday
+                ? { name: closedToday.name, plannedFor: closedToday.plannedFor }
+                : null
+            }
           />
           {today.kind === 'workout' && !isDone && <ExerciseDetails items={today.plannedItems} />}
         </>
       )}
       {inProgram && <WeekSection days={week} weekStart={weekStart} today={date} done={done} />}
-      {!active && inProgram && others.length > 0 && <OtherDays days={others} />}
+      {!active && inProgram && others.length > 0 && (
+        <OtherDays days={others} trainedToday={closedToday !== undefined} />
+      )}
     </>
   );
 }

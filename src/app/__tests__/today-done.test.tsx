@@ -458,6 +458,19 @@ describe('una sola sesión cerrada por día (spec 005b AC-8 a AC-12, AC-17)', ()
       }),
     ).toHaveLength(2);
   });
+
+  it('§6.1: con dos sesiones cerradas hoy y la de hoy pendiente, el texto nombra la más reciente', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    const monday = await closeSession(ctx, { on: '2026-11-17', plannedFor: '2026-11-16' });
+    await closeSession(ctx, { on: '2026-11-18', plannedFor: '2026-11-20' }); // 18:00, the latest
+    await lastTestDatabase()
+      .table<Workout>('workouts')
+      .update(monday.id, { date: date('2026-11-18') }); // Tuesday 18:00, earlier
+
+    await openToday(ctx.services);
+
+    expect(within(card()).getByText('Ya entrenaste hoy (Full body A del viernes).')).toBeVisible();
+  });
 });
 
 describe('carga', () => {
