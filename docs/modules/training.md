@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.18 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.19 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -68,11 +68,12 @@ interface ExerciseSession {          // salida de getExerciseHistory
 
 ```ts
 // Los puertos entran como dependencias (sin configureTraining, spec 002 plan §6.2). `bus` se añade
-// cuando un módulo escuche los eventos de §5 (fase 4); `painGate`, con finishWorkout (fase 3) (P-7).
+// cuando un módulo escuche los eventos de §5 (fase 4) (P-7). `painGate` llega con finishWorkout (spec 005).
 export function createTraining(deps: {
   db: Dexie; clock: Clock; ids: IdGenerator;
   plan: Pick<PlanApi, 'getTodayPlan' | 'getExercises'>;
   suggestions: SuggestionProvider;
+  painGate: PainGate;                   // RN-TRN-06; lo implementa health
 }): TrainingApi;
 
 // Tablas propias, para que app/db.ts componga db.version(n).stores({...}).
@@ -82,8 +83,9 @@ export type TrainingErrorCode =
   | 'training/workout-not-found' | 'training/workout-already-active' | 'training/workout-closed'
   | 'training/set-not-found' | 'training/invalid-set-values' | 'training/no-plan-today'
   | 'training/planned-date-out-of-week' | 'training/max-sets-reached' | 'training/set-not-removable'
-  | 'training/invalid-exercise-choice' | 'training/item-has-done-sets';
-  // 'training/pain-required' entra con finishWorkout (fase 3)
+  | 'training/invalid-exercise-choice' | 'training/item-has-done-sets'
+  | 'training/pain-required' | 'training/nothing-done' | 'training/notes-too-long'   // RN-TRN-22 (spec 005)
+  | 'training/already-done';                                                            // RN-TRN-24 (spec 005)
 
 interface InvalidSetValuesDetails {     // details de training/invalid-set-values; app elige el texto
   field: 'weightKg' | 'reps' | 'rir';
@@ -97,8 +99,7 @@ interface WorkoutView {                 // lo que necesita la página de sesión
   exercises: Record<ID, Exercise>;      // todas las options de todos los ítems
 }
 
-// Fase 2 implementa estas operaciones. finishWorkout, getWorkoutSummary, listWorkouts,
-// getWorkoutExerciseIds y dataPort entran en TrainingApi en la fase 3, cuando se implementan.
+// Fase 2 y spec 005. getWorkoutExerciseIds (fase 4) y dataPort (spec 007) entran cuando se implementan.
 interface TrainingApi {
   startWorkout(date: LocalDate, opts?: { plannedFor?: LocalDate }): Promise<Result<Workout>>; // RF-10, RN-TRN-14
   logSet(setId: ID, input: { weightKg?: number | null; reps?: number | null; rir?: number | null }): Promise<Result<SetLog>>; // RF-11, RF-13
@@ -112,15 +113,16 @@ interface TrainingApi {
   getWorkoutView(id: ID): Promise<WorkoutView | undefined>;
   getActiveWorkoutView(): Promise<WorkoutView | undefined>;                               // el activo de RN-TRN-01, armado como RN-TRN-17
   getExerciseHistory(exerciseId: ID, opts?: { limit?: number; before?: LocalDate }): Promise<ExerciseSession[]>;
+  finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;      // RF-20, RF-23, RN-TRN-22
+  getWorkoutSummary(id: ID): Promise<WorkoutSummary | undefined>;                         // RF-20, RN-TRN-25
+  listWorkouts(range?: { from?: LocalDate; to?: LocalDate }): Promise<Workout[]>;         // RN-TRN-23; RF-32 en la spec 006
 }
 
-// Fase 3
-//   finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;  // RF-20, RF-23
-//   getWorkoutSummary(id: ID): Promise<WorkoutSummary | undefined>;                     // RF-20
-//   listWorkouts(range?: { from?: LocalDate; to?: LocalDate }): Promise<Workout[]>;     // RF-32
-//   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;
-//   dataPort: DataPort;
-interface WorkoutSummary { durationMin: number; setsDone: number; setsPlanned: number; exercises: number }
+// Más adelante
+//   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;   // fase 4 (progression)
+//   dataPort: DataPort;                                    // spec 007
+// RN-TRN-25. La forma exacta (y si se calcula en el dominio desde WorkoutView) la fija el plan de la spec 005.
+interface WorkoutSummary { minutes: number; setsDone: number; itemsWithDoneSets: number; itemCount: number }
 
 // Hooks (ui, useLiveQuery). Reciben la API, como los de plan. null = no existe; undefined = cargando.
 export function useWorkoutView(training: TrainingApi, id: ID): WorkoutView | null | undefined;
@@ -195,7 +197,7 @@ export interface PainGate {
 }
 ```
 
-Los implementan `progression` y `health`; los pasa `app/compose.ts` en `createTraining`. Hasta la fase 4, `compose` pasa un `SuggestionProvider` nulo (siempre `null`); después, uno que delega en `progression`, asignada tras crear `training`, para no crear un ciclo (spec 002 plan §6.2). `PainGate` llega con `finishWorkout` (fase 3).
+Los implementan `progression` y `health`; los pasa `app/compose.ts` en `createTraining`. Hasta la fase 4, `compose` pasa un `SuggestionProvider` nulo (siempre `null`); después, uno que delega en `progression`, asignada tras crear `training`, para no crear un ciclo (spec 002 plan §6.2). `PainGate` es `health.painGate` desde la spec 005; `health` no depende de `training`, así que no hay ciclo.
 
 ## 5. Eventos
 
@@ -232,11 +234,15 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 | RN-TRN-19 | Hooks (`useWorkoutView`, `useActiveWorkout`, `useLastSession`, con `useLiveQuery`): devuelven `undefined` mientras cargan y mientras el resultado pertenece a otra clave (otro `id`, o otro ejercicio o fecha), y `null` si no existe; se actualizan solos al cambiar las tablas que leen (también las de `plan` en `useWorkoutView`); un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta. `useLastSession` es `getExerciseHistory(exerciseId, { before, limit: 1 })[0]`. | RN-PLN-26, spec 002 plan §6.4 |
 | RN-TRN-20 | Tiempo restante de un workout `in_progress`: la fórmula de RN-PLN-27 **sin** los 600 s de calentamiento, contando solo las series no hechas (planificadas y extra) y 90 s por cada ítem con al menos una serie no hecha. Usa el ejercicio elegido de cada ítem (RN-TRN-13) y sus `restSeconds` y `metric`, de `WorkoutView.exercises`; las constantes son las de `plan`. Mismo redondeo. Sin series pendientes no hay estimación. No depende del reloj. Función pura del dominio. | Spec 003 |
 | RN-TRN-21 | Avance de un workout `in_progress`: un ítem está **hecho** si todas sus series están hechas (también las extra). El ítem **actual** es el primero, por `order`, con una serie no hecha, y su serie actual es la de menor `setNumber` no hecha; si no hay ninguno, no hay ítem actual. Un ítem sin series cuenta como hecho (dato inconsistente; RN-TRN-10 lo impide, spec 003 §7). Con esta regla `/sesion/:workoutId` elige el ejercicio (spec 002 AC-4) y "Hoy" muestra "N de M ejercicios hechos" y "Vas en". Función pura del dominio. | Spec 003, spec 002 AC-4 |
+| RN-TRN-22 | `finishWorkout(workoutId, { notes })`: el workout debe estar `in_progress` (si no, `training/workout-closed`) y tener al menos una serie hecha (si no, `training/nothing-done`); luego `painGate.hasPainEntry` (RN-TRN-06). En ese orden. Pasa a `completed`, fija `finishedAt = clock.now()` y guarda `notes` recortadas, o sin `notes` si quedan vacías; máximo 2000 caracteres tras recortar (si no, `training/notes-too-long`). Las series no hechas se conservan. | RF-20, RF-23, spec 005 |
+| RN-TRN-23 | Un día de pesas de la semana está **hecho** si existe un workout `completed` con `plannedFor` igual a ese día. `discarded` e `in_progress` no cuentan. | Spec 005 |
+| RN-TRN-24 | `startWorkout` con un `plannedFor` que ya está hecho (RN-TRN-23) devuelve `training/already-done`. Se comprueba en la misma transacción que RN-TRN-01, después de él. | Spec 005 |
+| RN-TRN-25 | Resumen de un workout (`getWorkoutSummary`): minutos = `floor(((finishedAt ?? clock.now()) − startedAt) / 60 s)`, nunca negativo; `setsDone` = series hechas; `itemsWithDoneSets` = ítems con al menos una serie hecha; `itemCount` = total de ítems. | RF-20, spec 005 |
 | RN-TRN-15 | `discardWorkout` pasa un workout `in_progress` a `discarded` y conserva sus series; no se borra nada ni se fija `finishedAt` (es del cierre). Los workouts `discarded` no aparecen en el historial (RN-TRN-08) ni cuentan para RN-TRN-01. | P-2, decisión 2 |
 
 ## 7. Errores
 
-`training/workout-not-found`, `training/workout-already-active`, `training/workout-closed`, `training/set-not-found`, `training/invalid-set-values`, `training/pain-required`, `training/no-plan-today`, `training/planned-date-out-of-week`, `training/max-sets-reached`, `training/set-not-removable`, `training/invalid-exercise-choice`, `training/item-has-done-sets`.
+`training/workout-not-found`, `training/workout-already-active`, `training/workout-closed`, `training/set-not-found`, `training/invalid-set-values`, `training/pain-required`, `training/no-plan-today`, `training/planned-date-out-of-week`, `training/max-sets-reached`, `training/set-not-removable`, `training/invalid-exercise-choice`, `training/item-has-done-sets`, `training/nothing-done`, `training/notes-too-long`, `training/already-done`.
 
 ## 8. Pruebas de contrato
 
@@ -244,7 +250,11 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 - RN-TRN-01: segundo `startWorkout` falla con el id del activo; dos llamadas concurrentes → un solo workout.
 - RN-TRN-02: semana 1, Full body A → 7 ítems en orden, Prensa con 2 series vacías; con `SuggestionProvider` falso, el peso prellenado es el sugerido.
 - RN-TRN-04: cada límite de rango, peso no múltiplo de 0.25, no finito, negativo fuera de Dominadas y Fondos, y `weightKg` no nulo con `metric: 'reps'` → `training/invalid-set-values`; 0 kg y −20 kg en Dominadas se aceptan.
-- RN-TRN-06: `finishWorkout` sin dolor falla; con `PainGate` falso en memoria que devuelve `true` funciona y publica `WorkoutCompleted`.
+- RN-TRN-06: `finishWorkout` sin dolor falla; con `PainGate` falso en memoria que devuelve `true` funciona (publicar `WorkoutCompleted` llega con la fase 4).
+- RN-TRN-22: cerrado → `workout-closed` antes que todo; sin series hechas → `nothing-done` antes de preguntar al `PainGate`; notas recortadas, vacías → sin `notes`, 2001 caracteres → `notes-too-long`; las series no hechas siguen.
+- RN-TRN-23: `completed` con `plannedFor` del viernes hecho el miércoles marca el viernes; `discarded` e `in_progress` no marcan.
+- RN-TRN-24: iniciar un día ya hecho → `already-done`; con uno activo, gana `workout-already-active`.
+- RN-TRN-25: 52 min 59 s → 52; reloj hacia atrás → 0; parcial → 3 de 7 ítems y 5 series.
 - RN-TRN-07: tras descartar, cada operación de escritura → `training/workout-closed`.
 - RN-TRN-08: series no hechas y workouts descartados no aparecen en el historial.
 - RN-TRN-10: quitar una serie hecha o la única → `training/set-not-removable`; renumeración; extra hasta `maxSets`.
@@ -258,7 +268,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 
 ## 9. Trazabilidad
 
-RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
+RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32.
 
 ## 10. Decisiones (17-nov-2026)
 
@@ -282,3 +292,4 @@ RF-10 a RF-17, RF-19, RF-20, RF-23, RF-32.
 18. **Plan de la spec 003 (contrato v1.16):** `getActiveWorkoutView` y `useActiveWorkoutView` para D2; `workoutProgress(view)` exportado, con `progressOf` puro en el dominio que recibe el tiempo por serie (el dominio no importa `plan`, architecture §5.2); `SessionPage` usa `current` en lugar de su `firstPending`. `useActiveWorkout` se queda para `UpdatePrompt` y `DayPreviewPage`.
 19. **Review del punto A de la spec 003 (contrato v1.17):** RN-TRN-21 dice explícitamente que un ítem sin series cuenta como hecho, como ya pedía spec 003 §7; antes solo lo decía la spec.
 20. **Plan de la spec 004, rediseño de la sesión activa (contrato v1.18):** `SessionHeader` en una fila con menú flotante (`Dialog` de `shared`), `elapsed` y `onExit` en lugar de `onDiscard`; `SetTable` con "Seg", pistas de reps y RIR y serie actual; `formatRange`, `formatTarget` y `formatSetCount` exportados porque `training/ui` no puede importar `plan` (architecture §5.2). Sin reglas nuevas.
+21. **Spec 005, Cierre (contrato v1.19):** `finishWorkout`, `getWorkoutSummary` y `listWorkouts` entran en `TrainingApi`, con `painGate` en `createTraining`. Sin series hechas no se cierra (RN-TRN-22); el día hecho cuenta por `plannedFor` (RN-TRN-23) y no se repite (RN-TRN-24); resumen en RN-TRN-25, con `WorkoutSummary` renombrado para que coincida. `WorkoutCompleted` se sigue sin publicar hasta la fase 4.
