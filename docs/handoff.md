@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; spec 005b aprobada; siguiente: su plan técnico) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; spec 005b con plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -134,7 +134,9 @@
    9. ~~Punto de control E, páginas~~ (T16–T21, PR #41): Cierre en `app/pages/close/`, "Terminar sesión" y "Terminar y guardar lo hecho", "Hoy" con días hechos, aviso y chip "Espalda", vista previa de un día hecho. Detalle en plan §6.5 a §6.8. AC-35 se lee contra la redirección de la spec 002 (spec §8, decisión 17). Bundle **168.76 kB** de 200 kB.
    10. ~~Punto de control F, verificación y cierre~~ (T22 en el PR #44, T23 en el iPhone el 18-nov, T25 en el PR de cierre): alcance del E2E aprobado antes de escribirlo (plan §7.1, spec §8 decisión 18: AC-24 sin barra de pestañas); `close.spec.ts` (sesión completa y parcial hasta "Hoy", salir sin guardar, sin conexión, pie fijo) y el bloque de `a11y.spec.ts`, 90/90 en 5 repeticiones; AC-50 como prueba de componente en `update-prompt.test.tsx` (un SW nuevo esperando necesita dos builds). Spec y plan 005 marcados como implementados. **Queda T24** (tuya, no bloquea): validar los textos de salud con el traumatólogo; si cambian, PR de docs y `domain/messages.ts`; si no, quitar `[PROPUESTO]`.
    11. ~~Pregunta 9~~ (decidida el 18-nov): **spec 005b aprobada** (19-nov): `docs/specs/005b-una-sesion-por-dia/spec.md` (AC-1 a AC-19). Un día real (`date`) admite una sola sesión cerrada: RN-TRN-27 y `training/day-already-trained`, comprobado en `createIfAllowed` después de `active` y `done` (contrato `training` v1.23); solo al iniciar, no al cerrar. Si hoy ya hay una sesión cerrada, "Otra sesión de esta semana" sigue visible con el aviso "Ya entrenaste hoy. Podrás empezar otra sesión mañana." y enlaces a la vista previa, que no tiene "Empezar sesión"; la tarjeta de un día de pesas pendiente cambia el botón por "Ya entrenaste hoy (Full body A del viernes)."; cardio y descanso no cambian. Sin API ni índice nuevos (`useCompletedWorkouts`). Las dos sesiones cerradas del 18-nov en el iPhone se toleran (AC-17). Spec v0.11 (§7.2) y `design-hoy.md`.
-   12. **Siguiente: plan técnico de la spec 005b** (`docs/specs/005b-una-sesion-por-dia/plan.md`), luego sus tareas. Después, la spec 006 (historial) y la 007 (exportar e importar, `data`).
+   12. ~~Plan técnico de la 005b~~ aprobado (19-nov): `docs/specs/005b-una-sesion-por-dia/plan.md`. RN-TRN-27 en `createIfAllowed` (índice `date`, después de `active` y `done`), como RN-TRN-24; "ya entrenaste hoy" en `app` con `completed.find((w) => w.date === today)` (`closedToday`, para no confundirlo con `doneToday` por `plannedFor`); `DayCard` con `trained`, `OtherDays` con `trainedToday`, `DayPreview` con el orden hecho → entrenado → botón; `formatWeekday` y `formatTrainedToday`. Sin API, índice ni migración.
+   13. ~~Tareas de la 005b~~ (19-nov): `docs/specs/005b-una-sesion-por-dia/tasks.md`, T1 a T10 en 3 puntos de control (A `training`, B "Hoy" y la vista previa, C verificación y cierre).
+   14. **Siguiente: T1** (pruebas de RN-TRN-27 en el servicio y el repositorio, en rojo y sin push). Después, la spec 006 (historial) y la 007 (exportar e importar, `data`).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -207,4 +209,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005b-una-sesion-por-dia/spec.md, docs/modules/training.md (RN-TRN-24, 26 y 27) y docs/specs/005-cierre/plan.md como referencia. La spec 005b está aprobada. Propón su plan técnico (plan.md) con la plantilla de docs/templates/feature-plan.md. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005b-una-sesion-por-dia/ (spec, plan y tareas) y docs/modules/training.md (RN-TRN-24, 26 y 27). Empieza el punto de control A con T1: las pruebas de RN-TRN-27, en rojo y sin push. Guíame paso a paso, una tarea a la vez."
