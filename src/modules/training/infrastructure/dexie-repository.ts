@@ -63,6 +63,21 @@ export function createDexieTrainingRepository(db: Dexie): TrainingRepository {
         return ok(value);
       }),
 
+    // RN-TRN-28: both tables in one read transaction, so a session closing meanwhile never comes
+    // with sets from another moment. Two reads for the whole list, whatever its length.
+    findCompletedStates: () =>
+      db.transaction('r', tables, async () => {
+        const completed = await workouts.where('status').equals('completed').toArray();
+        const own = await sets
+          .where('workoutId')
+          .anyOf(completed.map((w) => w.id))
+          .toArray();
+        return completed.map((workout) => ({
+          workout,
+          sets: own.filter((s) => s.workoutId === workout.id),
+        }));
+      }),
+
     // RN-TRN-26: a LocalDate (YYYY-MM-DD) compares correctly as a string; an Instant never does.
     // With from > to the range is empty (Dexie returns no rows).
     findCompletedBetween: async (from, to) => {

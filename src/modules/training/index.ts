@@ -27,14 +27,16 @@ export function createTraining(deps: {
 }
 
 export { workoutProgress } from './application/progress';
+export { historyDetail } from './domain/history';
 export { workoutSummary } from './domain/summary';
 export { trainingStores } from './infrastructure/schema';
-export { formatRange, formatSetCount, formatTarget } from './ui/format';
+export { formatDoneSet, formatRange, formatSetCount, formatTarget } from './ui/format';
 export {
   useActiveWorkout,
   useActiveWorkoutView,
   useCompletedWorkouts,
   useLastSession,
+  useWorkoutHistory,
   useWorkoutView,
 } from './ui/hooks';
 export { SetRow } from './ui/SetRow';
@@ -43,6 +45,7 @@ export { SetTable } from './ui/SetTable';
 
 export type { TrainingApi } from './application/service';
 export type {
+  HistoryEntry,
   PainGate,
   PlanReader,
   PrefillSuggestion,
@@ -50,6 +53,7 @@ export type {
   WorkoutView,
 } from './application/ports';
 export type { WorkoutProgress } from './domain/progress';
+export type { HistoryItem } from './domain/history';
 export type { WorkoutSummary } from './domain/summary';
 export type {
   ExerciseSession,

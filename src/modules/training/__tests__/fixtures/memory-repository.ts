@@ -66,6 +66,8 @@ export function memoryRepository(initial: WorkoutState[] = []) {
       for (const setId of changes.remove) sets.delete(setId);
       return Promise.resolve({ ok: true, value });
     },
+    findCompletedStates: () =>
+      Promise.resolve([...workouts.values()].filter((w) => w.status === 'completed').map(stateOf)),
     findCompletedWith: (exerciseId) =>
       Promise.resolve(
         [...workouts.values()]

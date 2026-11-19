@@ -9,6 +9,7 @@ import {
   type Result,
 } from '@/shared/kernel';
 import { exerciseHistory } from '../domain/history';
+import { workoutSummary } from '../domain/summary';
 import type {
   ExerciseSession,
   PlannedSession,
@@ -31,6 +32,7 @@ import {
 import type {
   ChangeFn,
   Exercise,
+  HistoryEntry,
   PainGate,
   PlanReader,
   SuggestionProvider,
@@ -72,6 +74,7 @@ export interface TrainingApi {
   ): Promise<ExerciseSession[]>;
   finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout, TrainingError>>; // RN-TRN-22
   listWorkouts(range: { from: LocalDate; to: LocalDate }): Promise<Workout[]>; // RN-TRN-26
+  listWorkoutHistory(): Promise<HistoryEntry[]>; // RN-TRN-28 (spec 006): every completed one
 }
 
 const workoutNotFound = (workoutId: ID) =>
@@ -289,5 +292,19 @@ export function createTrainingService(deps: {
       (await repository.findCompletedBetween(from, to)).sort(
         (a, b) => byDateDesc(a.date, b.date) || compareInstants(b.startedAt, a.startedAt),
       ),
+
+    // RN-TRN-28: the order of RN-TRN-26. now = startedAt: a completed workout has finishedAt, so
+    // the result is the same; broken data without it reads 0 min, and the clock is not involved.
+    listWorkoutHistory: async () =>
+      (await repository.findCompletedStates())
+        .sort(
+          (a, b) =>
+            byDateDesc(a.workout.date, b.workout.date) ||
+            compareInstants(b.workout.startedAt, a.workout.startedAt),
+        )
+        .map((state) => ({
+          workout: state.workout,
+          summary: workoutSummary(state, state.workout.startedAt),
+        })),
   };
 }

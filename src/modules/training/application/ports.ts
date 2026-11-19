@@ -1,5 +1,6 @@
 import type { Exercise, PlanApi } from '@/modules/plan';
 import type { ID, LocalDate, Result } from '@/shared/kernel';
+import type { WorkoutSummary } from '../domain/summary';
 import type { SetLog, TrainingError, Workout, WorkoutChanges, WorkoutState } from '../domain/types';
 
 // What the training service needs from outside (docs/modules/training.md §4, plan §6.1).
@@ -27,6 +28,12 @@ export interface SuggestionProvider {
 }
 
 /** What the session page needs, in one reactive query (RN-TRN-17). */
+// One row of the history list (RN-TRN-28, spec 006): a completed workout and its summary.
+export interface HistoryEntry {
+  workout: Workout;
+  summary: WorkoutSummary;
+}
+
 export interface WorkoutView {
   workout: Workout;
   sets: SetLog[]; // by item order, then setNumber
@@ -49,6 +56,8 @@ export interface TrainingRepository {
   findCompletedWith(exerciseId: ID): Promise<WorkoutState[]>;
   // Completed workouts with from ≤ date ≤ to, in any order (RN-TRN-26; the service sorts).
   findCompletedBetween(from: LocalDate, to: LocalDate): Promise<Workout[]>;
+  // Every completed workout with its sets, in any order (RN-TRN-28; the service sorts).
+  findCompletedStates(): Promise<WorkoutState[]>;
 }
 
 export type CreateResult =

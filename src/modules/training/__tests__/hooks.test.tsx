@@ -11,6 +11,7 @@ import {
   useActiveWorkoutView,
   useCompletedWorkouts,
   useLastSession,
+  useWorkoutHistory,
   useWorkoutView,
   type TrainingApi,
   type Workout,
@@ -248,6 +249,31 @@ describe('useCompletedWorkouts (spec 005)', () => {
       expect(result.current).toEqual([]);
     });
     expect(seen.every((ids) => ids === undefined || ids.length === 0)).toBe(true);
+  });
+});
+
+describe('useWorkoutHistory (spec 006)', () => {
+  it('RN-TRN-28: undefined mientras carga, [] sin sesiones y se actualiza al cerrar', async () => {
+    const { result } = renderHook(() => useWorkoutHistory(training));
+    expect(result.current).toBeUndefined();
+    await waitFor(() => {
+      expect(result.current).toEqual([]);
+    });
+
+    const workout = await start();
+    const setId = await firstPrensaSet();
+    await training.logSet(setId, { weightKg: 60, reps: 10 });
+    await training.toggleSetDone(setId);
+    // Still in progress: not in the history (RN-TRN-26).
+    expect(result.current).toEqual([]);
+    const closed = await training.finishWorkout(workout.id, {});
+    if (!closed.ok) throw new Error(closed.error.code);
+
+    await waitFor(() => {
+      expect(result.current?.map((e) => [e.workout.id, e.summary.setsDone])).toEqual([
+        [workout.id, 1],
+      ]);
+    });
   });
 });
 
