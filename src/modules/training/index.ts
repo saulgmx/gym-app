@@ -27,6 +27,7 @@ export function createTraining(deps: {
 }
 
 export { workoutProgress } from './application/progress';
+export { historyDetail } from './domain/history';
 export { workoutSummary } from './domain/summary';
 export { trainingStores } from './infrastructure/schema';
 export { formatRange, formatSetCount, formatTarget } from './ui/format';
@@ -50,6 +51,7 @@ export type {
   WorkoutView,
 } from './application/ports';
 export type { WorkoutProgress } from './domain/progress';
+export type { HistoryItem } from './domain/history';
 export type { WorkoutSummary } from './domain/summary';
 export type {
   ExerciseSession,
