@@ -15,7 +15,7 @@ La fase 3 se reparte en tres specs: esta (Cierre), la 006 (historial) y la 007 (
 
 - **Incluye:**
   - **Módulo `health`, primera parte** (pruebas primero, P-5): clasificación del dolor (RN-HLT-01, 02, 06, 07), registro por workout (RN-HLT-09), alerta persistente (RN-HLT-03 a 05, 08), aviso de "Hoy" (RN-HLT-12) y `PainGate`. Tabla `painEntries`; la base sube a la versión 3.
-  - **`finishWorkout`** en `training` con `PainGate` (RN-TRN-06), `getWorkoutSummary` y `listWorkouts`.
+  - **`finishWorkout`** en `training` con `PainGate` (RN-TRN-06), `listWorkouts` y el resumen `workoutSummary` (el plan reemplazó `getWorkoutSummary` por esta función pura).
   - **Pantalla de Cierre** en `/sesion/:workoutId/cierre`: resumen, dolor 0-10 con mensaje, banderas rojas, notas, "Guardar sesión" y "Volver a la sesión".
   - **Entradas al Cierre:** "Terminar sesión" en el pie del último ejercicio y "Terminar y guardar lo hecho" en el aviso de salida.
   - **"Hoy" con sesiones hechas:** ✓ en la tira, "N" de "N de M sesiones", filas "hecha ✓" en "Otra sesión de esta semana", la tarjeta de un día ya hecho, el aviso de dolor y el chip "Espalda N/10" (spec 003 §6.6).
@@ -136,14 +136,14 @@ Reglas nuevas, ya en los contratos (`training` v1.19, `health` v1.2):
 | RN-TRN-22 | `finishWorkout(workoutId, { notes })`: el workout debe estar `in_progress` (si no, `training/workout-closed`) y tener al menos una serie hecha (si no, `training/nothing-done`); luego `painGate.hasPainEntry` (RN-TRN-06). En ese orden. Pasa a `completed`, fija `finishedAt = clock.now()` y guarda `notes` recortadas, o sin `notes` si quedan vacías; máximo 2000 caracteres (si no, `training/notes-too-long`). Las series no hechas se conservan. |
 | RN-TRN-23 | Un día de pesas de la semana está **hecho** si existe un workout `completed` con `plannedFor` igual a ese día. `discarded` e `in_progress` no cuentan. |
 | RN-TRN-24 | `startWorkout` con un `plannedFor` que ya está hecho (RN-TRN-23) devuelve `training/already-done`. |
-| RN-TRN-25 | Resumen del Cierre (`getWorkoutSummary`): minutos = `floor((finishedAt ?? now) − startedAt)` en minutos, nunca negativo; series = series hechas; ejercicios = ítems con al menos una serie hecha, sobre el total de ítems. |
+| RN-TRN-25 | Resumen del Cierre (`workoutSummary`): minutos = `floor((finishedAt ?? now) − startedAt)` en minutos, nunca negativo; series = series hechas; ejercicios = ítems con al menos una serie hecha, sobre el total de ítems. |
 | RN-HLT-13 | Causa del aviso de "Hoy" (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` → otra bandera roja → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (textos de AC-39 a AC-43). |
 
 Cambios de documentos hechos al aprobar (18-nov):
 
 | Documento | Cambio |
 |---|---|
-| `modules/training.md` | `finishWorkout`, `getWorkoutSummary` y `listWorkouts` entran en `TrainingApi`; `painGate` en `createTraining`; errores `training/pain-required`, `nothing-done`, `notes-too-long` y `already-done`; RN-TRN-22 a 25 |
+| `modules/training.md` | `finishWorkout`, `getWorkoutSummary` (luego `workoutSummary`, plan §3) y `listWorkouts` entran en `TrainingApi`; `painGate` en `createTraining`; errores `training/pain-required`, `nothing-done`, `notes-too-long` y `already-done`; RN-TRN-22 a 25 |
 | `modules/health.md` | RN-HLT-13; textos del aviso de "Hoy" y de las banderas rojas como `[PROPUESTO]` hasta validarlos (spec §14) |
 | `spec.md` §7.2 (v0.10) | Fila "Cierre" sin "próxima sesión" (fase 4); "Sesión activa" con "Terminar sesión" y "Terminar y guardar lo hecho" |
 | Spec 004 | AC-12 (sin "Terminar y guardar"), AC-33 y §6.6 (sin "Terminar sesión") quedan reemplazados por AC-1, AC-3, AC-4 y AC-6 de esta spec (la 004 no se edita) |

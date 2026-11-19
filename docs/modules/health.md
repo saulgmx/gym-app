@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.2 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.3 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -16,7 +16,7 @@ Registro del dolor lumbar por sesión, banderas rojas, clasificación y alertas,
 | `bodyMetrics` | `id, date` | Peso corporal |
 | `healthSettings` | `id` (`'singleton'`) | Umbral de dolor y meta de peso |
 
-La spec 005 crea solo `painEntries` (base v3). `bodyMetrics` llega con el peso corporal (fase 4) y `healthSettings` con Ajustes (RF-51); hasta entonces el umbral es 3 (P-7).
+La spec 005 crea solo `painEntries` (base v3; `healthStores`, que compone `app/db.ts`). `bodyMetrics` llega con el peso corporal (fase 4) y `healthSettings` con Ajustes (RF-51); hasta entonces el umbral es 3 (P-7).
 
 ## 3. Modelo de dominio
 
@@ -41,47 +41,73 @@ interface HealthSettings {
   weeklyGainGoalKg: [number, number];   // por defecto [0.2, 0.3] (plan.md)
 }
 
-interface PainAssessment {          // resultado puro de classify()
+interface PainAssessment {          // resultado puro de assessPain()
   status: PainStatus;
   message: string;
   redFlagMessage?: string;         // destacado; urgencias si bladder_bowel
   blocksProgression: boolean;
 }
 
-interface PainSummary {
+type NoticeCause = 'bladder_bowel' | 'red_flag' | 'alert' | 'over_threshold_2x' | 'rising_3x' | 'attention';
+
+interface PainSummary {             // "últimas" = por recordedAt, de la más reciente a la más antigua
   latest: PainEntry | null;
   latestAssessment: PainAssessment | null;
-  persistentAlert: { reason: 'over_threshold_2x' | 'rising_3x' | 'red_flag'; since: LocalDate } | null;
-  threshold: number;
-  series: { date: LocalDate; level: number }[];   // para la gráfica (RF-33)
+  persistentAlert: { reason: 'over_threshold_2x' | 'rising_3x' | 'red_flag' } | null;
+  notice: { cause: NoticeCause; message: string } | null;   // aviso de Hoy (RN-HLT-12, 13; textos §6.1)
+  threshold: number;                                        // 3 hasta Ajustes (RF-51)
+  // series (RF-33) y persistentAlert.since entran cuando una pantalla los use (P-7)
 }
 ```
 
 ## 4. API pública (`index.ts`)
 
 ```ts
-export function createHealth(deps: { db: HealthDb; clock: Clock; ids: IdGenerator; bus: EventBus }): HealthApi;
+// `bus` entra cuando se publiquen los eventos de §5 (fase 4), como en training (P-7).
+export function createHealth(deps: { db: Dexie; clock: Clock; ids: IdGenerator }): HealthApi;
 
+// Tablas propias, para que app/db.ts componga db.version(n).stores({...}).
+export const healthStores: Record<'painEntries', string>;   // painEntries: 'id, &workoutId, recordedAt'
+
+export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-flag';
+
+// Spec 005. Lo demás entra con su feature: getPainForWorkouts (spec 006), dataPort (spec 007),
+// peso corporal (fase 4) y getSettings/updateSettings (Ajustes, RF-51).
 interface HealthApi {
-  recordPain(workoutId: ID, input: { level: number; redFlags: RedFlag[]; date: LocalDate }): Promise<Result<PainAssessment>>; // RF-21, RF-22
-  assessPain(level: number, redFlags: RedFlag[]): PainAssessment;      // puro, para la vista previa en ClosePage
-  getPainSummary(opts?: { limit?: number }): Promise<PainSummary>;
-  getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;
-  hasPainEntry(workoutId: ID): Promise<boolean>;                       // implementa training.PainGate
-  recordBodyWeight(date: LocalDate, weightKg: number): Promise<Result<BodyMetric>>;  // RF-34
-  getBodyWeightSeries(range?: { from?: LocalDate; to?: LocalDate }): Promise<BodyWeightSeries>;
-  getSettings(): Promise<HealthSettings>;
-  updateSettings(patch: Partial<Omit<HealthSettings, 'id'>>): Promise<Result<void>>;
-  painGate: PainGate;
-  dataPort: DataPort;
+  recordPain(workoutId: ID, input: { level: number; redFlags: RedFlag[]; date: LocalDate }): Promise<Result<PainAssessment, HealthError>>; // RF-21, RF-22, RN-HLT-01, 09
+  assessPain(level: number, redFlags: RedFlag[]): PainAssessment;      // puro, para la vista previa del Cierre
+  getPainSummary(): Promise<PainSummary>;
+  hasPainEntry(workoutId: ID): Promise<boolean>;
+  painGate: PainGate;                                                  // { hasPainEntry }, para training
 }
 
-export function usePainSummary(): PainSummary | undefined;
-export function useBodyWeightSeries(): BodyWeightSeries | undefined;
+export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando
 
+// Componentes (spec 005 plan §6.9). Más adelante: PainHistoryChart (RF-33), BodyWeightChart (RF-34).
+function PainSelector(props: { value: number | null; onChange: (level: number) => void; assessment: PainAssessment | null }): JSX.Element;
+function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void; assessment: PainAssessment | null }): JSX.Element;
+function PainNotice(props: { notice: NonNullable<PainSummary['notice']> }): JSX.Element;   // aviso ámbar de Hoy
+export { PainSelector, RedFlagsChecklist, PainNotice } from './ui';
+
+// Futuro (fuera de la spec 005)
+//   getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;
+//   recordBodyWeight(date: LocalDate, weightKg: number): Promise<Result<BodyMetric>>;  // RF-34
+//   getBodyWeightSeries(range?: { from?: LocalDate; to?: LocalDate }): Promise<BodyWeightSeries>;
+//   getSettings(): Promise<HealthSettings>;
+//   updateSettings(patch: Partial<Omit<HealthSettings, 'id'>>): Promise<Result<void>>;
+//   dataPort: DataPort;
+//   useBodyWeightSeries(health): BodyWeightSeries | undefined;
 interface BodyWeightSeries { points: BodyMetric[]; weeklyAverages: { weekStart: LocalDate; avgKg: number }[] }
-export { PainSelector, RedFlagsChecklist, PainAlertBanner, PainHistoryChart, BodyWeightChart } from './ui';
 ```
+
+### Funciones del dominio (`domain/pain.ts`, spec 005 plan §6.4)
+
+- `checkPainInput(level, redFlags)` → `Result` (RN-HLT-01; banderas de `RedFlag` y sin repetir, si no `health/invalid-red-flag`).
+- `assessPain(level, redFlags)` → `PainAssessment` (RN-HLT-02, 06, 07).
+- `persistentAlert(latestFirst, threshold)` (RN-HLT-03, 04, 05, 08).
+- `noticeOf(latestFirst, threshold)` → `{ cause, message } | null` (RN-HLT-12, 13).
+
+Los textos de §6.1 viven en `domain/messages.ts`: son reglas de spec §6.2, no errores, así que no pasan por el mapa de ADR-0010.
 
 ## 5. Eventos
 
@@ -104,11 +130,12 @@ No escucha eventos.
 | RN-HLT-06 | Cualquier bandera roja → `redFlagMessage` destacado y `blocksProgression = true`. Con `bladder_bowel`, el mensaje indica acudir a urgencias. | spec §6.2 |
 | RN-HLT-07 | `alert` (7-10) → `blocksProgression = true`. | spec §6.2 |
 | RN-HLT-08 | La alerta persistente es **derivada**: se calcula con las últimas entradas y desaparece sola cuando dejan de cumplirse las condiciones. Una bandera roja mantiene la alerta hasta que se registra una sesión sin banderas. [PROPUESTO] | — |
-| RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza (permite corregir antes de cerrar). | RF-21 |
+| RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza, con el mismo `id` y `recordedAt` nuevo (permite reintentar el cierre). | RF-21 |
 | RN-HLT-10 | `weightKg` del peso corporal en [30, 250]; una medición por día (la nueva reemplaza). [PROPUESTO] | RF-34 |
 | RN-HLT-11 | Promedio semanal de peso: media de las mediciones de la semana ISO; la meta se compara contra el cambio entre promedios semanales. | plan.md |
 | RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (RN-HLT-13, §6.1). Sin entradas, no hay aviso. | spec §6.2 |
 | RN-HLT-13 | Causa del aviso de Hoy (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` en la última → otra bandera roja en la última → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (§6.1). | Spec 005 |
+| RN-HLT-14 | Las "últimas entradas" (RN-HLT-04, 05, 08, 12) se ordenan por `recordedAt`, de la más reciente a la más antigua: una sesión vieja cerrada tarde es la última. | Spec 005 plan §6.3 |
 
 ### 6.1 Textos [PROPUESTO]
 
@@ -153,6 +180,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 3. **Aviso en Hoy:** última lectura ≥ 4, banderas rojas en la última o alerta persistente; un solo aviso con texto por causa (RN-HLT-12, spec §6.2). Reemplaza la propuesta del diseño de Hoy ("última ≥ 3/10"), que chocaba con la banda Normal.
 
 4. **Spec 005, Cierre (contrato v1.2):** prioridad entre causas del aviso (RN-HLT-13) y textos de §6.1; solo `painEntries` en la base v3; los eventos de §5 no se publican hasta que `progression` los escuche (fase 4).
+5. **Plan de la spec 005 (contrato v1.3):** API reducida a lo que usa el Cierre (`recordPain`, `assessPain`, `getPainSummary`, `hasPainEntry`, `painGate`), `createHealth` sin `bus`, `healthStores`, `HealthErrorCode`, `usePainSummary(health)` y los componentes `PainSelector`, `RedFlagsChecklist` y `PainNotice` (`PainAlertBanner` pasa a llamarse así). `PainSummary` gana `notice` y pierde `series` y `since` hasta que se usen. Orden por `recordedAt` (RN-HLT-14). Funciones del dominio en §4.
 
 Preguntas abiertas:
 
