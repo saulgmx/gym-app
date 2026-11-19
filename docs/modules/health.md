@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.1 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.2 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -15,6 +15,8 @@ Registro del dolor lumbar por sesión, banderas rojas, clasificación y alertas,
 | `painEntries` | `id, &workoutId, recordedAt` | Un registro de dolor por sesión (índice único en `workoutId`) |
 | `bodyMetrics` | `id, date` | Peso corporal |
 | `healthSettings` | `id` (`'singleton'`) | Umbral de dolor y meta de peso |
+
+La spec 005 crea solo `painEntries` (base v3). `bodyMetrics` llega con el peso corporal (fase 4) y `healthSettings` con Ajustes (RF-51); hasta entonces el umbral es 3 (P-7).
 
 ## 3. Modelo de dominio
 
@@ -105,7 +107,23 @@ No escucha eventos.
 | RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza (permite corregir antes de cerrar). | RF-21 |
 | RN-HLT-10 | `weightKg` del peso corporal en [30, 250]; una medición por día (la nueva reemplaza). [PROPUESTO] | RF-34 |
 | RN-HLT-11 | Promedio semanal de peso: media de las mediciones de la semana ISO; la meta se compara contra el cambio entre promedios semanales. | plan.md |
-| RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (textos y prioridad entre causas: spec 005). Sin entradas, no hay aviso. | spec §6.2 |
+| RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (RN-HLT-13, §6.1). Sin entradas, no hay aviso. | spec §6.2 |
+| RN-HLT-13 | Causa del aviso de Hoy (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` en la última → otra bandera roja en la última → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (§6.1). | Spec 005 |
+
+### 6.1 Textos [PROPUESTO]
+
+Aprobados en la spec 005; quedan `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). N = nivel de la última entrada; U = umbral.
+
+| Causa | Texto |
+|---|---|
+| Bandera roja en el Cierre (`redFlagMessage`) | "Consulta a un médico antes de seguir entrenando. No se sugerirá subir carga." |
+| `bladder_bowel` en el Cierre | "Acude a urgencias. No sigas entrenando hasta que te revise un médico." |
+| Hoy: `bladder_bowel` | "En la última sesión marcaste problemas de control de vejiga o intestino. Acude a urgencias antes de volver a entrenar." |
+| Hoy: otra bandera roja | "En la última sesión marcaste una señal de alarma. Consulta a un médico antes de seguir entrenando." |
+| Hoy: `alert` | "Espalda baja N/10 en la última sesión. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta." |
+| Hoy: `over_threshold_2x` | "Espalda baja por encima de U/10 en las 2 últimas sesiones. Hoy prioriza la técnica y no añadas carga; si sigue, consulta a tu traumatólogo o fisioterapeuta." |
+| Hoy: `rising_3x` | "Tu dolor lumbar subió en las 3 últimas sesiones (a → b → c). Hoy prioriza la técnica y no añadas carga." |
+| Hoy: `attention` | "Espalda baja N/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron." |
 
 ## 7. Errores
 
@@ -118,6 +136,7 @@ No escucha eventos.
 - RN-HLT-05: [1, 2, 3] → `rising_3x`; [1, 2, 2] → no; [0, 0, 0] → no.
 - RN-HLT-06: `bladder_bowel` → mensaje de urgencias y bloqueo.
 - RN-HLT-08: tras [4, 4] una entrada 2 quita la alerta.
+- RN-HLT-13: [4, 5] → `over_threshold_2x` antes que `attention`; última 8 con `numbness` → bandera roja antes que `alert`; `numbness` y `bladder_bowel` → `bladder_bowel`; [1, 2, 5] → `rising_3x` antes que `attention`.
 - RN-HLT-12: última 3 sin banderas ni alerta persistente → sin aviso; última 4 → aviso; última 2 con `numbness` → aviso; [1, 2, 3] → aviso (`rising_3x`); sin entradas → sin aviso.
 - `PainAlertRaised` se publica solo en la transición de "sin alerta" a "con alerta".
 
@@ -132,6 +151,8 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 1. **Bandas fijas:** 0-3/4-6/7-10 y sus mensajes no se mueven con el umbral; el umbral solo decide `over_threshold_2x` (RN-HLT-02, RN-HLT-03).
 2. **"Sube 3 sesiones":** 3 últimas entradas estrictamente crecientes, la última > 0 (RN-HLT-05).
 3. **Aviso en Hoy:** última lectura ≥ 4, banderas rojas en la última o alerta persistente; un solo aviso con texto por causa (RN-HLT-12, spec §6.2). Reemplaza la propuesta del diseño de Hoy ("última ≥ 3/10"), que chocaba con la banda Normal.
+
+4. **Spec 005, Cierre (contrato v1.2):** prioridad entre causas del aviso (RN-HLT-13) y textos de §6.1; solo `painEntries` en la base v3; los eventos de §5 no se publican hasta que `progression` los escuche (fase 4).
 
 Preguntas abiertas:
 
