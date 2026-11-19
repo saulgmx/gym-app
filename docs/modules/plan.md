@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.16 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.17 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -118,6 +118,7 @@ interface PlanApi {
   jumpToWeek(week: number, today: LocalDate): Promise<Result<void>>; // RF-03: recalcula startDate
   updateTemplate(id: ID, items: TemplateItem[]): Promise<Result<void>>; // RF-04 (v1.0)
   dataPort: DataPort;
+  // Spec 006: el bloque de una semana del programa (RN-PLN-28) entra con nombre en su plan técnico.
 }
 
 // Hooks reactivos (ui, useLiveQuery). Reciben la API: `ui` no lee el contexto de `app`.
@@ -189,6 +190,7 @@ No escucha eventos.
 | RN-PLN-26 | Hooks (`useTodayPlan`, `useWeekPlan`, con `useLiveQuery`): devuelven `undefined` mientras cargan y mientras el resultado pertenece a otra fecha (nunca el plan de ayer con la fecha de hoy, AC-20); se actualizan solos al cambiar las tablas del plan (spec 001 plan §6.4); un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta (AC-21). | Spec 001 |
 | RN-PLN-18 | Notas del día: en cardio, la `note` de la entrada del calendario; en descanso, ninguna (el texto lo pone la UI); en pesas, la `note` de cada `TemplateItem` en su `PlannedItem`. | Spec 001 §6 |
 | RN-PLN-27 | Duración estimada de una sesión planificada, en segundos: `600 + Σ por ítem (plannedSets × (trabajo + descansoMedio) + 90)`. `trabajo` = 45 s por serie, o la media de `repRange` si `metric = 'time'`; `descansoMedio` = media de `exercise.restSeconds`. Se muestra en minutos redondeados al múltiplo de 5 más cercano (`Math.round`), mínimo 5. Las constantes (600 de calentamiento, 45 de trabajo, 90 de cambio de ejercicio) tienen nombre en el dominio y son las mismas que usa `training` para el tiempo restante (RN-TRN-20). Función pura del dominio, sin almacenamiento. | Spec 003, `plan.md` (60 min por sesión, 10 de calentamiento) |
+| RN-PLN-28 | **Bloque de una semana del programa:** el bloque cuya `startWeek ≤ week ≤ endWeek`, o ninguno si `week` está fuera del programa. Depende solo de `week`, no de `startDate`: si se cambia la fecha de inicio (RF-03), las semanas ya entrenadas conservan su bloque, porque `Workout.programWeek` es parte de la instantánea. | RF-32, spec 006 |
 
 ## 7. Errores
 
@@ -232,7 +234,7 @@ No escucha eventos.
 
 ## 9. Trazabilidad
 
-RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
+RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, spec 006), spec §6.4, §6.5.
 
 ## 10. Decisiones (17-nov-2026)
 
@@ -255,3 +257,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 17. **Plan de la spec 003 (contrato v1.14):** RN-PLN-27 como funciones exportadas (`setSeconds`, `plannedSessionSeconds`, `displayMinutes` y constantes), sin cambiar `TodayPlan`; `PlanExerciseList` sin RIR por fila (va una vez en el chip de "Hoy" y bajo el título de `/dia/:date`); `formatRir` exportado; `WeekStrip` con las marcas nuevas y la misma firma (el estado "hecha" llega en la fase 3).
 18. **Plan de la spec 005 (contrato v1.15):** `WeekStrip` recibe `done` (días de pesas hechos). `plan` no conoce `training`: `app` cruza la semana con `training.listWorkouts`. Un día en `done` dibuja ✓ relleno de acento y su `aria-label` dice "hecha"; hoy hecho suma el anillo de hoy.
 19. **Días hechos en `WeekStrip`, antes de T15 de la spec 005 (contrato v1.16, 18-nov-2026):** hecho = día de pesas cuya fecha está en `done`, también si es futuro (AC-33); cardio, descanso y "fuera del programa" nunca llevan ✓; las fechas de otra semana se ignoran; `data-mark="done"` con ✓ en `--bg` sobre `--accent`; `aria-label` "…, hecha". `done` es obligatorio: hasta que T19 conecte los días reales, `app` pasa un conjunto vacío.
+20. **Spec 006, historial (contrato v1.17, 19-nov-2026):** RN-PLN-28, el bloque de una semana por su número y no por fecha, para los encabezados del historial. La forma (función pura o consulta) la fija el plan técnico de la spec 006.

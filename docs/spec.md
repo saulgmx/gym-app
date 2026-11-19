@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.11 (borrador) · **Fecha:** 19-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.12 (borrador) · **Fecha:** 19-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -206,7 +206,7 @@ El seed marca ejercicios con `lumbarRisk`:
 
 ### 7.1 Navegación
 
-Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). La sesión activa es un flujo a pantalla completa sin barra inferior.
+Barra inferior con **Hoy**, **Historial** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). Historial entra en la fase 3 (spec 006). La sesión activa es un flujo a pantalla completa sin barra inferior.
 
 ### 7.2 Pantallas
 
@@ -219,7 +219,8 @@ Barra inferior con **Hoy** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). 
 | Cierre | `/sesion/:workoutId/cierre` | Resumen (minutos, series, ejercicios), selector de dolor 0-10 con mensaje, banderas rojas, notas, "Guardar sesión" y "Volver a la sesión" (spec 005). Fase 4: "Para la próxima sesión" |
 | Progreso | `/progreso` | Selector de ejercicio, gráfica por semana, historial de dolor lumbar, peso corporal |
 | Plan (v1.0) | `/plan` | Bloques, semanas y plantillas; edición |
-| Historial (v1.0) | `/historial` | Lista de sesiones y detalle |
+| Historial | `/historial` | Sesiones guardadas, de la más reciente a la más antigua, agrupadas por semana del programa (número, bloque y fechas); cada fila con fecha, sesión, resumen y chip de dolor (spec 006) |
+| Detalle de una sesión | `/historial/:workoutId` | Solo lectura: nombre, fecha, día del plan si es otro, resumen, dolor lumbar y señales de alarma (sin consejos), ejercicios con sus series hechas ("Sin series" si no tiene) y notas. Se llega desde la lista y desde los días hechos de "Hoy" (spec 006) |
 | Ajustes (v1.0) | `/ajustes` | Unidades, incrementos, umbral de dolor, exportar/importar, borrar datos |
 
 ### 7.3 Flujos principales

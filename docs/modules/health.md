@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.8 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.9 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -78,11 +78,13 @@ interface HealthApi {
   assessPain(level: number, redFlags: RedFlag[]): PainAssessment;      // puro, para la vista previa del Cierre
   getPainSummary(): Promise<PainSummary>;                              // RN-HLT-14, 17
   hasPainEntry(workoutId: ID): Promise<boolean>;                       // RN-HLT-18
+  getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;   // RN-HLT-20, historial (spec 006)
   painGate: PainGate;                                                  // { hasPainEntry }, para training
 }
 // Todas las operaciones async rechazan si falla la base (RN-HLT-16).
 
 export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando (RN-HLT-19)
+export function usePainForWorkouts(health: HealthApi, workoutIds: ID[]): Map<ID, PainEntry> | undefined; // RN-HLT-20 (spec 006)
 
 // Componentes (spec 005 plan §6.9). Más adelante: PainHistoryChart (RF-33), BodyWeightChart (RF-34).
 // Sin `assessment` (contrato v1.8): cada uno deriva su texto de su propio value, para que el aviso
@@ -92,8 +94,7 @@ function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[
 function PainNotice(props: { notice: NonNullable<PainSummary['notice']> }): JSX.Element;   // aviso ámbar de Hoy
 export { PainSelector, RedFlagsChecklist, PainNotice } from './ui';
 
-// Futuro (fuera de la spec 005)
-//   getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;
+// Futuro (fuera de las specs 005 y 006)
 //   recordBodyWeight(date: LocalDate, weightKg: number): Promise<Result<BodyMetric>>;  // RF-34
 //   getBodyWeightSeries(range?: { from?: LocalDate; to?: LocalDate }): Promise<BodyWeightSeries>;
 //   getSettings(): Promise<HealthSettings>;
@@ -157,6 +158,7 @@ No escucha eventos.
 | RN-HLT-17 | `getPainSummary` arma el resumen con el dominio sobre las entradas de RN-HLT-14: `latest` es la `PainEntry` completa más reciente, `latestAssessment = assessPain(latest)`, `persistentAlert` y `notice` con `threshold`, que es la constante 3 del servicio hasta Ajustes (RF-51). Sin entradas: `{ latest: null, latestAssessment: null, persistentAlert: null, notice: null, threshold: 3 }`. | Spec 005 |
 | RN-HLT-18 | `hasPainEntry(workoutId)` es `true` si existe una entrada con ese `workoutId` y `false` si no (también con uno desconocido). `painGate` es `{ hasPainEntry }`, la misma función. | RN-TRN-06, spec 005 |
 | RN-HLT-19 | `usePainSummary(health)` (en `ui/hooks.ts`, con `useLiveQuery`) devuelve `undefined` solo mientras carga y nunca `null`: sin entradas devuelve el resumen vacío de RN-HLT-17. No lleva clave, porque no recibe parámetros y `health` es una sola instancia por `compose` (sus dependencias son `[health]`). Se actualiza solo al cambiar `painEntries`: `getPainSummary` solo espera promesas de Dexie y el resto es síncrono. Un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta, como RN-TRN-19. | RN-TRN-19, spec 005 |
+| RN-HLT-20 | `getPainForWorkouts(workoutIds)` devuelve un mapa con la entrada de cada id que tiene una (RN-HLT-09: como mucho una por workout); los ids sin entrada no están; los ids repetidos cuentan una vez; con la lista vacía, mapa vacío sin leer la base. Rechaza si falla la base (RN-HLT-16). `usePainForWorkouts(health, ids)` sigue RN-HLT-19: `undefined` mientras carga o con el resultado de otra lista de ids (la clave son los ids unidos), y se actualiza con `painEntries`. `health` no comprueba que los workouts existan. | RF-32, spec 006 |
 
 ### 6.1 Textos [PROPUESTO]
 
@@ -233,6 +235,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 8. **Servicio y almacenamiento (contrato v1.6, 18-nov-2026, antes de T5 de la spec 005):** `painEntries` pierde el índice `recordedAt` (ADR-0009: un `Instant` no se ordena como string; corrige el plan §4) y las últimas se ordenan en memoria con `compareInstants`, con empate por `id` mayor (RN-HLT-14); `recordPain` valida sin tocar la base, normaliza, reemplaza en una transacción conservando solo el `id` y llama a `ids.next()` solo al crear; `health` no comprueba que el workout exista ni valida `date` (RN-HLT-09); un fallo de la base rechaza (RN-HLT-16); resumen vacío y `threshold: 3` constante (RN-HLT-17); `hasPainEntry` y `painGate` (RN-HLT-18).
 9. **Hook (contrato v1.7, 18-nov-2026, antes de T8 de la spec 005):** `usePainSummary` devuelve `undefined` solo al cargar y nunca `null`, sin clave porque no tiene parámetros, se actualiza con `painEntries` y lanza sus errores en el render (RN-HLT-19).
 10. **Componentes (contrato v1.8, 18-nov-2026, antes de T13 de la spec 005):** `PainSelector` y `RedFlagsChecklist` pierden `assessment` y derivan su texto de su propio `value` con `bandMessage` y `redFlagMessage`, porque el aviso de las banderas debe salir sin nivel elegido (AC-14 parte de AC-7); los textos viven con los componentes; no se puede quitar la elección del dolor; las regiones `aria-live` están siempre en el DOM; las banderas vuelven en el orden de `RED_FLAGS`; `legend` con `h2`; `PainNotice` con `role="note"` y sin `aria-live`; `SafetyNote` interno (§4, "Componentes").
+11. **Spec 006, historial (contrato v1.9, 19-nov-2026):** `getPainForWorkouts` sale de "Futuro" y entra en `HealthApi` con su hook `usePainForWorkouts` (RN-HLT-20), para el chip de la lista y el detalle. El historial muestra el nivel y las señales marcadas, sin los mensajes de banda ni de las señales: son consejos para la próxima sesión y solo salen en el Cierre y en "Hoy".
 
 Preguntas abiertas:
 
