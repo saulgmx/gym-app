@@ -30,7 +30,7 @@ export { workoutProgress } from './application/progress';
 export { historyDetail } from './domain/history';
 export { workoutSummary } from './domain/summary';
 export { trainingStores } from './infrastructure/schema';
-export { formatRange, formatSetCount, formatTarget } from './ui/format';
+export { formatDoneSet, formatRange, formatSetCount, formatTarget } from './ui/format';
 export {
   useActiveWorkout,
   useActiveWorkoutView,

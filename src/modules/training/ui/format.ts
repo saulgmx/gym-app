@@ -34,6 +34,13 @@ export function formatTarget(
   return `${String(plannedSets)} × ${formatRange(repRange)}${metric === 'time' ? ' s' : ''}`;
 }
 
+/** A done set in the history (spec 006): "100 × 10 · RIR 2", "Asist. 20 × 8 · RIR 2", "40 s · RIR 2";
+ *  without RIR, which RN-TRN-04 allows, just "100 × 10". */
+export function formatDoneSet(set: SetLog, metric: ExerciseFacts['metric']): string {
+  const value = formatPrevious(set, metric);
+  return set.rir === null ? value : `${value} · RIR ${String(set.rir)}`;
+}
+
 /** "1 serie", "2 series". */
 export function formatSetCount(n: number): string {
   return `${String(n)} ${n === 1 ? 'serie' : 'series'}`;

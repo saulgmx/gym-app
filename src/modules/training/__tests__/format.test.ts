@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatRange, formatSetCount, formatTarget } from '..';
+import type { ID } from '@/shared/kernel';
+import { formatDoneSet, formatRange, formatSetCount, formatTarget, type SetLog } from '..';
 
 // Texts of the session (docs/modules/training.md §4, v1.18; spec 004 plan §6.6, T3).
 
@@ -33,5 +34,44 @@ describe('formatSetCount', () => {
     expect(formatSetCount(1)).toBe('1 serie');
     expect(formatSetCount(2)).toBe('2 series');
     expect(formatSetCount(4)).toBe('4 series');
+  });
+});
+
+describe('formatDoneSet (spec 006)', () => {
+  const set = (v: Partial<SetLog>): SetLog => ({
+    id: 's' as ID,
+    workoutId: 'w' as ID,
+    exerciseId: 'e' as ID,
+    setNumber: 1,
+    weightKg: 100,
+    reps: 10,
+    rir: 2,
+    done: true,
+    isExtra: false,
+    ...v,
+  });
+
+  it('spec 006 AC-20: kilos × reps · RIR, con coma decimal', () => {
+    expect(formatDoneSet(set({}), 'weight')).toBe('100 × 10 · RIR 2');
+    expect(formatDoneSet(set({ weightKg: 62.5, reps: 8, rir: 1 }), 'weight')).toBe(
+      '62,5 × 8 · RIR 1',
+    );
+  });
+
+  it('spec 006 AC-23: asistencia (peso negativo)', () => {
+    expect(formatDoneSet(set({ weightKg: -20, reps: 8 }), 'weight')).toBe('Asist. 20 × 8 · RIR 2');
+  });
+
+  it('spec 006 AC-24: por repeticiones solo las reps, y por tiempo los segundos', () => {
+    expect(formatDoneSet(set({ weightKg: null, reps: 12, rir: 1 }), 'reps')).toBe('12 · RIR 1');
+    expect(formatDoneSet(set({ weightKg: null, reps: 40 }), 'time')).toBe('40 s · RIR 2');
+  });
+
+  it('RN-TRN-04: una serie hecha sin RIR omite " · RIR"', () => {
+    expect(formatDoneSet(set({ rir: null }), 'weight')).toBe('100 × 10');
+  });
+
+  it('RIR 0 se muestra (no se confunde con "sin RIR")', () => {
+    expect(formatDoneSet(set({ rir: 0 }), 'weight')).toBe('100 × 10 · RIR 0');
   });
 });
