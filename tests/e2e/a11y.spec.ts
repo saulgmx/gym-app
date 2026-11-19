@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import {
   closeFridayOnWednesday,
+  closeMondayWithFlags,
   doSet,
   freezeClockAt,
   openTodayOn,
@@ -401,6 +402,46 @@ test.describe('spec 005b AC-18: "Hoy" y la vista previa con una sesión cerrada 
       await expect(page.getByText(TRAINED_TODAY)).toBeVisible();
       await expectAccessible(page);
       expect(await fits(page)).toBe(true);
+    });
+  }
+});
+
+// Spec 006 AC-36: the history list and the details of a session with red flags, a note and items
+// without sets, and of one without flags: axe, 44 px, and nothing overflows at 320 px.
+test.describe('spec 006 AC-36: el historial', () => {
+  test.use({ timezoneId: USER_TIME_ZONE });
+
+  async function expectAccessible(page: Page) {
+    const { violations } = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await smallTouchTargets(page)).toEqual([]);
+  }
+
+  const fits = (page: Page) =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    );
+
+  for (const viewport of [null, { width: 320, height: 640 }]) {
+    test(viewport ? 'a 320 px de ancho' : 'en el viewport por defecto', async ({ page }) => {
+      if (viewport) await page.setViewportSize(viewport);
+      const monday = await closeMondayWithFlags(page);
+      await freezeClockAt(page, '2026-11-18T18:00:00-06:00');
+      await page.reload();
+      await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+      const friday = await closeFridayOnWednesday(page);
+
+      await page.goto('/historial');
+      await expect(page.getByRole('region', { name: 'Semana 1' }).getByRole('link')).toHaveCount(2);
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
+
+      for (const id of [monday, friday]) {
+        await page.goto(`/historial/${id}`);
+        await expect(page.getByRole('region', { name: 'Ejercicios' })).toBeVisible();
+        await expectAccessible(page);
+        expect(await fits(page)).toBe(true);
+      }
     });
   }
 });

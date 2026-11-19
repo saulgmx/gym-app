@@ -1,6 +1,6 @@
 # Spec: Historial de sesiones
 
-**ID:** 006 · **Estado:** Aprobada (19-nov-2026) · **Fecha:** 19-nov-2026
+**ID:** 006 · **Estado:** Implementada (19-nov-2026) · **Fecha:** 19-nov-2026
 **Requerimientos cubiertos:** RF-32, RNF-01, RNF-05 · **Fase:** 3 (spec §13), segunda parte
 **Fuente de diseño:** sin tablero propio; reutiliza las piezas de "Hoy" (`docs/design-hoy.md`) y del Cierre (`docs/design-cierre.md`): cifras del resumen, chip "Espalda", filas de "Otra sesión de esta semana"
 **ADRs aplicados:** 0002, 0005, 0009, 0010
