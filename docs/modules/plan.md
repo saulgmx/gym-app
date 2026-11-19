@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.19 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.20 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -103,8 +103,8 @@ export type PlanErrorCode =
   | 'plan/invalid-seed' | 'plan/high-risk-exercise' | 'plan/template-not-found' | 'plan/week-out-of-range';
 
 // Fase 1 implementa ensureSeeded, getPosition, getTodayPlan y getWeekPlan; fase 2, getExercise y getExercises.
-// El resto entra en PlanApi cuando se implementa (listExercises cuando alguien la use; v1.0: RF-03, RF-04;
-// fase 3: dataPort).
+// spec 006, getBlocks; spec 007, dataPort (catálogo, programa con startDate, bloques y plantillas).
+// El resto entra en PlanApi cuando se implementa (listExercises cuando alguien la use; v1.0: RF-03, RF-04).
 
 interface PlanApi {
   ensureSeeded(seed: unknown): Promise<Result<void>>;                // RN-PLN-13 a 15: valida y carga si está vacío
@@ -236,7 +236,7 @@ No escucha eventos.
 
 ## 9. Trazabilidad
 
-RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, spec 006), spec §6.4, §6.5.
+RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, spec 006), RF-40 y RF-41 (`dataPort`, spec 007), spec §6.4, §6.5.
 
 ## 10. Decisiones (17-nov-2026)
 
@@ -262,3 +262,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, s
 20. **Spec 006, historial (contrato v1.17, 19-nov-2026):** RN-PLN-28, el bloque de una semana por su número y no por fecha, para los encabezados del historial. La forma (función pura o consulta) la fija el plan técnico de la spec 006.
 21. **Plan de la spec 006 (contrato v1.18, 19-nov-2026):** RN-PLN-28 como `blockOfWeek(blocks, week)` pura, con `getBlocks()` y `useBlocks` para que la lista resuelva todos sus bloques en una lectura. Se descartó `getBlockForWeek(week)` (una llamada por grupo).
 22. **Casos de borde de RN-PLN-28, antes de T1 de la spec 006 (contrato v1.19, 19-nov-2026):** `getBlocks` sin programa lanza (RN-PLN-22); `useBlocks` sin clave, `undefined` solo al cargar (RN-PLN-26); `blockOfWeek` no depende del orden de la lista ni valida que la semana sea entera (RN-PLN-28).
+23. **Spec 007, respaldo (contrato v1.20, 19-nov-2026):** `dataPort` entra en `PlanApi`. Exporta las 4 tablas tal cual (RN-PLN-25) y al importar valida el plan con las mismas reglas del seed: esquema (RN-PLN-24), RN-PLN-07 primero (un respaldo con un ejercicio `high` se rechaza, P-1), RN-PLN-15 y un solo programa. Importar reemplaza las 4 tablas, también `startDate`. La forma de sus datos, su versión y cómo expone los IDs de ejercicio a `training` para RN-DAT-11 los fija el plan técnico de la spec 007.

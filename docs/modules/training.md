@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.28 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.29 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -100,7 +100,7 @@ interface WorkoutView {                 // lo que necesita la página de sesión
   exercises: Record<ID, Exercise>;      // todas las options de todos los ítems
 }
 
-// Fase 2 y spec 005. getWorkoutExerciseIds (fase 4) y dataPort (spec 007) entran cuando se implementan.
+// Fase 2 y specs 005 a 007. getWorkoutExerciseIds (fase 4) entra cuando se implemente.
 interface TrainingApi {
   startWorkout(date: LocalDate, opts?: { plannedFor?: LocalDate }): Promise<Result<Workout>>; // RF-10, RN-TRN-14, 24, 27
   logSet(setId: ID, input: { weightKg?: number | null; reps?: number | null; rir?: number | null }): Promise<Result<SetLog>>; // RF-11, RF-13
@@ -117,6 +117,7 @@ interface TrainingApi {
   finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;      // RF-20, RF-23, RN-TRN-22
   listWorkouts(range: { from: LocalDate; to: LocalDate }): Promise<Workout[]>;            // RN-TRN-23, 26 ("Hoy")
   listWorkoutHistory(): Promise<HistoryEntry[]>;                                            // RN-TRN-28: todos los completed, sin rango (spec 006 plan §6.1)
+  dataPort: DataPort;                                                                       // workouts y sets (spec 007, decisión 31)
 }
 
 // Historial (spec 006). HistoryEntry: una fila de la lista; HistoryItem: un ítem del detalle.
@@ -126,7 +127,6 @@ export function historyDetail(view: Pick<WorkoutView, 'workout' | 'sets'>): Hist
 export function formatDoneSet(set: SetLog, metric: Exercise['metric']): string;          // "100 × 10 · RIR 2", "Asist. 20 × 8 · RIR 2", "40 s · RIR 2"; sin RIR (RN-TRN-04 lo permite), "100 × 10"
 // Más adelante
 //   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;   // fase 4 (progression)
-//   dataPort: DataPort;                                    // spec 007
 // RN-TRN-25, puro: el Cierre lo calcula con su vista en vivo y "Hoy" con la del día hecho (spec 005 plan §3).
 interface WorkoutSummary { minutes: number; setsDone: number; itemsWithDoneSets: number; itemCount: number }
 export function workoutSummary(view: Pick<WorkoutView, 'workout' | 'sets'>, now: Instant): WorkoutSummary; // domain/summary.ts
@@ -285,7 +285,7 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 
 ## 9. Trazabilidad
 
-RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32.
+RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32, RF-40 y RF-41 (`dataPort`, spec 007).
 
 ## 10. Decisiones (17-nov-2026)
 
@@ -319,3 +319,4 @@ RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32.
 28. **Casos de borde de RN-TRN-29, antes de T6 de la spec 006 (contrato v1.26, 19-nov-2026):** los ítems del detalle van por `order`, como RN-TRN-17, y no por la posición en el arreglo; `replaces` no valida que el elegido esté en `options`; el filtro por ejercicio elegido protege ante datos inconsistentes.
 29. **Casos de borde de RN-TRN-28, antes de T8 de la spec 006 (contrato v1.27, 19-nov-2026):** el resumen de la lista recibe `now = startedAt` en vez de `clock.now()` (mismo resultado con `finishedAt`; 0 min con un dato roto, y la consulta no depende del reloj); `findCompletedStates` lee las dos tablas en una transacción `r` y sin orden; `useWorkoutHistory` con clave fija y `[]` sin sesiones.
 30. **`formatDoneSet`, antes de T10 de la spec 006 (contrato v1.28, 19-nov-2026):** una serie hecha puede no tener RIR (RN-TRN-04: `rir` puede quedar `null` al marcar); entonces la línea omite " · RIR" ("100 × 10") en vez de mostrar "RIR null".
+31. **Spec 007, respaldo (contrato v1.29, 19-nov-2026):** `dataPort` entra en `TrainingApi`. Exporta `workouts` y `sets` completos, en cualquier estado (también `discarded` e `in_progress`), tal como están guardados. Al importar valida el esquema, IDs únicos, que cada serie pertenezca a un workout del archivo, que cada ejercicio (ítems y series) esté en el plan del archivo (RN-DAT-11) y como mucho un `in_progress` (RN-TRN-01). No comprueba RN-TRN-27 ni RN-TRN-06 (RN-DAT-12: datos que la app tolera). Importar reemplaza las dos tablas. La forma de sus datos y su versión las fija el plan técnico de la spec 007.
