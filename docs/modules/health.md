@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.4 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.5 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -104,10 +104,12 @@ interface BodyWeightSeries { points: BodyMetric[]; weeklyAverages: { weekStart: 
 
 - `checkPainInput(level, redFlags)` → `Result<{ level: number; redFlags: RedFlag[] }, HealthError>` (RN-HLT-01, 15).
 - `assessPain(level, redFlags)` → `PainAssessment` (RN-HLT-02, 06, 07); lanza si la entrada no pasa `checkPainInput` (RN-HLT-01).
-- `persistentAlert(latestFirst, threshold)` (RN-HLT-03, 04, 05, 08).
-- `noticeOf(latestFirst, threshold)` → `{ cause, message } | null` (RN-HLT-12, 13).
+- `persistentAlert(latestFirst, threshold)` → `PainSummary['persistentAlert']` (RN-HLT-03, 04, 05, 08).
+- `noticeOf(latestFirst, threshold)` → `PainSummary['notice']` (RN-HLT-12, 13).
 
-Los textos de §6.1 viven en `domain/messages.ts`: son reglas de spec §6.2, no errores, así que no pasan por el mapa de ADR-0010.
+`latestFirst: readonly Pick<PainEntry, 'level' | 'redFlags'>[]`, de la más reciente a la más antigua. El dominio confía en su entrada: el orden lo da el servicio (RN-HLT-14), las entradas se validaron al guardarse (RN-HLT-01, 15; la importación las valida con Zod en la spec 007) y `threshold` es la constante 3 hasta que Ajustes la valide (RF-51). No se revalida nada ni se modifica el arreglo.
+
+Los textos de §6.1 viven en `domain/messages.ts`: son reglas de spec §6.2, no errores, así que no pasan por el mapa de ADR-0010. Los que llevan N, U o la secuencia son funciones.
 
 ## 5. Eventos
 
@@ -125,22 +127,22 @@ No escucha eventos.
 | RN-HLT-01 | `level` es entero en [0, 10]; si no, `health/pain-out-of-range`. Los valores no finitos (`NaN`, `Infinity`) se rechazan y `-0` se acepta como 0. `checkPainInput(level, redFlags)` revisa primero el nivel y luego las banderas (RN-HLT-15), y devuelve solo el primer error, sin `details` (como RN-TRN-04). Si todo es válido, devuelve `ok({ level, redFlags })` con el nivel normalizado (`-0` → 0) y un arreglo nuevo con las banderas en el orden recibido; `[]` es válido. `assessPain` con una entrada que no pasa `checkPainInput` lanza una excepción cuyo mensaje cita la regla incumplida (`RN-HLT-01` o `RN-HLT-15`): es un error de programación, como RN-PLN-16. Los mensajes técnicos de los errores (`message` del `Result`) también citan su regla. | RF-21, spec 005 |
 | RN-HLT-02 | Clasificación fija: 0-3 `normal`, 4-6 `attention`, 7-10 `alert`, con los mensajes literales de spec §6.2. No depende de `painThreshold`. `status` y `message` dependen solo del nivel: una bandera roja no cambia la banda. | RF-22 |
 | RN-HLT-03 | "Supera el umbral" significa `level > painThreshold`. | spec §6.2, RF-51 |
-| RN-HLT-04 | Alerta persistente `over_threshold_2x`: las 2 últimas entradas superan el umbral. | spec §6.2 |
-| RN-HLT-05 | Alerta persistente `rising_3x`: las 3 últimas entradas son estrictamente crecientes y la última > 0. | spec §6.2 |
+| RN-HLT-04 | Alerta persistente `over_threshold_2x`: las 2 últimas entradas superan el umbral. Solo cuentan las 2 primeras de `latestFirst`; con menos de 2 entradas no se cumple. | spec §6.2 |
+| RN-HLT-05 | Alerta persistente `rising_3x`: las 3 últimas entradas son estrictamente crecientes y la última > 0. Solo cuentan las 3 primeras de `latestFirst`; con menos de 3 entradas no se cumple. | spec §6.2 |
 | RN-HLT-06 | Cualquier bandera roja → `redFlagMessage` destacado y `blocksProgression = true`. Con `bladder_bowel`, el mensaje indica acudir a urgencias (§6.1), aunque haya otras banderas. Sin banderas, `PainAssessment` no tiene la propiedad `redFlagMessage` (no basta con `undefined`: `exactOptionalPropertyTypes`). | spec §6.2 |
 | RN-HLT-07 | `alert` (7-10) → `blocksProgression = true`. `blocksProgression` es `true` solo con `alert` o con alguna bandera (RN-HLT-06); `normal` y `attention` sin banderas no bloquean. | spec §6.2 |
-| RN-HLT-08 | La alerta persistente es **derivada**: se calcula con las últimas entradas y desaparece sola cuando dejan de cumplirse las condiciones. Una bandera roja mantiene la alerta hasta que se registra una sesión sin banderas. [PROPUESTO] | — |
+| RN-HLT-08 | La alerta persistente es **derivada**: se calcula con las últimas entradas y desaparece sola cuando dejan de cumplirse las condiciones. Una bandera roja mantiene la alerta hasta que se registra una sesión sin banderas: `red_flag` se cumple solo si la **última** entrada tiene banderas. `persistentAlert` devuelve una sola razón, con prioridad `red_flag` → `over_threshold_2x` → `rising_3x` (el orden de RN-HLT-13); sin entradas, `null`. | Spec 005 (AC-45) |
 | RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza, con el mismo `id` y `recordedAt` nuevo (permite reintentar el cierre). | RF-21 |
 | RN-HLT-10 | `weightKg` del peso corporal en [30, 250]; una medición por día (la nueva reemplaza). [PROPUESTO] | RF-34 |
 | RN-HLT-11 | Promedio semanal de peso: media de las mediciones de la semana ISO; la meta se compara contra el cambio entre promedios semanales. | plan.md |
-| RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (RN-HLT-13, §6.1). Sin entradas, no hay aviso. | spec §6.2 |
-| RN-HLT-13 | Causa del aviso de Hoy (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` en la última → otra bandera roja en la última → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (§6.1). | Spec 005 |
+| RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (RN-HLT-13, §6.1). Sin entradas, no hay aviso. `noticeOf` es `null` exactamente cuando no se cumple ninguna de esas condiciones; `rising_3x` puede dar aviso con la última entrada en `normal` ([1, 2, 3], AC-40). | spec §6.2 |
+| RN-HLT-13 | Causa del aviso de Hoy (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` en la última → otra bandera roja en la última → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (§6.1). La causa combina `assessPain` de la última entrada con `persistentAlert`. Con umbral 3, `over_threshold_2x` siempre llega con la última ≥ 4, así que gana a `attention`. | Spec 005 |
 | RN-HLT-14 | Las "últimas entradas" (RN-HLT-04, 05, 08, 12) se ordenan por `recordedAt`, de la más reciente a la más antigua: una sesión vieja cerrada tarde es la última. | Spec 005 plan §6.3 |
 | RN-HLT-15 | `redFlags` solo contiene valores de `RedFlag` y ninguno se repite; si no, `health/invalid-red-flag`, por la primera bandera que falle en el orden recibido. | RF-21, spec 005 |
 
 ### 6.1 Textos [PROPUESTO]
 
-Aprobados en la spec 005; quedan `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). N = nivel de la última entrada; U = umbral.
+Aprobados en la spec 005; quedan `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). N = nivel de la última entrada; U = umbral; los dos se escriben como enteros (`String`). En `rising_3x`, "a → b → c" va en orden cronológico (a = la más antigua de las tres, c = la última), separados por " → " (U+2192 con un espacio a cada lado): `latestFirst` [3, 2, 1] → "(1 → 2 → 3)".
 
 | Causa | Texto |
 |---|---|
@@ -162,13 +164,17 @@ Aprobados en la spec 005; quedan `[PROPUESTO]` hasta validarlos con el traumató
 - RN-HLT-01: 0 y 10 válidos; −1, 11, 2.5, `NaN`, `Infinity` y `-Infinity` → `health/pain-out-of-range` con el mensaje que cita `RN-HLT-01`; `-0` → `ok` con nivel 0 (`Object.is`); nivel y bandera inválidos a la vez → solo el error del nivel; válido → `ok({ level, redFlags })` con las banderas en el orden recibido y un arreglo distinto del de entrada; `[]` válido; `assessPain` con nivel inválido lanza `/RN-HLT-01/`.
 - RN-HLT-15: bandera desconocida y bandera repetida → `health/invalid-red-flag` con el mensaje que cita `RN-HLT-15`; `assessPain` con una bandera inválida lanza `/RN-HLT-15/`.
 - RN-HLT-02: 0, 3 → `normal`; 4, 6 → `attention`; 7, 10 → `alert`; los mensajes coinciden con la spec; con umbral 5, un 4 sigue siendo `attention`; un 2 con `numbness` sigue siendo `normal` con el mensaje de su banda.
-- RN-HLT-04: [4, 4] con umbral 3 → alerta; [4, 3] → no.
-- RN-HLT-05: [1, 2, 3] → `rising_3x`; [1, 2, 2] → no; [0, 0, 0] → no.
 - RN-HLT-06: `bladder_bowel` → mensaje de urgencias y bloqueo, también junto a otra bandera; cualquier otra bandera → mensaje de consultar a un médico y bloqueo; sin banderas, sin la propiedad `redFlagMessage`.
 - RN-HLT-07: 7 y 10 sin banderas → bloquea; 0, 3, 4 y 6 sin banderas → no bloquea.
-- RN-HLT-08: tras [4, 4] una entrada 2 quita la alerta.
-- RN-HLT-13: [4, 5] → `over_threshold_2x` antes que `attention`; última 8 con `numbness` → bandera roja antes que `alert`; `numbness` y `bladder_bowel` → `bladder_bowel`; [1, 2, 5] → `rising_3x` antes que `attention`.
-- RN-HLT-12: última 3 sin banderas ni alerta persistente → sin aviso; última 4 → aviso; última 2 con `numbness` → aviso; [1, 2, 3] → aviso (`rising_3x`); sin entradas → sin aviso.
+
+Desde aquí, las listas de entradas van de la más reciente a la más antigua (`latestFirst`), con umbral 3, salvo cuando se dice "cronológico".
+
+- RN-HLT-04: [4, 4] → alerta; [4, 3] y [3, 4] → no; [4] → no; [4, 4, 0] → alerta (solo cuentan las 2 primeras).
+- RN-HLT-05: cronológico [1, 2, 3] (`latestFirst` [3, 2, 1]) → `rising_3x`; cronológico [1, 2, 2] → no; [0, 0, 0] → no; [3, 2] → no (menos de 3); `latestFirst` [3, 2, 1, 9] → sí (solo cuentan las 3 primeras).
+- RN-HLT-08: [2, 4, 4] → `null` (un 2 tras [4, 4] quita la alerta); [2 con `numbness`, 4, 4] → `red_flag` (manda sobre `over_threshold_2x`); [5 con `numbness`, 4] → `red_flag`; [2 sin banderas, 4 con `numbness`] → `null` (la bandera no era de la última); sin entradas → `null`; el arreglo de entrada no cambia.
+- RN-HLT-12: última 3 sin banderas ni alerta persistente → sin aviso; última 4 → aviso; última 2 con `numbness` → aviso; cronológico [1, 2, 3] → aviso (`rising_3x`); sin entradas → sin aviso.
+- RN-HLT-13: [5, 4] → `over_threshold_2x` antes que `attention`; última 8 con `numbness` → `red_flag` antes que `alert`; `numbness` y `bladder_bowel` → `bladder_bowel`; cronológico [1, 2, 5] → `rising_3x` antes que `attention`.
+- Textos (§6.1): `attention` y `alert` con N; `over_threshold_2x` con "por encima de 3/10" (U); `latestFirst` [3, 2, 1] → "(1 → 2 → 3)".
 - `PainAlertRaised` se publica solo en la transición de "sin alerta" a "con alerta".
 
 ## 9. Trazabilidad
@@ -186,6 +192,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 4. **Spec 005, Cierre (contrato v1.2):** prioridad entre causas del aviso (RN-HLT-13) y textos de §6.1; solo `painEntries` en la base v3; los eventos de §5 no se publican hasta que `progression` los escuche (fase 4).
 5. **Plan de la spec 005 (contrato v1.3):** API reducida a lo que usa el Cierre (`recordPain`, `assessPain`, `getPainSummary`, `hasPainEntry`, `painGate`), `createHealth` sin `bus`, `healthStores`, `HealthErrorCode`, `usePainSummary(health)` y los componentes `PainSelector`, `RedFlagsChecklist` y `PainNotice` (`PainAlertBanner` pasa a llamarse así). `PainSummary` gana `notice` y pierde `series` y `since` hasta que se usen. Orden por `recordedAt` (RN-HLT-14). Funciones del dominio en §4.
 6. **Entrada y clasificación del dolor (contrato v1.4, 18-nov-2026, antes de T1 de la spec 005):** se revisa primero el nivel y se devuelve solo el primer error; no finitos rechazados y `-0` como 0; `checkPainInput` válido devuelve el nivel normalizado y un arreglo nuevo de banderas en su orden; `assessPain` lanza con una entrada inválida (error de programación); `status` y `message` solo dependen del nivel y `redFlagMessage` solo existe con banderas; `blocksProgression` = `alert` o alguna bandera; RN-HLT-15 para las banderas; los mensajes técnicos citan su regla (RN-HLT-01, 02, 06, 07, 15).
+7. **Alertas y aviso de "Hoy" (contrato v1.5, 18-nov-2026, antes de T3 de la spec 005):** `persistentAlert` y `noticeOf` reciben `Pick<PainEntry, 'level' | 'redFlags'>` de la más reciente a la más antigua y confían en su entrada (orden del servicio, entradas validadas al guardarse, umbral constante); solo cuentan las 2 o 3 primeras y con menos no se cumple la condición; `persistentAlert` da una sola razón (`red_flag` → `over_threshold_2x` → `rising_3x`) y `red_flag` solo con banderas en la última; RN-HLT-08 deja de ser `[PROPUESTO]` (AC-45); `noticeOf` es `null` exactamente cuando no se cumple RN-HLT-12; N y U como enteros y "a → b → c" en orden cronológico; los textos con valores son funciones en `messages.ts` (RN-HLT-04, 05, 08, 12, 13).
 
 Preguntas abiertas:
 
