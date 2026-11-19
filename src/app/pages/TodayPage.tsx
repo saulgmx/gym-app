@@ -54,7 +54,14 @@ function TodayContent() {
   const others = week.flatMap((day, i) => {
     const dayDate = addDays(weekStart, i);
     return day.kind === 'workout' && dayDate !== date
-      ? [{ date: dayDate, name: day.template.name, done: done.has(dayDate) }]
+      ? [
+          {
+            date: dayDate,
+            name: day.template.name,
+            // Latest first (RN-TRN-26): with two for one day (broken data), the most recent (AC-35).
+            doneId: completed.find((w) => w.plannedFor === dayDate)?.id ?? null,
+          },
+        ]
       : [];
   });
   const isDone = today.kind === 'workout' && doneToday !== undefined;
@@ -77,7 +84,7 @@ function TodayContent() {
             today={today}
             date={date}
             back={pain.latest?.level ?? null}
-            done={isDone ? { view: doneView, now: clock.now() } : null}
+            done={isDone ? { workoutId: doneToday.id, view: doneView, now: clock.now() } : null}
             trained={
               !isDone && closedToday
                 ? { name: closedToday.name, plannedFor: closedToday.plannedFor }

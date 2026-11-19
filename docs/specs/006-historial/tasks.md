@@ -48,8 +48,8 @@ Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación c
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
 |---|---|---|---|---|---|---|
-| T15 | `DoneDay` con `workoutId` y el enlace "Ver detalle" en `DayCard`; `OtherDays` con `doneId` (fila hecha como `Link` gris); `TodayPage` pasa los ids con `completed.find` (plan §6.9) | `app/pages/today`, `app/pages` | Pruebas primero en `today-done.test.tsx` y `day-card.test.tsx`: AC-33 a AC-35 (con dos `completed` del mismo `plannedFor`, el más reciente). Se actualizan las pruebas y el E2E de la spec 005 que esperaban la fila "no pulsable", citando spec 006 AC-34; mutaciones detectadas (`date` en lugar de `plannedFor`, sin `state`) | AC-33 a AC-35 | C | ☐ |
-| T16 | Medir el bundle (`npm run build` y `npm run size`) | raíz | `npm run size` < 200 kB; la medición se anota en el plan §6.11 | AC-38 | C | ☐ |
+| T15 | `DoneDay` con `workoutId` y el enlace "Ver detalle" en `DayCard`; `OtherDays` con `doneId` (fila hecha como `Link` gris); `TodayPage` pasa los ids con `completed.find` (plan §6.9) | `app/pages/today`, `app/pages` | Pruebas primero en `today-done.test.tsx` y `day-card.test.tsx`: AC-33 a AC-35 (con dos `completed` del mismo `plannedFor`, el más reciente). Se actualizan las pruebas y el E2E de la spec 005 que esperaban la fila "no pulsable", citando spec 006 AC-34; mutaciones detectadas (`date` en lugar de `plannedFor`, sin `state`) | AC-33 a AC-35 | C || ☑ |
+| T16 | Medir el bundle (`npm run build` y `npm run size`) | raíz | `npm run size` < 200 kB; la medición se anota en el plan §6.11 | AC-38 | C || ☑ |
 
 **Punto de control D:** PR "history: links from today".
 

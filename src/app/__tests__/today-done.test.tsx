@@ -1,11 +1,12 @@
 import 'fake-indexeddb/auto';
 import { act, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RedFlag } from '@/modules/health';
 import type { Workout } from '@/modules/training';
-import type { ID, LocalDate } from '@/shared/kernel';
+import type { ID, Instant, LocalDate } from '@/shared/kernel';
 import type { AppServices } from '../context';
-import { closeTestDatabases, lastTestDatabase, renderRoute } from './test-app';
+import { closeTestDatabases, lastTestDatabase, renderRoute, tapToNavigate } from './test-app';
 import { closeSession, setup } from './test-sessions';
 
 // "Hoy" with done sessions and the pain notice (spec 005 AC-32 to AC-45; plan §6.7) over the real
@@ -49,9 +50,9 @@ const dayLabel = (name: string) => screen.getByRole('img', { name: new RegExp(`^
 const others = () => screen.getByRole('region', { name: 'Otra sesión de esta semana' });
 
 describe('días hechos (AC-32 a AC-36)', () => {
-  it('AC-32: el lunes guardado se ve hecho el miércoles: ✓, "1 de 3" y su fila gris sin enlace', async () => {
+  it('AC-32: el lunes guardado se ve hecho el miércoles: ✓, "1 de 3" y su fila gris, que desde la spec 006 AC-34 enlaza al detalle', async () => {
     const ctx = await setup();
-    await closeSession(ctx, { on: '2026-11-16' });
+    const monday = await closeSession(ctx, { on: '2026-11-16' });
 
     await openToday(ctx.services);
 
@@ -59,7 +60,9 @@ describe('días hechos (AC-32 a AC-36)', () => {
     expect(screen.getByText('1 de 3 sesiones')).toBeInTheDocument();
     const region = others();
     expect(within(region).getByText(/^Lun 16 · Full body A · hecha/)).toBeInTheDocument();
-    expect(within(region).queryByRole('link', { name: /Lun 16/ })).not.toBeInTheDocument();
+    expect(
+      within(region).getByRole('link', { name: 'Lun 16 · Full body A · hecha' }),
+    ).toHaveAttribute('href', `/historial/${monday.id}`);
     expect(within(region).getByRole('link', { name: 'Vie 20 · Full body A' })).toHaveAttribute(
       'href',
       '/dia/2026-11-20',
@@ -433,5 +436,68 @@ describe('carga', () => {
       await promise;
     });
     expect(await screen.findByRole('region', { name: 'Tu sesión de hoy' })).toBeInTheDocument();
+  });
+});
+
+describe('spec 006: enlaces de "Hoy" al detalle (AC-33 a AC-35)', () => {
+  async function openTodayRouter(services: AppServices) {
+    const router = await renderRoute('/', services);
+    await screen.findByRole('region', { name: /Tu sesión de hoy|Sesión en curso/ });
+    return router;
+  }
+
+  it('spec 006 AC-33: la tarjeta de un día hecho lleva "Ver detalle" a su sesión', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    const workout = await closeSession(ctx, { on: '2026-11-18' });
+    const router = await openTodayRouter(ctx.services);
+
+    const link = within(card()).getByRole('link', { name: 'Ver detalle' });
+    expect(link).toHaveAttribute('href', `/historial/${workout.id}`);
+    await tapToNavigate(userEvent.setup(), link);
+    expect(router.state.location.pathname).toBe(`/historial/${workout.id}`);
+    expect(router.state.location.state).toEqual({ from: '/' });
+  });
+
+  it('spec 006 AC-33: un día de pesas pendiente no tiene "Ver detalle"', async () => {
+    const ctx = await setup();
+    await openTodayRouter(ctx.services);
+
+    expect(within(card()).queryByRole('link', { name: 'Ver detalle' })).not.toBeInTheDocument();
+  });
+
+  it('spec 006 AC-34: la fila hecha de "Otra sesión" abre su detalle, desde "Hoy"', async () => {
+    const ctx = await setup();
+    const monday = await closeSession(ctx, { on: '2026-11-16' });
+    const router = await openTodayRouter(ctx.services);
+
+    const row = within(others()).getByRole('link', { name: 'Lun 16 · Full body A · hecha' });
+    await tapToNavigate(userEvent.setup(), row);
+    expect(router.state.location.pathname).toBe(`/historial/${monday.id}`);
+    expect(router.state.location.state).toEqual({ from: '/' });
+  });
+
+  it('spec 006 AC-35: con dos cerradas para el mismo día del plan, la fila y la tarjeta llevan a la más reciente', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    const monday = await closeSession(ctx, { on: '2026-11-16' });
+    const wednesday = await closeSession(ctx, { on: '2026-11-18' });
+    // Broken data the API forbids (RN-TRN-24): later copies with the same plannedFor.
+    const later = (w: Workout, id: string): Workout => ({
+      ...w,
+      id: id as ID,
+      startedAt: `${w.date}T19:00:00-06:00` as Instant,
+      finishedAt: `${w.date}T19:30:00-06:00` as Instant,
+    });
+    await lastTestDatabase()
+      .table('workouts')
+      .bulkAdd([later(monday, 'lunes-2'), later(wednesday, 'miercoles-2')]);
+    await openTodayRouter(ctx.services);
+
+    expect(
+      within(others()).getByRole('link', { name: 'Lun 16 · Full body A · hecha' }),
+    ).toHaveAttribute('href', '/historial/lunes-2');
+    expect(within(card()).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+      'href',
+      '/historial/miercoles-2',
+    );
   });
 });

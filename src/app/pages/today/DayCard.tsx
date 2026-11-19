@@ -1,7 +1,8 @@
 import { useId } from 'react';
+import { Link } from 'react-router';
 import { formatRir, plannedSessionSeconds, type TodayPlan } from '@/modules/plan';
 import { workoutSummary, type WorkoutView } from '@/modules/training';
-import type { Instant, LocalDate } from '@/shared/kernel';
+import type { ID, Instant, LocalDate } from '@/shared/kernel';
 import { formatLongDate } from '../../format-date';
 import { formatBackChip } from '../../format-pain';
 import { StartWorkoutButton } from '../StartWorkoutButton';
@@ -60,6 +61,7 @@ function outsideMessage(today: TodayPlan): string {
 
 /** What the card needs of a workout day already done (spec 005 AC-34). */
 export interface DoneDay {
+  workoutId: ID; // "Ver detalle" opens its history detail (spec 006 AC-33)
   view: WorkoutView | null; // null only with broken data: the card then has no summary line
   now: Instant;
 }
@@ -106,6 +108,14 @@ function Body({
                 {formatDoneSummary(summary.minutes, summary.setsDone)}
               </p>
             )}
+            {/* Spec 006 AC-33: from "Hoy", so the detail's "Volver" comes back here. */}
+            <Link
+              to={`/historial/${done.workoutId}`}
+              state={{ from: '/' }}
+              className={styles.detail}
+            >
+              Ver detalle
+            </Link>
           </>
         );
       }

@@ -101,7 +101,10 @@ test.describe('spec 005: el Cierre', () => {
     await expect(page.getByText('1 de 3 sesiones', { exact: true })).toBeVisible();
     const others = page.getByRole('region', { name: 'Otra sesión de esta semana' });
     await expect(others.getByText('Lun 16 · Full body A · hecha')).toBeVisible();
-    await expect(others.getByRole('link', { name: /Lun 16/ })).toHaveCount(0);
+    // Since spec 006 AC-34 the done row links to its session detail.
+    await expect(
+      others.getByRole('link', { name: 'Lun 16 · Full body A · hecha' }),
+    ).toHaveAttribute('href', /^\/historial\//);
     await expect(others.getByRole('link', { name: 'Vie 20 · Full body A' })).toBeVisible();
     await expect(page.getByRole('note')).toHaveText(
       'Espalda baja 5/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron.',
