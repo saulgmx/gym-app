@@ -49,7 +49,7 @@ Las fechas suponen un programa que empieza el lunes 16-nov-2026; hoy es el miér
 | **M18**: Full body A del viernes | mié 18-nov | vie 20-nov | 2 de Prensa, 1.ª de Press de banca, 2 de Dominadas (5 en 3 ejercicios) | 18:00 → 18:30 | 5, "Hormigueo o adormecimiento" |
 | **L23**: Full body B | lun 23-nov | lun 23-nov | todas | 18:00 → 18:45 | 3, sin señales |
 
-En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2, Dominadas se hizo con la alternativa Jalón al pecho, y hay una serie extra de Press de banca (3.ª, 60 kg × 8, RIR 1). Una de las Dominadas de M18 fue con asistencia de 20 kg × 8 y RIR 2. La nota de L16 es "Buena sesión".
+En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2 y Dominadas se hizo con la alternativa Jalón al pecho. En L23 hay una serie extra de Fondos en paralelas (3.ª, 0 kg × 8, RIR 1), además de las planificadas. Una de las Dominadas de M18 fue con asistencia de 20 kg × 8 y RIR 2. La nota de L16 es "Buena sesión".
 
 ### 4.1 Navegación
 
@@ -86,7 +86,7 @@ En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2, Dominadas se hizo 
 | AC-19 | L16 | Miro "Ejercicios" | `h2` "Ejercicios" y los 7 en el orden de la sesión, cada uno con su nombre en `h3` y sus series hechas en una lista ordenada por `setNumber` |
 | AC-20 | AC-19 | Miro Prensa | "1 · 100 × 10 · RIR 2" y "2 · 100 × 9 · RIR 2" (kilos con coma decimal, como la sesión) |
 | AC-21 | AC-19 | Miro Dominadas | El `h3` dice "Jalón al pecho" y debajo "En lugar de Dominadas" (el ejercicio elegido, RN-TRN-13) |
-| AC-22 | AC-19 | Miro Press de banca | La 3.ª serie lleva la marca "Extra" |
+| AC-22 | L23 | Miro Fondos en paralelas | La 3.ª serie lleva la marca "Extra" |
 | AC-23 | M18 | Miro Dominadas | La serie con asistencia dice "Asist. 20 × 8 · RIR 2" |
 | AC-24 | Un ejercicio medido por tiempo (Plancha) con una serie de 40 s y RIR 2 | Miro su detalle | "1 · 40 s · RIR 2"; uno medido por repeticiones (`metric: 'reps'`) muestra solo las reps: "1 · 12 · RIR 1" |
 | AC-25 | M18 | Miro los ejercicios | Los 4 sin series hechas salen en su orden, con su nombre en gris y "Sin series" (decisión 4). Las series no hechas de Press de banca no salen (RN-TRN-08) |
@@ -196,6 +196,7 @@ Propuestas al escribir la spec, aprobadas con ella (19-nov):
 Decisiones durante la implementación (19-nov, antes de T14):
 
 10. **Detalle:** sin "Ejercicio desconocido", porque RN-TRN-17 hace lanzar la consulta si falta un ejercicio (el contrato manda sobre esta spec, `docs/README.md`); una sesión sin `programWeek` dice "· Fuera del programa" en lugar de "· Semana N" (AC-14), como el grupo de la lista; el `<title>` es "Historial · Gym" mientras carga y cuando la sesión no está en el historial; "Volver" es un enlace con `aria-label`, porque navega (§6.2 decía botón).
+11. **La serie extra de los ejemplos pasa de L16 a L23** (Fondos en paralelas, la 3.ª): con ella en L16, AC-7 y AC-16 habrían sido "11 series", porque las extra hechas cuentan (RN-TRN-25). Va en Fondos porque es el ítem de Full body B con margen (`[2, 3]`, RN-TRN-10); Press inclinado ya empieza con su máximo en la semana 2.
 
 ## 9. Checklist de la constitución
 
