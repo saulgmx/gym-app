@@ -322,6 +322,47 @@ describe('cerrar y días hechos (spec 005, contrato v1.22)', () => {
   });
 });
 
+describe('historial con Dexie (RN-TRN-28)', () => {
+  // Starts a session on `day` and marks the first `n` Prensa sets done; closes it if asked.
+  async function sessionOn(
+    service: ReturnType<typeof training>,
+    db: Dexie,
+    day: string,
+    n: number,
+    end: 'close' | 'discard' | 'keep',
+  ) {
+    const workout = ok(await service.startWorkout(date(day)));
+    const own = (await setsOf(db, 'prensa'))
+      .filter((s) => s.workoutId === workout.id)
+      .sort((a, b) => a.setNumber - b.setNumber)
+      .slice(0, n);
+    for (const set of own) {
+      ok(await service.logSet(set.id, { weightKg: 60, reps: 10 }));
+      ok(await service.toggleSetDone(set.id));
+    }
+    if (end === 'close') return ok(await service.finishWorkout(workout.id, {}));
+    if (end === 'discard') ok(await service.discardWorkout(workout.id));
+    return workout;
+  }
+
+  it('RN-TRN-28: lee de la base solo los completed, cada uno con sus propias series', async () => {
+    const db = openDb();
+    const service = training(db);
+    const first = await sessionOn(service, db, '2026-11-18', 1, 'close');
+    await sessionOn(service, db, '2026-11-19', 2, 'discard');
+    const last = await sessionOn(service, db, '2026-11-20', 2, 'close');
+    await sessionOn(service, db, '2026-11-21', 1, 'keep'); // in progress
+
+    const history = await service.listWorkoutHistory();
+
+    expect(history.map((e) => [e.workout.id, e.summary.setsDone])).toEqual([
+      [last.id, 2],
+      [first.id, 1],
+    ]);
+    expect(history[0]?.workout).toEqual(last);
+  });
+});
+
 describe('días hechos con Dexie (RN-TRN-23, 24)', () => {
   async function closeStarted(service: ReturnType<typeof training>, db: Dexie, workoutId: ID) {
     const setId = (await setsOf(db, 'prensa')).find(

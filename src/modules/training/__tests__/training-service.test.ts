@@ -859,6 +859,98 @@ describe('listWorkouts (RN-TRN-26)', () => {
   });
 });
 
+describe('listWorkoutHistory (RN-TRN-28)', () => {
+  // A closed workout of `d`, started at 09:00-06:00 and finished `minutes` later.
+  const closed = (
+    key: string,
+    d: string,
+    exerciseIds: string[],
+    sets: SetLog[],
+    overrides: Partial<Workout> = {},
+  ): WorkoutState => ({
+    workout: {
+      ...stored(key, 'completed', d, exerciseIds),
+      finishedAt: instant(`${d}T09:52:00-06:00`),
+      ...overrides,
+    },
+    sets,
+  });
+
+  it('RN-TRN-28: solo completed, en el orden de RN-TRN-26 (date y luego startedAt como instante)', async () => {
+    const { service } = setup({
+      initial: [
+        closed('lunes', '2026-11-16', ['prensa'], []),
+        { workout: stored('curso', 'in_progress', '2026-11-19'), sets: [] },
+        { workout: stored('descartado', 'discarded', '2026-11-20'), sets: [] },
+        // 10:00+01:00 is 09:00Z, before 09:30Z, though it sorts after it as a string.
+        closed('madrid', '2026-11-23', ['prensa'], [], {
+          startedAt: instant('2026-11-23T10:00:00+01:00'),
+        }),
+        closed('miercoles', '2026-11-18', ['prensa'], []),
+        closed('londres', '2026-11-23', ['prensa'], [], {
+          startedAt: instant('2026-11-23T09:30:00+00:00'),
+        }),
+      ],
+    });
+
+    const history = await service.listWorkoutHistory();
+
+    expect(history.map((e) => e.workout.id)).toEqual(['londres', 'madrid', 'miercoles', 'lunes']);
+  });
+
+  it('RN-TRN-28: cada entrada con el resumen de RN-TRN-25 de sus propias series', async () => {
+    const { service } = setup({
+      initial: [
+        closed(
+          'completa',
+          '2026-11-16',
+          ['prensa', 'jalon'],
+          [
+            doneSet('c1', 'completa', 'prensa', 1),
+            doneSet('c2', 'completa', 'prensa', 2),
+            doneSet('c3', 'completa', 'jalon', 1),
+            doneSet('c4', 'completa', 'jalon', 2, { isExtra: true }),
+          ],
+        ),
+        closed(
+          'parcial',
+          '2026-11-18',
+          ['prensa', 'jalon', 'dead-bug'],
+          [
+            doneSet('p1', 'parcial', 'prensa', 1),
+            doneSet('p2', 'parcial', 'jalon', 1, { done: false }),
+          ],
+        ),
+      ],
+    });
+
+    const history = await service.listWorkoutHistory();
+
+    expect(history.map((e) => [e.workout.id, e.summary])).toEqual([
+      ['parcial', { minutes: 52, setsDone: 1, itemsWithDoneSets: 1, itemCount: 3 }],
+      ['completa', { minutes: 52, setsDone: 4, itemsWithDoneSets: 2, itemCount: 2 }],
+    ]);
+  });
+
+  it('RN-TRN-28: sin finishedAt (dato roto) el resumen da 0 min, no los minutos hasta ahora', async () => {
+    const broken = closed('roto', '2026-11-16', ['prensa'], [doneSet('r1', 'roto', 'prensa', 1)]);
+    delete broken.workout.finishedAt;
+    const { service } = setup({ initial: [broken] });
+
+    const [entry] = await service.listWorkoutHistory();
+
+    expect(entry?.summary).toMatchObject({ minutes: 0, setsDone: 1 });
+  });
+
+  it('RN-TRN-28: sin sesiones cerradas → []', async () => {
+    const { service } = setup({
+      initial: [{ workout: stored('curso', 'in_progress', '2026-11-19'), sets: [] }],
+    });
+
+    expect(await service.listWorkoutHistory()).toEqual([]);
+  });
+});
+
 describe('startWorkout de un día ya hecho (RN-TRN-24)', () => {
   const friday = (status: Workout['status']): WorkoutState => ({
     workout: { ...stored(`viernes-${status}`, status, '2026-11-20') },
