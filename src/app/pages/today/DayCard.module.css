@@ -43,3 +43,9 @@
   color: var(--text-muted);
   font-size: 0.8125rem;
 }
+
+/* From 4 the back chip turns amber (spec 005 §6.3); --warn on --surface is 9.68:1. */
+.chip[data-warn] {
+  border-color: var(--warn);
+  color: var(--warn);
+}

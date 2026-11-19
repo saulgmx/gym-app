@@ -1,7 +1,8 @@
 import { Suspense, use } from 'react';
 import { useTodayPlan, useWeekPlan } from '@/modules/plan';
-import { useActiveWorkoutView } from '@/modules/training';
-import { addDays, startOfIsoWeek } from '@/shared/kernel';
+import { PainNotice, usePainSummary } from '@/modules/health';
+import { useActiveWorkoutView, useCompletedWorkouts, useWorkoutView } from '@/modules/training';
+import { addDays, startOfIsoWeek, type ID } from '@/shared/kernel';
 import { useApp } from '../context';
 import { useToday } from '../hooks/useToday';
 import { ActiveSessionCard } from './today/ActiveSessionCard';
@@ -28,7 +29,7 @@ export function TodayPage() {
 }
 
 function TodayContent() {
-  const { plan, training, clock, ready } = useApp();
+  const { plan, training, health, clock, ready } = useApp();
   use(ready);
   const date = useToday(clock);
   const weekStart = startOfIsoWeek(date);
@@ -36,31 +37,49 @@ function TodayContent() {
   const week = useWeekPlan(plan, weekStart);
   // The view, not only the workout: the discard dialog counts its sets (spec 003 plan §6.4).
   const active = useActiveWorkoutView(training);
-  if (!today || !week || active === undefined) return null;
+  // Spec 005 (plan §6.7): days done this week, the pain summary and, if today is done, its view.
+  const completed = useCompletedWorkouts(training, { from: weekStart, to: addDays(weekStart, 6) });
+  const pain = usePainSummary(health);
+  // Latest first (RN-TRN-26): with two for one day (broken data), the most recent (spec §7).
+  const doneToday = completed?.find((w) => w.plannedFor === date);
+  // Queried here, with an empty id when there is none, so the done card never shows half-loaded.
+  const doneView = useWorkoutView(training, (doneToday?.id ?? '') as ID);
+  if (!today || !week || active === undefined || !completed || !pain || doneView === undefined) {
+    return null;
+  }
 
   const inProgram = today.position.status === 'active';
+  const done = new Set(completed.map((w) => w.plannedFor));
   // Other workout days of this week, past or future (RN-TRN-14, spec 002 AC-9).
   const others = week.flatMap((day, i) => {
     const dayDate = addDays(weekStart, i);
     return day.kind === 'workout' && dayDate !== date
-      ? [{ date: dayDate, name: day.template.name }]
+      ? [{ date: dayDate, name: day.template.name, done: done.has(dayDate) }]
       : [];
   });
+  const isDone = today.kind === 'workout' && doneToday !== undefined;
 
   return (
     <>
       <TodayHeader date={date} position={today.position} />
       {active ? (
         // D2: the session in progress takes the place of the day card; never both (§6.3). It
-        // can always be continued, even from a day outside the program.
+        // can always be continued, even from a day outside the program. No pain notice nor
+        // back chip in D2 (spec 005 AC-44).
         <ActiveSessionCard view={active} today={date} />
       ) : (
         <>
-          <DayCard today={today} date={date} />
-          {today.kind === 'workout' && <ExerciseDetails items={today.plannedItems} />}
+          {pain.notice && <PainNotice notice={pain.notice} />}
+          <DayCard
+            today={today}
+            date={date}
+            back={pain.latest?.level ?? null}
+            done={isDone ? { view: doneView, now: clock.now() } : null}
+          />
+          {today.kind === 'workout' && !isDone && <ExerciseDetails items={today.plannedItems} />}
         </>
       )}
-      {inProgram && <WeekSection days={week} weekStart={weekStart} today={date} />}
+      {inProgram && <WeekSection days={week} weekStart={weekStart} today={date} done={done} />}
       {!active && inProgram && others.length > 0 && <OtherDays days={others} />}
     </>
   );

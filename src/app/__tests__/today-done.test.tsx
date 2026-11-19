@@ -152,6 +152,9 @@ describe('días hechos (AC-32 a AC-36)', () => {
     expect(dayLabel('viernes')).toHaveAccessibleName('viernes, Full body A, hecha');
     expect(dayLabel('miércoles')).toHaveAccessibleName('miércoles, hoy, Full body B, pendiente');
     expect(screen.getByText('1 de 3 sesiones')).toBeInTheDocument();
+    // Today (Wednesday) is still to do: the done card goes by plannedFor, not by date.
+    expect(within(card()).getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+    expect(chipsOf(card())).not.toContain('Hecha ✓');
   });
 
   it('AC-34: el miércoles hecho ese día: tarjeta con "Hecha ✓", "52 min · N series" y sin CTA', async () => {
@@ -340,13 +343,18 @@ describe('aviso de dolor y chip "Espalda" (AC-37 a AC-45)', () => {
     await openToday(ctx.services);
 
     expect(chipsOf(card())).toEqual(expect.arrayContaining(['Hecha ✓', 'Espalda 4/10']));
+    // 4 is already amber (spec 005 §6.3: "en ámbar desde 4").
+    expect(backChip()).toHaveAttribute('data-warn');
   });
 });
 
 describe('carga', () => {
   it('plan §6.7: nada se pinta hasta que responden todas las consultas', async () => {
     const ctx = await setup();
-    const { promise, resolve } = Promise.withResolvers<void>();
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => {
+      resolve = r;
+    });
     const slow: AppServices = {
       ...ctx.services,
       health: {
