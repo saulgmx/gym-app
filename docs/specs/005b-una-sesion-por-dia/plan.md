@@ -106,7 +106,7 @@ Se sigue en vivo, como `done`: si otra pestaña cierra una sesión, el botón pa
   - "Miércoles" y "sábado" llevan acento según `Intl`; la prueba lo fija.
 
 ### 6.6 Presupuesto del bundle
-Bundle inicial actual: 168.76 kB de 200 kB. Entran dos textos, dos funciones de formato, un predicado y dos props: unos cientos de bytes. Se mide en la tarea de cierre (`npm run build` y `npm run size`).
+Bundle inicial actual: 168.76 kB de 200 kB. Entran dos textos, dos funciones de formato, un predicado y dos props: unos cientos de bytes. Se mide en la tarea de cierre (`npm run build` y `npm run size`). **Medido en T7 (19-nov): 169.00 kB** (168 998 bytes, `size-limit --json`), 0.24 kB más que antes y 31 kB por debajo del límite.
 
 ## 7. Estrategia de pruebas
 
