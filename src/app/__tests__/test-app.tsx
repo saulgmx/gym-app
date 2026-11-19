@@ -29,6 +29,14 @@ export function createTestServices({
   return { plan: app.plan, training: app.training, health: app.health, clock, ready: app.ready };
 }
 
+/** The database of the last createTestServices call, to write broken data the API forbids
+ *  (spec 005b AC-17: two completed workouts on the same date, from before RN-TRN-27). */
+export function lastTestDatabase(): Dexie {
+  const db = opened.at(-1);
+  if (!db) throw new Error('createTestServices was not called');
+  return db;
+}
+
 /** Call from afterEach in files that use createTestServices. */
 export async function closeTestDatabases() {
   const dbs = opened.splice(0);

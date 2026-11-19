@@ -27,6 +27,13 @@
   color: var(--text-muted);
 }
 
+/* "Ya entrenaste hoy (…)." in the place of "Empezar sesión" (spec 005b §6.1): the same top margin
+   as the button wrapper, so the card does not jump. */
+.trained {
+  margin: 0.75rem 0 0.5rem;
+  color: var(--text-muted);
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

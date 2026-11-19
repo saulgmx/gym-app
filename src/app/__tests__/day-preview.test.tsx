@@ -260,4 +260,77 @@ describe('DayPreviewPage con un día hecho (spec 005)', () => {
     });
     expect(router.state.historyAction).toBe('REPLACE');
   });
+
+  // Spec 005b (RN-TRN-27, plan §6.4): once a session was closed today, no other one can start.
+  describe('con una sesión cerrada hoy (spec 005b)', () => {
+    const NOTICE = 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.';
+
+    it('AC-13: el miércoles hecho ese día, la vista previa del viernes dice el texto sin "Empezar sesión"', async () => {
+      const services = createTestServices({ clock: at('2026-11-18') });
+      await services.ready;
+      await closeDay(services, '2026-11-18', '2026-11-18');
+
+      await openDay('/dia/2026-11-20', services);
+
+      expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'Full body A' })).toBeInTheDocument();
+      expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(7);
+      expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
+    });
+
+    it('AC-14: si ese día del plan también está hecho, gana "Ya hiciste esta sesión."', async () => {
+      const services = createTestServices({ clock: at('2026-11-18') });
+      await services.ready;
+      await closeDay(services, '2026-11-18', '2026-11-20');
+
+      await openDay('/dia/2026-11-20', services);
+
+      expect(await screen.findByText('Ya hiciste esta sesión.')).toBeInTheDocument();
+      expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+    });
+
+    it('AC-15: si otra pestaña cierra una sesión hoy con la vista previa abierta, el botón pasa al texto', async () => {
+      const { services } = await openDay('/dia/2026-11-20');
+      await screen.findByRole('button', { name: 'Empezar sesión' });
+
+      await act(() => closeDay(services, '2026-11-21', '2026-11-16'));
+
+      expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
+    });
+
+    it('AC-16: si "Empezar sesión" devuelve day-already-trained, lo dice bajo el botón y no navega', async () => {
+      const services = createTestServices({ clock: SATURDAY });
+      const refusing: AppServices = {
+        ...services,
+        training: {
+          ...services.training,
+          startWorkout: () =>
+            Promise.resolve(
+              err({
+                code: 'training/day-already-trained' as const,
+                message: 'trained (RN-TRN-27)',
+              }),
+            ),
+        },
+      };
+      const { router, user } = await openDay('/dia/2026-11-20', refusing);
+
+      await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
+
+      expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe('/dia/2026-11-20');
+    });
+
+    it('AC-11: al día siguiente, la vista previa del miércoles (no hecho) vuelve a tener "Empezar sesión"', async () => {
+      const services = createTestServices({ clock: at('2026-11-19') });
+      await services.ready;
+      await closeDay(services, '2026-11-18', '2026-11-20');
+
+      await openDay('/dia/2026-11-18', services);
+
+      expect(await screen.findByRole('button', { name: 'Empezar sesión' })).toBeInTheDocument();
+      expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+    });
+  });
 });

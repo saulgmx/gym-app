@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from '@/shared/kernel';
-import { formatShortDateTitle } from '../format-date';
+import { formatLongDate, formatShortDateTitle, formatWeekday } from '../format-date';
 import {
   formatCurrent,
   formatItemsDone,
   formatRemaining,
   formatSessionSummary,
+  formatTrainedToday,
   formatWeekSessions,
 } from '../pages/today/format';
 import { formatElapsed } from '../format-time';
@@ -26,6 +27,40 @@ describe('formatShortDateTitle', () => {
     expect(formatShortDateTitle(date('2027-02-22'))).toBe('Lunes 22 feb');
     expect(formatShortDateTitle(date('2026-12-31'))).toBe('Jueves 31 dic');
     expect(formatShortDateTitle(date('2027-09-06'))).toBe('Lunes 6 sept');
+  });
+});
+
+// Spec 005b plan §6.5: the weekday alone, in lower case, for "Full body A del viernes".
+describe('formatWeekday', () => {
+  it('spec 005b AC-9: los siete días en minúsculas, con acento en miércoles y sábado', () => {
+    expect(
+      ['16', '17', '18', '19', '20', '21', '22'].map((d) => formatWeekday(date(`2026-11-${d}`))),
+    ).toEqual(['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']);
+  });
+});
+
+// formatLongDate now builds on formatWeekday; it had no direct test until spec 005b.
+describe('formatLongDate', () => {
+  it('"lunes 16 de noviembre", sin coma tras el día', () => {
+    expect(formatLongDate(date('2026-11-16'))).toBe('lunes 16 de noviembre');
+    expect(formatLongDate(date('2026-11-18'))).toBe('miércoles 18 de noviembre');
+  });
+});
+
+describe('formatTrainedToday (spec 005b §6.1)', () => {
+  it('AC-9: la sesión ya cerrada hoy y el día del plan al que pertenece', () => {
+    expect(formatTrainedToday('Full body A', date('2026-11-20'))).toBe(
+      'Ya entrenaste hoy (Full body A del viernes).',
+    );
+  });
+
+  it('AC-10: un día del plan ya pasado, con acento', () => {
+    expect(formatTrainedToday('Full body B', date('2026-11-18'))).toBe(
+      'Ya entrenaste hoy (Full body B del miércoles).',
+    );
+    expect(formatTrainedToday('Torso A', date('2026-11-21'))).toBe(
+      'Ya entrenaste hoy (Torso A del sábado).',
+    );
   });
 });
 

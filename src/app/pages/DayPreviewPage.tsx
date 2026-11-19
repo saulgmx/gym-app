@@ -58,6 +58,9 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
   if (!day || blocked === null || !completed) return null;
   if (blocked || day.kind !== 'workout') return <Navigate to="/" replace />;
   const done = completed.some((w) => w.plannedFor === date);
+  // Spec 005b (RN-TRN-27, plan §6.4): a session already closed today, by date. The preview only
+  // takes days of today's week, so the week range includes today. Followed live, like `done`.
+  const closedToday = completed.some((w) => w.date === today);
 
   return (
     <>
@@ -68,6 +71,8 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
         <PlanExerciseList items={day.plannedItems} />
         {done ? (
           <p>{errorMessages['training/already-done']}</p>
+        ) : closedToday ? (
+          <p>{errorMessages['training/day-already-trained']}</p>
         ) : (
           <StartWorkoutButton date={today} plannedFor={date} />
         )}

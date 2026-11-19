@@ -7,6 +7,12 @@
   font-size: 1.0625rem;
 }
 
+/* "Ya entrenaste hoy…" under the heading (spec 005b §6.1). */
+.note {
+  margin: -0.25rem 0 0.75rem;
+  color: var(--text-muted);
+}
+
 .list {
   display: grid;
   gap: 0.5rem;

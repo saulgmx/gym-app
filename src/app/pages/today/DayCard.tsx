@@ -4,7 +4,12 @@ import { workoutSummary, type WorkoutView } from '@/modules/training';
 import type { Instant, LocalDate } from '@/shared/kernel';
 import { formatLongDate } from '../../format-date';
 import { StartWorkoutButton } from '../StartWorkoutButton';
-import { formatBackChip, formatDoneSummary, formatSessionSummary } from './format';
+import {
+  formatBackChip,
+  formatDoneSummary,
+  formatSessionSummary,
+  formatTrainedToday,
+} from './format';
 import styles from './DayCard.module.css';
 
 // "Tu sesión de hoy" (spec 003 §6.2, AC-1, AC-5, AC-7 to AC-9; spec 005 AC-34, §6.3). One eyebrow
@@ -63,16 +68,24 @@ export interface DoneDay {
   now: Instant;
 }
 
+/** The session already closed today, when it is not today's own (spec 005b §6.1, RN-TRN-27). */
+export interface TrainedToday {
+  name: string;
+  plannedFor: LocalDate;
+}
+
 function Body({
   today,
   date,
   back,
   done,
+  trained,
 }: {
   today: TodayPlan;
   date: LocalDate;
   back: number | null;
   done: DoneDay | null;
+  trained: TrainedToday | null;
 }) {
   const block = today.position.block?.name;
   switch (today.kind) {
@@ -107,7 +120,12 @@ function Body({
             {formatSessionSummary(items.length, plannedSessionSeconds(items))}
           </p>
           <Chips chips={chips} />
-          <StartWorkoutButton date={date} plannedFor={date} />
+          {trained ? (
+            // One closed session per day (RN-TRN-27): the text takes the place of the button.
+            <p className={styles.trained}>{formatTrainedToday(trained.name, trained.plannedFor)}</p>
+          ) : (
+            <StartWorkoutButton date={date} plannedFor={date} />
+          )}
         </>
       );
     }
@@ -138,11 +156,13 @@ export function DayCard({
   date,
   back = null,
   done = null,
+  trained = null,
 }: {
   today: TodayPlan;
   date: LocalDate;
   back?: number | null; // level of the latest pain entry, for the "Espalda N/10" chip
   done?: DoneDay | null; // today's workout day is already done
+  trained?: TrainedToday | null; // another session was closed today; only a pending workout day uses it
 }) {
   const eyebrowId = useId();
   return (
@@ -150,7 +170,7 @@ export function DayCard({
       <p id={eyebrowId} className={styles.eyebrow}>
         Tu sesión de hoy
       </p>
-      <Body today={today} date={date} back={back} done={done} />
+      <Body today={today} date={date} back={back} done={done} trained={trained} />
     </section>
   );
 }
