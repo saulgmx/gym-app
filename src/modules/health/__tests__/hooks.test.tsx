@@ -83,6 +83,30 @@ describe('usePainSummary', () => {
     });
     expect(result.current?.notice).toBeNull();
   });
+
+  it('RN-HLT-19: con otra instancia de health, consulta la nueva (dependencias [health])', async () => {
+    await record('w1', 5, '2026-11-16T19:00:00-06:00');
+    const otherDb = new Dexie(crypto.randomUUID());
+    otherDb.version(1).stores(healthStores);
+    const other = createHealth({ db: otherDb, clock, ids: sequentialIds('other') });
+    try {
+      const { result, rerender } = renderHook(({ api }) => usePainSummary(api), {
+        initialProps: { api: health },
+      });
+      await waitFor(() => {
+        expect(result.current?.latest?.level).toBe(5);
+      });
+
+      rerender({ api: other });
+
+      await waitFor(() => {
+        expect(result.current?.latest).toBeNull();
+      });
+    } finally {
+      otherDb.close();
+      await Dexie.delete(otherDb.name);
+    }
+  });
 });
 
 class TestBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -91,7 +115,7 @@ class TestBoundary extends Component<{ children: ReactNode }, { error: Error | n
     return { error };
   }
   override render() {
-    return this.state.error ? <p role="alert">{this.state.error.name}</p> : this.props.children;
+    return this.state.error ? <p role="alert">{this.state.error.message}</p> : this.props.children;
   }
 }
 
@@ -104,7 +128,11 @@ function Back() {
 describe('errores', () => {
   it('RN-HLT-19: un error de la consulta se lanza en el render y lo captura el boundary', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined); // React logs caught errors
-    db.close();
+    // A read that throws. Not a closed database: Dexie's liveQuery waits silently for it to open.
+    await record('w1', 4, '2026-11-16T19:00:00-06:00');
+    db.table('painEntries').hook('reading', () => {
+      throw new Error('disk failure');
+    });
 
     render(
       <TestBoundary>
@@ -112,6 +140,6 @@ describe('errores', () => {
       </TestBoundary>,
     );
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('DatabaseClosedError');
+    expect(await screen.findByRole('alert')).toHaveTextContent('disk failure');
   });
 });

@@ -192,7 +192,7 @@ Servicio (integración con `fake-indexeddb`, spec 005 T5):
 
 Hook (spec 005 T8):
 
-- RN-HLT-19: `undefined` en el primer render y luego el resumen vacío (nunca `null`); registrar dolor, nuevo o reemplazado, actualiza el resultado sin volver a renderizar desde fuera; con la base cerrada, el error (`DatabaseClosedError`) llega al *error boundary*. Que otra pestaña escriba no se prueba con `fake-indexeddb`, como en `training`.
+- RN-HLT-19: `undefined` en el primer render y luego el resumen vacío (nunca `null`); registrar dolor, nuevo o reemplazado, actualiza el resultado sin volver a renderizar desde fuera; con otra instancia de `health` consulta la nueva; una lectura que lanza (un *hook* `reading` de Dexie) hace llegar su error al *error boundary*. No sirve una base cerrada: `liveQuery` espera en silencio a que se abra y el hook se queda en `undefined`. Que otra pestaña escriba no se prueba con `fake-indexeddb`, como en `training`.
 
 ## 9. Trazabilidad
 
