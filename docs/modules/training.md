@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.27 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.28 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -123,7 +123,7 @@ interface TrainingApi {
 interface HistoryEntry { workout: Workout; summary: WorkoutSummary }                     // RN-TRN-28
 interface HistoryItem { exerciseId: ID; replaces: ID | null; sets: SetLog[] }           // RN-TRN-29; replaces = options[0] si se eligió otro
 export function historyDetail(view: Pick<WorkoutView, 'workout' | 'sets'>): HistoryItem[] | null; // domain/history.ts, puro; null si no está completed
-export function formatDoneSet(set: SetLog, metric: Exercise['metric']): string;          // "100 × 10 · RIR 2", "Asist. 20 × 8 · RIR 2", "40 s · RIR 2"
+export function formatDoneSet(set: SetLog, metric: Exercise['metric']): string;          // "100 × 10 · RIR 2", "Asist. 20 × 8 · RIR 2", "40 s · RIR 2"; sin RIR (RN-TRN-04 lo permite), "100 × 10"
 // Más adelante
 //   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;   // fase 4 (progression)
 //   dataPort: DataPort;                                    // spec 007
@@ -318,3 +318,4 @@ RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32.
 27. **Plan de la spec 006 (contrato v1.25, 19-nov-2026):** `listWorkoutHistory()` sin rango (todos los `completed`, índice `status`, dos lecturas en una transacción `r` con `findCompletedStates`), con su hook `useWorkoutHistory`; `historyDetail` puro en `domain/history.ts`; `formatDoneSet` exportado para la línea de cada serie. `listWorkouts(range)` no cambia.
 28. **Casos de borde de RN-TRN-29, antes de T6 de la spec 006 (contrato v1.26, 19-nov-2026):** los ítems del detalle van por `order`, como RN-TRN-17, y no por la posición en el arreglo; `replaces` no valida que el elegido esté en `options`; el filtro por ejercicio elegido protege ante datos inconsistentes.
 29. **Casos de borde de RN-TRN-28, antes de T8 de la spec 006 (contrato v1.27, 19-nov-2026):** el resumen de la lista recibe `now = startedAt` en vez de `clock.now()` (mismo resultado con `finishedAt`; 0 min con un dato roto, y la consulta no depende del reloj); `findCompletedStates` lee las dos tablas en una transacción `r` y sin orden; `useWorkoutHistory` con clave fija y `[]` sin sesiones.
+30. **`formatDoneSet`, antes de T10 de la spec 006 (contrato v1.28, 19-nov-2026):** una serie hecha puede no tener RIR (RN-TRN-04: `rir` puede quedar `null` al marcar); entonces la línea omite " · RIR" ("100 × 10") en vez de mostrar "RIR null".
