@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.14 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.15 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -134,7 +134,10 @@ export function plannedSessionSeconds(items: PlannedItem[]): number;
 export function displayMinutes(seconds: number): number;   // múltiplo de 5 más cercano, mínimo 5
 
 // Componentes y formato
-function WeekStrip(props: { days: TodayPlan[]; weekStart: LocalDate; today: LocalDate }): JSX.Element; // marcas de spec 003 §6.4
+function WeekStrip(props: {
+  days: TodayPlan[]; weekStart: LocalDate; today: LocalDate;
+  done: ReadonlySet<LocalDate>;   // días de pesas hechos; los calcula app con training (spec 005, RN-TRN-23)
+}): JSX.Element; // marcas de spec 003 §6.4; un día de pesas en `done` dibuja ✓ y dice "hecha"
 function PlanExerciseList(props: { items: PlannedItem[] }): JSX.Element;  // nombre, series × reps y nota; sin RIR por fila
 export function formatRir(rir: [number, number]): string;                // "RIR 3-4", "RIR 4"
 export { WeekStrip, PlanExerciseList } from './ui';
@@ -243,3 +246,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 15. **Casos de borde de la fase 2, antes de T1 (contrato v1.12):** una alternativa inexistente al calcular el día lanza (RN-PLN-16); `getExercises` devuelve uno por ID pedido; `getExercise(s)` sin programa lanzan (RN-PLN-22); RN-PLN-15 (i) cubre también el mismo principal en dos ítems.
 16. **Spec 003, rediseño de "Hoy" (contrato v1.13):** duración estimada de la sesión del día (RN-PLN-27), con constantes con nombre que comparte `training` (RN-TRN-20). La forma exacta de la API (función exportada o campo de `TodayPlan`) la fija el plan técnico.
 17. **Plan de la spec 003 (contrato v1.14):** RN-PLN-27 como funciones exportadas (`setSeconds`, `plannedSessionSeconds`, `displayMinutes` y constantes), sin cambiar `TodayPlan`; `PlanExerciseList` sin RIR por fila (va una vez en el chip de "Hoy" y bajo el título de `/dia/:date`); `formatRir` exportado; `WeekStrip` con las marcas nuevas y la misma firma (el estado "hecha" llega en la fase 3).
+18. **Plan de la spec 005 (contrato v1.15):** `WeekStrip` recibe `done` (días de pesas hechos). `plan` no conoce `training`: `app` cruza la semana con `training.listWorkouts`. Un día en `done` dibuja ✓ relleno de acento y su `aria-label` dice "hecha"; hoy hecho suma el anillo de hoy.
