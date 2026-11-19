@@ -12,6 +12,7 @@ export interface PainRepository {
   ): Promise<PainEntry>;
   listAll(): Promise<PainEntry[]>; // any order; the service sorts (RN-HLT-14)
   existsForWorkout(workoutId: ID): Promise<boolean>;
+  findByWorkoutIds(workoutIds: ID[]): Promise<PainEntry[]>; // RN-HLT-20; any order
 }
 
 // The port training reads before closing a workout (RN-TRN-06). Declared here with the same shape

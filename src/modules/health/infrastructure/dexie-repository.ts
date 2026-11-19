@@ -24,5 +24,8 @@ export function createDexiePainRepository(db: Dexie): PainRepository {
 
     existsForWorkout: async (workoutId) =>
       (await entries().where('workoutId').equals(workoutId).count()) > 0,
+
+    // RN-HLT-20: by the unique workoutId index.
+    findByWorkoutIds: (workoutIds) => entries().where('workoutId').anyOf(workoutIds).toArray(),
   };
 }
