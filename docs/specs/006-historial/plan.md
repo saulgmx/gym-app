@@ -206,11 +206,11 @@ Las reglas nuevas van **prueba primero**: commit en rojo local, que se sube con 
 | RN-TRN-28 (`listWorkoutHistory`: solo `completed`, orden, resumen, series de cada uno) | Servicio con memoria y repositorio Dexie, primero | `training-service.test.ts`, `dexie-repository.test.ts` |
 | `useWorkoutHistory` (`undefined`, `[]`, se actualiza al cerrar) | Hook | `modules/training/__tests__/hooks.test.tsx` |
 | `formatDoneSet` (peso, asistencia, reps, tiempo) | Unitaria | `modules/training/__tests__/format.test.ts` |
-| RN-HLT-20 (`getPainForWorkouts`: ids sin entrada, repetidos, lista vacía sin leer, fallo de la base) | Servicio y repositorio Dexie, primero | `modules/health/__tests__/health-service.test.ts`, `dexie-repository.test.ts` |
+| RN-HLT-20 (`getPainForWorkouts`: ids sin entrada, repetidos, lista vacía sin leer, fallo de la base) | Servicio sobre Dexie, primero | `modules/health/__tests__/health-service.test.ts` |
 | `usePainForWorkouts` (clave por ids, se actualiza con `painEntries`) | Hook | `modules/health/__tests__/hooks.test.tsx` |
-| `formatRedFlags`; `RedFlagsChecklist` sigue con los mismos textos | Unitaria y componente | `modules/health/__tests__/` |
+| `formatRedFlags`; `RedFlagsChecklist` sigue con los mismos textos | Unitaria y componente | `modules/health/__tests__/pain-ui.test.tsx` |
 | `groupByWeek`, `formatWeekRange`, `formatHistorySummary` | Unitaria | `app/__tests__/history-format.test.ts` |
-| AC-1 a AC-3 | Componente | `app/__tests__/tab-bar.test.tsx` |
+| AC-1 a AC-3 | Página (rutas y barra) | `app/__tests__/router.test.tsx` |
 | AC-4 a AC-13 | Página | `app/__tests__/history-page.test.tsx` |
 | AC-14 a AC-32 | Página | `app/__tests__/history-detail.test.tsx` |
 | AC-33 a AC-35 | Página | `app/__tests__/today-done.test.tsx` |
