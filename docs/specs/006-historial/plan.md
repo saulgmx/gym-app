@@ -99,7 +99,7 @@ El detalle sigue el mismo patrón:
 ## 6. Decisiones
 
 ### 6.1 La lista lee todo, sin rango
-La spec pide todas las sesiones. Un rango ficticio enorme en `listWorkouts` ocultaría la intención. `listWorkoutHistory()` no recibe parámetros y usa el índice `status`. El orden es el de RN-TRN-26, por `date` y luego `startedAt` con `compareInstants`, y lo hace el servicio, como en `listWorkouts`. El resumen se calcula con `workoutSummary(state, clock.now())`. Un `completed` siempre tiene `finishedAt`, así que `now` no cuenta (RN-TRN-28).
+La spec pide todas las sesiones. Un rango ficticio enorme en `listWorkouts` ocultaría la intención. `listWorkoutHistory()` no recibe parámetros y usa el índice `status`. El orden es el de RN-TRN-26, por `date` y luego `startedAt` con `compareInstants`, y lo hace el servicio, como en `listWorkouts`. El resumen se calcula con `workoutSummary(state, state.workout.startedAt)`. Un `completed` siempre tiene `finishedAt`, así que `now` no cuenta; un dato roto sin él da 0 min, y la consulta no depende del reloj (RN-TRN-28, contrato v1.27).
 
 ### 6.2 El detalle es puro y reutiliza `useWorkoutView`
 `useWorkoutView` ya trae el workout, las series y los ejercicios (con nombres). `historyDetail` solo filtra y ordena, sin consultas nuevas.
