@@ -1,6 +1,6 @@
 import type { Dexie } from 'dexie';
 import { ok, type ID } from '@/shared/kernel';
-import type { TrainingRepository } from '../application/ports';
+import type { CreateResult, TrainingRepository } from '../application/ports';
 import type { SetLog, Workout, WorkoutState } from '../domain/types';
 
 // Training repository over the module's own Dexie tables. Rows are the domain objects as they are.
@@ -26,13 +26,20 @@ export function createDexieTrainingRepository(db: Dexie): TrainingRepository {
 
     findInProgress: () => workouts.where('status').equals('in_progress').toArray(),
 
-    createIfNoneActive: (workout, newSets) =>
-      db.transaction('rw', tables, async () => {
+    // RN-TRN-01 first, then RN-TRN-24: a day of the plan already done is not started again.
+    createIfAllowed: (workout, newSets) =>
+      db.transaction('rw', tables, async (): Promise<CreateResult> => {
         const active = await workouts.where('status').equals('in_progress').first();
-        if (active) return { created: false as const, activeId: active.id };
+        if (active) return { created: false, reason: 'active', activeId: active.id };
+        const done = await workouts
+          .where('status')
+          .equals('completed')
+          .filter((w) => w.plannedFor === workout.plannedFor)
+          .first();
+        if (done) return { created: false, reason: 'done' };
         await workouts.add(workout);
         await sets.bulkAdd(newSets);
-        return { created: true as const };
+        return { created: true };
       }),
 
     mutate: (workoutId, fn) =>
@@ -47,6 +54,13 @@ export function createDexieTrainingRepository(db: Dexie): TrainingRepository {
         await sets.bulkPut(changes.put);
         return ok(value);
       }),
+
+    // RN-TRN-26: a LocalDate (YYYY-MM-DD) compares correctly as a string; an Instant never does.
+    // With from > to the range is empty (Dexie returns no rows).
+    findCompletedBetween: async (from, to) => {
+      const inRange = await workouts.where('date').between(from, to, true, true).toArray();
+      return inRange.filter((w) => w.status === 'completed');
+    },
 
     findCompletedWith: (exerciseId) =>
       db.transaction('r', tables, async () => {

@@ -18,10 +18,12 @@ import type {
 } from '../domain/types';
 import {
   addExtraSet,
+  checkFinishable,
   checkPlannedFor,
   chooseExercise,
   createWorkout,
   discardWorkout,
+  finishWorkout,
   logSetValues,
   removeSet,
   toggleSetDone,
@@ -29,6 +31,7 @@ import {
 import type {
   ChangeFn,
   Exercise,
+  PainGate,
   PlanReader,
   SuggestionProvider,
   TodayPlan,
@@ -67,6 +70,8 @@ export interface TrainingApi {
     exerciseId: ID,
     opts?: { limit?: number; before?: LocalDate },
   ): Promise<ExerciseSession[]>;
+  finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout, TrainingError>>; // RN-TRN-22
+  listWorkouts(range: { from: LocalDate; to: LocalDate }): Promise<Workout[]>; // RN-TRN-26
 }
 
 const workoutNotFound = (workoutId: ID) =>
@@ -78,6 +83,9 @@ const setNotFound = (setId: ID) =>
   err<TrainingError>({ code: 'training/set-not-found', message: `Set ${setId} not found` });
 
 const optionsOf = (workout: Workout): ID[] => workout.items.flatMap((i) => i.options);
+
+// LocalDate (YYYY-MM-DD) sorts as a string; an Instant never does (ADR-0009).
+const byDateDesc = (a: LocalDate, b: LocalDate): number => Number(a < b) - Number(a > b);
 
 // The plan of a workout day as the domain takes it; maxSets comes from the template (RN-TRN-10).
 function plannedSession(today: Extract<TodayPlan, { kind: 'workout' }>): PlannedSession {
@@ -108,10 +116,11 @@ export function createTrainingService(deps: {
   repository: TrainingRepository;
   plan: PlanReader;
   suggestions: SuggestionProvider;
+  painGate: PainGate;
   clock: Clock;
   ids: IdGenerator;
 }): TrainingApi {
-  const { repository, plan, suggestions, clock, ids } = deps;
+  const { repository, plan, suggestions, painGate, clock, ids } = deps;
 
   // RN-TRN-16: a failing provider never blocks a session.
   async function prefillOf(exerciseId: ID): Promise<number | null> {
@@ -194,15 +203,19 @@ export function createTrainingService(deps: {
         prefill: new Map(mains.map((id, i) => [id, prefills[i] ?? null])),
       });
 
-      const created = await repository.createIfNoneActive(workout, sets);
-      if (!created.created) {
+      const created = await repository.createIfAllowed(workout, sets);
+      if (created.created) return ok(workout);
+      if (created.reason === 'active') {
         return err({
           code: 'training/workout-already-active',
           message: `Workout ${created.activeId} is in progress (RN-TRN-01)`,
           details: { workoutId: created.activeId },
         });
       }
-      return ok(workout);
+      return err({
+        code: 'training/already-done',
+        message: `${plannedFor} is already done (RN-TRN-24)`,
+      });
     },
 
     logSet: (setId, input) =>
@@ -250,5 +263,25 @@ export function createTrainingService(deps: {
 
     getExerciseHistory: async (exerciseId, opts) =>
       exerciseHistory(await repository.findCompletedWith(exerciseId), exerciseId, opts),
+
+    // RN-TRN-22: PainGate is asked before the transaction, which cannot wait on health, and only
+    // when the workout can be closed; mutate checks everything again in case another tab closed it.
+    async finishWorkout(workoutId, { notes }) {
+      const state = await repository.load(workoutId);
+      if (!state) return workoutNotFound(workoutId);
+      const finishable = checkFinishable(state);
+      if (!finishable.ok) return finishable;
+      const hasPain = await painGate.hasPainEntry(workoutId);
+      const now = clock.now();
+      return mutate(workoutId, (current) =>
+        finishWorkout(current, { ...(notes === undefined ? {} : { notes }), now, hasPain }),
+      );
+    },
+
+    // RN-TRN-26: latest first, by date and then by startedAt as an instant (ADR-0009).
+    listWorkouts: async ({ from, to }) =>
+      (await repository.findCompletedBetween(from, to)).sort(
+        (a, b) => byDateDesc(a.date, b.date) || compareInstants(b.startedAt, a.startedAt),
+      ),
   };
 }

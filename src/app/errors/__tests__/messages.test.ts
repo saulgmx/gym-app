@@ -10,7 +10,7 @@ import {
 // ADR-0010: every error code has a message (spec 001 plan §6.8, spec 002 plan §6.6).
 
 describe('errorMessages', () => {
-  it('los códigos de plan y training con sus textos aprobados', () => {
+  it('los códigos de plan, training y health con sus textos aprobados', () => {
     expect(errorMessages).toEqual({
       'plan/invalid-seed': GENERIC_ERROR_MESSAGE,
       'plan/high-risk-exercise': GENERIC_ERROR_MESSAGE,
@@ -32,6 +32,9 @@ describe('errorMessages', () => {
       'training/nothing-done': 'No hay series hechas para guardar.',
       'training/notes-too-long': 'Las notas pueden tener hasta 2000 caracteres.',
       'training/already-done': 'Ya hiciste esta sesión.',
+      // health (spec 005 plan §6.10): they guard the API, the selector cannot send them.
+      'health/pain-out-of-range': 'El dolor va de 0 a 10.',
+      'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
     });
   });
 });

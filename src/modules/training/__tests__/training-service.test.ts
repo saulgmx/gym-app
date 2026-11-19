@@ -131,7 +131,8 @@ function setup(
   const plan = fakePlan(options.missing);
   const suggestions = options.suggestions ?? { getPrefill: vi.fn(() => Promise.resolve(null)) };
   // A pain entry exists unless the test says otherwise (RN-TRN-06).
-  const painGate = options.painGate ?? { hasPainEntry: vi.fn(() => Promise.resolve(true)) };
+  const hasPainEntry = vi.fn<PainGate['hasPainEntry']>(() => Promise.resolve(true));
+  const painGate = options.painGate ?? { hasPainEntry };
   const service = createTrainingService({
     repository: store.repository,
     plan,
@@ -140,7 +141,7 @@ function setup(
     clock: saturday,
     ids: sequentialIds('id'),
   });
-  return { service, store, plan, suggestions, painGate };
+  return { service, store, plan, suggestions, hasPainEntry };
 }
 
 const expectOk = <T>(result: { ok: true; value: T } | { ok: false; error: { code: string } }) => {
@@ -684,7 +685,7 @@ describe('finishWorkout (RN-TRN-06, 22)', () => {
   }
 
   it('RN-TRN-22: con dolor cierra y guarda completed, finishedAt del reloj y las notas (AC-18)', async () => {
-    const { service, store, workout, painGate } = await withDoneSet();
+    const { service, store, workout, hasPainEntry } = await withDoneSet();
 
     const closed = expectOk(await service.finishWorkout(workout.id, { notes: '  Buena sesión ' }));
 
@@ -695,7 +696,21 @@ describe('finishWorkout (RN-TRN-06, 22)', () => {
       notes: 'Buena sesión',
     });
     expect(store.workouts.get(workout.id)).toEqual(closed);
-    expect(painGate.hasPainEntry).toHaveBeenCalledWith(workout.id);
+    expect(hasPainEntry).toHaveBeenCalledWith(workout.id);
+  });
+
+  it('RN-TRN-22: finishedAt es la hora del cierre, no la del inicio', async () => {
+    // Started Friday evening, closed with the clock at Saturday 09:30.
+    const friday: WorkoutState = {
+      workout: { ...stored('viernes', 'in_progress', '2026-11-20') },
+      sets: [doneSet('s1', 'viernes', 'prensa', 1)],
+    };
+    const { service } = setup({ initial: [friday] });
+
+    const closed = expectOk(await service.finishWorkout(id('viernes'), {}));
+
+    expect(closed.startedAt).toBe('2026-11-20T09:00:00-06:00');
+    expect(closed.finishedAt).toBe(saturday.now());
   });
 
   it('RN-TRN-22: las series no hechas siguen guardadas (AC-20)', async () => {
@@ -719,34 +734,34 @@ describe('finishWorkout (RN-TRN-06, 22)', () => {
   });
 
   it('RN-TRN-22: un workout inexistente → workout-not-found, sin preguntar al PainGate', async () => {
-    const { service, painGate } = setup();
+    const { service, hasPainEntry } = setup();
 
     expect(await service.finishWorkout(id('nadie'), {})).toMatchObject({
       ok: false,
       error: { code: 'training/workout-not-found' },
     });
-    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+    expect(hasPainEntry).not.toHaveBeenCalled();
   });
 
   it('RN-TRN-22: sin series hechas → nothing-done, sin preguntar al PainGate', async () => {
-    const { service, workout, painGate } = await started();
+    const { service, workout, hasPainEntry } = await started();
 
     expect(await service.finishWorkout(workout.id, {})).toMatchObject({
       ok: false,
       error: { code: 'training/nothing-done' },
     });
-    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+    expect(hasPainEntry).not.toHaveBeenCalled();
   });
 
   it('RN-TRN-07: un workout descartado → workout-closed, sin preguntar al PainGate', async () => {
-    const { service, workout, painGate } = await withDoneSet();
+    const { service, workout, hasPainEntry } = await withDoneSet();
     expectOk(await service.discardWorkout(workout.id));
 
     expect(await service.finishWorkout(workout.id, {})).toMatchObject({
       ok: false,
       error: { code: 'training/workout-closed' },
     });
-    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+    expect(hasPainEntry).not.toHaveBeenCalled();
   });
 
   it('RN-TRN-22: si otra pestaña cierra mientras se pregunta al PainGate → workout-closed (AC-31)', async () => {

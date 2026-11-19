@@ -1,5 +1,5 @@
 import type { Exercise, PlanApi } from '@/modules/plan';
-import type { ID, Result } from '@/shared/kernel';
+import type { ID, LocalDate, Result } from '@/shared/kernel';
 import type { SetLog, TrainingError, Workout, WorkoutChanges, WorkoutState } from '../domain/types';
 
 // What the training service needs from outside (docs/modules/training.md §4, plan §6.1).
@@ -41,13 +41,22 @@ export interface TrainingRepository {
   findSet(setId: ID): Promise<SetLog | undefined>;
   load(workoutId: ID): Promise<WorkoutState | undefined>;
   findInProgress(): Promise<Workout[]>;
-  // Checks RN-TRN-01 and inserts in the same transaction.
-  createIfNoneActive(
-    workout: Workout,
-    sets: SetLog[],
-  ): Promise<{ created: true } | { created: false; activeId: ID }>;
+  // Checks RN-TRN-01 and then RN-TRN-24, and inserts, in the same transaction.
+  createIfAllowed(workout: Workout, sets: SetLog[]): Promise<CreateResult>;
   // Reads the state, calls fn and writes its changes in one transaction; undefined if no workout.
   mutate<T>(workoutId: ID, fn: ChangeFn<T>): Promise<Result<T, TrainingError> | undefined>;
   // Completed workouts with at least one set of the exercise (RN-TRN-08 filters the rest).
   findCompletedWith(exerciseId: ID): Promise<WorkoutState[]>;
+  // Completed workouts with from ≤ date ≤ to, in any order (RN-TRN-26; the service sorts).
+  findCompletedBetween(from: LocalDate, to: LocalDate): Promise<Workout[]>;
+}
+
+export type CreateResult =
+  | { created: true }
+  | { created: false; reason: 'active'; activeId: ID } // RN-TRN-01
+  | { created: false; reason: 'done' }; // RN-TRN-24
+
+// Implemented by health (spec 005); compose passes health.painGate (RN-TRN-06).
+export interface PainGate {
+  hasPainEntry(workoutId: ID): Promise<boolean>;
 }

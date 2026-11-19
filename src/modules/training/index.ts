@@ -2,7 +2,7 @@
 
 import type { Dexie } from 'dexie';
 import type { Clock, IdGenerator } from '@/shared/kernel';
-import type { PlanReader, SuggestionProvider } from './application/ports';
+import type { PainGate, PlanReader, SuggestionProvider } from './application/ports';
 import { createTrainingService, type TrainingApi } from './application/service';
 import { createDexieTrainingRepository } from './infrastructure/dexie-repository';
 
@@ -14,11 +14,13 @@ export function createTraining(deps: {
   ids: IdGenerator;
   plan: PlanReader;
   suggestions: SuggestionProvider;
+  painGate: PainGate; // RN-TRN-06; health.painGate (spec 005)
 }): TrainingApi {
   return createTrainingService({
     repository: createDexieTrainingRepository(deps.db),
     plan: deps.plan,
     suggestions: deps.suggestions,
+    painGate: deps.painGate,
     clock: deps.clock,
     ids: deps.ids,
   });
@@ -28,13 +30,20 @@ export { workoutProgress } from './application/progress';
 export { workoutSummary } from './domain/summary';
 export { trainingStores } from './infrastructure/schema';
 export { formatRange, formatSetCount, formatTarget } from './ui/format';
-export { useActiveWorkout, useActiveWorkoutView, useLastSession, useWorkoutView } from './ui/hooks';
+export {
+  useActiveWorkout,
+  useActiveWorkoutView,
+  useCompletedWorkouts,
+  useLastSession,
+  useWorkoutView,
+} from './ui/hooks';
 export { SetRow } from './ui/SetRow';
 export { SessionHeader } from './ui/SessionHeader';
 export { SetTable } from './ui/SetTable';
 
 export type { TrainingApi } from './application/service';
 export type {
+  PainGate,
   PlanReader,
   PrefillSuggestion,
   SuggestionProvider,

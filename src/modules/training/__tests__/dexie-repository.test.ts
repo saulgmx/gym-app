@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixedClock, sequentialIds, type Instant, type LocalDate } from '@/shared/kernel';
+import { fixedClock, sequentialIds, type ID, type Instant, type LocalDate } from '@/shared/kernel';
 import { createTraining, trainingStores } from '..';
 import type { SetLog, Workout } from '../domain/types';
 import { dominadas, jalon, plan, prensa } from './fixtures/plan';
@@ -319,5 +319,44 @@ describe('cerrar y días hechos (spec 005, contrato v1.22)', () => {
       }),
     ]);
     expect((await dump(openDb(name))).workouts).toHaveLength(1);
+  });
+});
+
+describe('días hechos con Dexie (RN-TRN-23, 24)', () => {
+  async function closeStarted(service: ReturnType<typeof training>, db: Dexie, workoutId: ID) {
+    const setId = (await setsOf(db, 'prensa')).find(
+      (s) => s.workoutId === workoutId && s.setNumber === 1,
+    )?.id;
+    if (!setId) throw new Error('no Prensa set');
+    ok(await service.logSet(setId, { weightKg: 60, reps: 10 }));
+    ok(await service.toggleSetDone(setId));
+    return ok(await service.finishWorkout(workoutId, {}));
+  }
+
+  it('RN-TRN-23: el viernes hecho el miércoles bloquea el viernes, no el miércoles (AC-33)', async () => {
+    const db = openDb();
+    const service = training(db);
+    const friday = ok(
+      await service.startWorkout(date('2026-11-18'), { plannedFor: date('2026-11-20') }),
+    );
+    await closeStarted(service, db, friday.id);
+
+    expect(
+      await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/already-done' } });
+    expect((await service.startWorkout(date('2026-11-18'))).ok).toBe(true);
+  });
+
+  it('RN-TRN-24: con un día hecho y una sesión activa, gana workout-already-active', async () => {
+    const db = openDb();
+    const service = training(db);
+    const done = ok(await service.startWorkout(date('2026-11-20')));
+    await closeStarted(service, db, done.id);
+    ok(await service.startWorkout(date('2026-11-16')));
+
+    expect(await service.startWorkout(date('2026-11-20'))).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-already-active' },
+    });
   });
 });
