@@ -139,8 +139,19 @@ Los textos de salud viven en `health/domain/messages.ts` (son reglas de spec §6
 - Guardar: `recordPain` con `date = workout.date` y luego `finishWorkout`; si los dos van bien, `navigate('/', { replace: true })`. `saving` deshabilita el botón (AC-27).
 - La sesión ya guardada en `/sesion/:id/N` (AC-28): `SessionPage` distingue `completed` de los demás estados no disponibles.
 
+Detalle aprobado antes de T16 (18-nov):
+- **Contexto:** `AppServices` gana `health: HealthApi`; `bootstrap` y `test-app.tsx` lo pasan desde `compose`.
+- **Estados, en este orden:** cargando → nada; inexistente o `discarded` → "Esta sesión ya no está disponible." (AC-29); `completed` → "Esta sesión ya está guardada." (AC-28); sin series hechas → "No hay series hechas para guardar." (AC-30); si no, el formulario. En los tres primeros el `h1` es "Cierre de sesión"; los dos primeros llevan "Volver a Hoy" y el de sin series "Volver a la sesión". `<title>` siempre "Cierre de sesión · Gym".
+- **Sin parpadeo al guardar:** cuando esta página cierra el workout, la vista en vivo pasa a `completed` antes de navegar; mientras tanto la página no pinta nada, en vez de "ya guardada".
+- **Encabezado:** check decorativo (`aria-hidden`), `h1` "Sesión terminada" y la línea `formatLongDateTitle(workout.date) · workout.name`.
+- **Resumen:** `<dl>` con un `<dt>` oculto ("Duración", "Series hechas", "Ejercicios") y un `<dd>` con el texto de la spec y el número grande: "52 min", "10 series" ("1 serie"), "7 ejercicios" ("1 ejercicio") o "3 de 7 ejercicios" ("1 de 7 ejercicios"). Sin el par de la duración si `workout.date` no es hoy (AC-9). `now` y hoy se leen al montar; series y ejercicios siguen la vista en vivo (spec §7).
+- **Sin nivel:** "Guardar sesión" `disabled` con la ayuda "Elige el nivel de dolor para poder guardar" encima, enlazada por `aria-describedby`; al elegir, la ayuda desaparece.
+- **Guardar:** `recordPain(id, { level, redFlags, date: workout.date })` y, si va bien, `finishWorkout(id, { notes })`, con las notas tal cual (el dominio las recorta; el campo tiene `maxLength` 2000). Bien → `navigate('/', { replace: true })`. Mientras guarda, el botón dice "Guardando…" y está `disabled` (AC-27); con un error vuelve a "Guardar sesión" y lo elegido se conserva.
+- **Errores**, en una región `role="alert"` sobre el pie, que se borra al reintentar: un `Result` con error → `errorMessages[code]`; una promesa que rechaza → `GENERIC_ERROR_MESSAGE`, capturada en la página (no llega también al aviso global). `training/workout-closed` no muestra texto: la vista en vivo ya pasa a "Esta sesión ya está guardada." (AC-31).
+- Fuera de las pruebas de página: el pie fijo con la zona segura, 56 y 48 px y 320 px (E2E de T22).
+
 ### 6.6 A qué ejercicio vuelve "Volver a la sesión"
-Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage` lo acepta solo si es un entero entre 1 y el número de ítems; si no (URL escrita, recarga), usa `workoutProgress(view).current?.itemIndex ?? 1` (AC-21 a AC-23). No se guarda en ningún sitio.
+Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage` lo acepta solo si es un entero entre 1 y el número de ítems; si no (URL escrita, recarga), usa `workoutProgress(view).current?.itemIndex ?? 1` (AC-21 a AC-23). No se guarda en ningún sitio. Con todo hecho vuelve al **1**, como dice AC-23, aunque `SessionPage` sin índice abra el último. Es un `Link` normal, sin `replace`.
 
 ### 6.7 "Hoy"
 `TodayContent` añade dos consultas y sigue sin pintar hasta que todas respondan (spec 003 plan §6.7):
