@@ -162,7 +162,9 @@ Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage
 
 ### 6.8 Sesión activa
 - `SessionFooter` recibe `closeTo: string | null`: en el último ejercicio, si `progress.setsDone > 0`, el enlace principal "Terminar sesión" con `state: { from: index }` (AC-1 a AC-3).
-- `ExitSheet` recibe `onFinish?: () => void`: con al menos una serie hecha añade "Terminar y guardar lo hecho" con su subtítulo, en segundo lugar (AC-4 a AC-6). Es un enlace, como "Salir y continuar después".
+- `ExitSheet` recibe `finishTo: string | null` (antes `onFinish?`; aprobado antes de T18, porque la opción es un enlace, como "Salir y continuar después"): con al menos una serie hecha añade "Terminar y guardar lo hecho" con su subtítulo "Irás al cierre para registrar el dolor", en segundo lugar, con el estilo de "Salir y continuar después" y todo su texto visible como nombre (WCAG 2.5.3) (AC-4 a AC-6). Llevan `state: { from: index }` los dos enlaces al Cierre; navegar desmonta el aviso, así que no hace falta cerrarlo a mano.
+- `setsDone` sale de `workoutProgress(view)` (cuenta las extra). `closeTo` solo se usa en el último ejercicio; con `null`, el pie queda con "Anterior" (AC-3).
+- Las pruebas de la spec 004 AC-12 (`session-exit.test.tsx`, tres opciones) y AC-33 (`session-page.test.tsx`, "ningún Terminar") quedan reemplazadas por AC-4 y AC-6, y por AC-1 y AC-3 de esta spec (§5).
 
 ### 6.9 Componentes de `health/ui`
 - `PainSelector`: `role="group"` con nombre "Dolor lumbar", 11 botones `aria-pressed`, el mensaje (`bandMessage(value)`) en `aria-live="polite"`; `data-band` para el color (`--warn` desde 4) y la barra en 7-10 (las pruebas no dependen de clases).
