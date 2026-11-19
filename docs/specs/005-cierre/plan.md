@@ -207,11 +207,27 @@ Pruebas primero en `health` (P-5) y en las reglas nuevas de `training`. Los nomb
 | AC-1 a AC-6 | Página | `app/__tests__/session-page.test.tsx`, `session-exit.test.tsx` |
 | AC-7 a AC-31 | Página | `app/__tests__/close-page.test.tsx` |
 | AC-32 a AC-45 | Página | `app/__tests__/today-page.test.tsx`, `day-card.test.tsx`, `day-preview.test.tsx` |
-| AC-18, AC-24, AC-32, AC-39, AC-48, AC-50 | E2E: cerrar, guardar, "Hoy" después, sin conexión | `tests/e2e/close.spec.ts` |
+| AC-17, AC-18, AC-22, AC-24, AC-32, AC-39, AC-43, AC-48 | E2E: cerrar, guardar, "Hoy" después, sin conexión | `tests/e2e/close.spec.ts` |
 | AC-47 | E2E con axe, 44 px y 320 px | `tests/e2e/a11y.spec.ts` |
+| AC-50 | Componente con `useRegisterSW` simulado (como spec 002 AC-37) | `app/__tests__/update-prompt.test.tsx` |
 | AC-49 | `npm run size` tras `npm run build` | CI |
 
 Tras cada prueba en verde se rompe el código a propósito, para ver que falla la prueba correcta (handoff, notas).
+
+### 7.1 E2E (T22)
+
+Detalle aprobado antes de T22 (19-nov):
+- **AC-50 sale del E2E:** un service worker nuevo esperando necesita dos builds distintos, e interceptar `sw.js` con `page.route` no es fiable (Chromium y WebKit tratan distinto la petición de actualización). Se prueba en `update-prompt.test.tsx`: con una sesión activa el aviso no aparece y aparece al cerrarla con `finishWorkout`.
+- **AC-24:** el Cierre no tiene barra de pestañas (§6.1), así que se sale con "atrás" (vuelve a la sesión) o abriendo `/` otra vez (spec §8, decisión 18). En los dos, "Hoy" muestra "Continuar sesión" y no hay ninguna entrada de dolor guardada.
+- **"Atrás" después de guardar (AC-18):** con `replace`, lleva a `/sesion/<id>/7`, que muestra "Esta sesión ya está guardada."; la URL no termina en `/cierre`.
+- **Recorrido completo:** las 10 series por la interfaz con el reloj fijo a las 18:00 y movido a las 18:52 antes de "Terminar sesión"; resumen "52 min", "10 series", "7 ejercicios"; dolor 5 y la nota "Buena sesión"; "Hoy" el miércoles 18 con ✓ en el lunes, "1 de 3", "Lun 16 · Full body A · hecha ✓", el aviso de AC-39 y el chip "Espalda 5/10".
+- **Recorrido parcial:** las 5 series del ejemplo y "Terminar y guardar lo hecho" desde el ejercicio 2; "Volver a la sesión" vuelve al 2 y al reabrir el Cierre el dolor empieza sin elegir (AC-22); dolor 2 con "Hormigueo"; "Hoy" el mismo lunes con la tarjeta "Hecha ✓", el aviso de bandera roja (AC-43) y el chip "Espalda 2/10".
+- **Datos:** en los dos recorridos se lee IndexedDB (`storedRows(page, table)` en `tests/e2e/helpers.ts`): el workout `completed` y una sola entrada de dolor. Las series se registran por la interfaz, no se siembran, para no atar la prueba al esquema.
+- **Sin conexión (AC-48):** con el service worker controlando, sin red: empezar, una serie, "Terminar y guardar lo hecho", dolor 0, guardar → "Hoy" con "Hecha ✓".
+- **Pie fijo (AC-17):** Playwright no emula la zona segura (`env()` vale 0; verificada en el iPhone, T23). A 320 × 640 y en el viewport del iPhone 13, tras desplazar hasta el final, el borde inferior de las notas queda encima del borde superior del pie; "Guardar sesión" ≥ 56 px y "Volver a la sesión" ≥ 48 px de alto.
+- **axe y 44 px (AC-47):** el Cierre sin dolor; con 8, "Hormigueo" y "Vejiga" (aviso de urgencias) y la nota; "No hay series hechas para guardar."; "ya guardada"; "Hoy" con aviso, chip y tarjeta hecha; "Hoy" el miércoles con la fila "hecha ✓"; el aviso de salida con 4 opciones. **320 px:** el Cierre completo, "Hoy" con aviso y chip y el aviso de salida. El error al guardar se queda en `close-page.test.tsx` (en E2E no se provoca sin trucos).
+- **Fuera del E2E:** AC-31 (dos pestañas), cubierto por `close-page.test.tsx` y el repositorio; dos clics en dos pestañas son inestables (spec 002 AC-2).
+- **Estabilidad:** las pruebas nuevas van en `describe('spec 005 …')`; `npx playwright test --grep "spec 005" --repeat-each=5` en Chromium y WebKit, en local. En CI corren una vez.
 
 ## 8. Riesgos
 
