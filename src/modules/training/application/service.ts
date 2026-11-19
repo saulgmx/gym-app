@@ -212,9 +212,15 @@ export function createTrainingService(deps: {
           details: { workoutId: created.activeId },
         });
       }
+      if (created.reason === 'done') {
+        return err({
+          code: 'training/already-done',
+          message: `${plannedFor} is already done (RN-TRN-24)`,
+        });
+      }
       return err({
-        code: 'training/already-done',
-        message: `${plannedFor} is already done (RN-TRN-24)`,
+        code: 'training/day-already-trained',
+        message: `${date} already has a completed workout (RN-TRN-27)`,
       });
     },
 

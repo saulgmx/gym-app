@@ -26,7 +26,8 @@ export function createDexieTrainingRepository(db: Dexie): TrainingRepository {
 
     findInProgress: () => workouts.where('status').equals('in_progress').toArray(),
 
-    // RN-TRN-01 first, then RN-TRN-24: a day of the plan already done is not started again.
+    // RN-TRN-01 first, then RN-TRN-24 (a day of the plan already done is not started again) and
+    // RN-TRN-27 (a real day, the workout's date, has at most one completed session).
     createIfAllowed: (workout, newSets) =>
       db.transaction('rw', tables, async (): Promise<CreateResult> => {
         const active = await workouts.where('status').equals('in_progress').first();
@@ -37,6 +38,13 @@ export function createDexieTrainingRepository(db: Dexie): TrainingRepository {
           .filter((w) => w.plannedFor === workout.plannedFor)
           .first();
         if (done) return { created: false, reason: 'done' };
+        // A LocalDate compares correctly as a string (RN-TRN-26), so the date index serves.
+        const trained = await workouts
+          .where('date')
+          .equals(workout.date)
+          .filter((w) => w.status === 'completed')
+          .first();
+        if (trained) return { created: false, reason: 'trained' };
         await workouts.add(workout);
         await sets.bulkAdd(newSets);
         return { created: true };

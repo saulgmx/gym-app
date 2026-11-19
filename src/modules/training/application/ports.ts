@@ -41,7 +41,7 @@ export interface TrainingRepository {
   findSet(setId: ID): Promise<SetLog | undefined>;
   load(workoutId: ID): Promise<WorkoutState | undefined>;
   findInProgress(): Promise<Workout[]>;
-  // Checks RN-TRN-01 and then RN-TRN-24, and inserts, in the same transaction.
+  // Checks RN-TRN-01, RN-TRN-24 and then RN-TRN-27, and inserts, in the same transaction.
   createIfAllowed(workout: Workout, sets: SetLog[]): Promise<CreateResult>;
   // Reads the state, calls fn and writes its changes in one transaction; undefined if no workout.
   mutate<T>(workoutId: ID, fn: ChangeFn<T>): Promise<Result<T, TrainingError> | undefined>;
@@ -54,7 +54,8 @@ export interface TrainingRepository {
 export type CreateResult =
   | { created: true }
   | { created: false; reason: 'active'; activeId: ID } // RN-TRN-01
-  | { created: false; reason: 'done' }; // RN-TRN-24
+  | { created: false; reason: 'done' } // RN-TRN-24
+  | { created: false; reason: 'trained' }; // RN-TRN-27
 
 // Implemented by health (spec 005); compose passes health.painGate (RN-TRN-06).
 export interface PainGate {
