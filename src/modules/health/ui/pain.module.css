@@ -1,0 +1,111 @@
+/* Pain components of the Cierre and "Hoy" (docs/modules/health.md §4, "Componentes").
+   Colors via data-* and aria-pressed, so tests never depend on class names. Fits 320 px. */
+
+.section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Six columns: 11 levels in two rows at 320 px (spec 005 §6.1). */
+.levels {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(var(--touch-min), 1fr));
+  gap: 0.375rem;
+}
+
+.level {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.level[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* From 4 the chosen level turns amber (spec 005 AC-12). */
+.level[aria-pressed='true']:not([data-band='normal']) {
+  border-color: var(--warn);
+  background: var(--warn);
+}
+
+.message {
+  min-height: 1.5rem;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+/* 7-10: amber bar on the left (spec 005 §6.1). */
+.message[data-band='alert'] {
+  padding-left: 0.75rem;
+  border-left: 0.25rem solid var(--warn);
+}
+
+.flags {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.flags legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+
+.flag {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: var(--touch-min);
+}
+
+.flag input {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--warn);
+}
+
+.note {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-input);
+  background: var(--warn-tint);
+  color: var(--text);
+}
+
+.note svg {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--warn);
+}
+
+.note p {
+  margin: 0;
+}

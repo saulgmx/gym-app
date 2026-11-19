@@ -85,8 +85,8 @@ Componentes genéricos, accesibles y con objetivo táctil ≥ 44 px.
 | `ChipSelect` | Selección única con chips (RF-31 selector de ejercicio) |
 | `Chart` | Envoltorio de uPlot (ADR-0004) con tabla alternativa accesible |
 | `StatCard` | Valor + etiqueta |
-| `SafetyNote` | Caja de aviso con `--warn` |
-| `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`, `--backdrop` (fondo de los diálogos modales, spec 002); `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
+| `SafetyNote` | Caja de aviso con `--warn`. Hoy vive dentro de `health/ui` (spec 005 plan §6.9); pasa a `shared` cuando otro módulo la use (P-7) |
+| `tokens.css` | Variables de spec §7.4: colores `--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-muted`, `--accent`, `--warn`, `--warn-tint` (`--warn` al 12%, fondo de los avisos de salud; `--text` encima da 13.58:1, spec 005), `--backdrop` (fondo de los diálogos modales, spec 002); `--font-heading` (Space Grotesk), `--font-body` (Inter); `--radius-input` (0.75rem), `--radius-button` (1rem), `--radius-card` (1.25rem); `--touch-min` (2.75rem = 44 px). Único archivo con colores literales (stylelint) |
 | `fonts.css` | `@font-face` autoalojados, solo subconjunto latino, `font-display: swap` |
 | `cx(...classes)` | Une clases de CSS Modules en un `string`, ignorando `undefined`, `null` y `false` (ver abajo) |
 | `base.css` | Estilos globales: tema oscuro, `rem`, foco visible con `--accent`, movimiento reducido, y la clase global `.visually-hidden` (texto solo para lectores de pantalla; spec 001, T16) |

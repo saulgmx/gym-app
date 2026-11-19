@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.15 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.16 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -138,6 +138,12 @@ function WeekStrip(props: {
   days: TodayPlan[]; weekStart: LocalDate; today: LocalDate;
   done: ReadonlySet<LocalDate>;   // días de pesas hechos; los calcula app con training (spec 005, RN-TRN-23)
 }): JSX.Element; // marcas de spec 003 §6.4; un día de pesas en `done` dibuja ✓ y dice "hecha"
+// Días hechos (contrato v1.16): el día i es addDays(lunes, i); está hecho si es de pesas y `done`
+// tiene su fecha, sea pasado, hoy o futuro (spec 005 AC-33). Cardio, descanso y "fuera del programa"
+// nunca muestran ✓ aunque estén en `done`; las fechas de fuera de la semana se ignoran. Marca:
+// data-mark="done", círculo relleno de --accent con "✓" en --bg (14.10:1; el ✓ es la señal que no
+// depende del color, WCAG 1.4.11), aria-hidden como las demás. Hoy hecho suma el anillo de hoy.
+// aria-label: "<día>, [hoy,] <sesión>, hecha".
 function PlanExerciseList(props: { items: PlannedItem[] }): JSX.Element;  // nombre, series × reps y nota; sin RIR por fila
 export function formatRir(rir: [number, number]): string;                // "RIR 3-4", "RIR 4"
 export { WeekStrip, PlanExerciseList } from './ui';
@@ -222,6 +228,7 @@ No escucha eventos.
 - RN-PLN-24: un seed por cada caso (a)–(i) → `plan/invalid-seed` con su ruta; un `high` pasa el esquema.
 - El seed real (`plan.md`) pasa la validación y cubre las 15 semanas sin huecos.
 - RN-PLN-27: Full body A y B de la semana 1 → 50 y 55 min; Full body B de la semana 2 → 75 min; un ejercicio `time` usa la media de su rango; redondeo al múltiplo de 5 y mínimo 5.
+- `WeekStrip` con `done` (contrato v1.16; spec 005 AC-32 a AC-34, AC-36): el lunes en `done` → "lunes, Full body A, hecha" con `data-mark="done"` y "✓"; un día de pesas futuro en `done` también; hoy en `done` → "…, hoy, Full body B, hecha" con el anillo de hoy; un día de pesas pasado fuera de `done` sigue "no hecha"; cardio y descanso en `done` siguen siendo cardio y descanso; una fecha de otra semana en `done` no marca nada; con `done` vacío, la tira es la de la spec 003.
 
 ## 9. Trazabilidad
 
@@ -247,3 +254,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), spec §6.4, §6.5.
 16. **Spec 003, rediseño de "Hoy" (contrato v1.13):** duración estimada de la sesión del día (RN-PLN-27), con constantes con nombre que comparte `training` (RN-TRN-20). La forma exacta de la API (función exportada o campo de `TodayPlan`) la fija el plan técnico.
 17. **Plan de la spec 003 (contrato v1.14):** RN-PLN-27 como funciones exportadas (`setSeconds`, `plannedSessionSeconds`, `displayMinutes` y constantes), sin cambiar `TodayPlan`; `PlanExerciseList` sin RIR por fila (va una vez en el chip de "Hoy" y bajo el título de `/dia/:date`); `formatRir` exportado; `WeekStrip` con las marcas nuevas y la misma firma (el estado "hecha" llega en la fase 3).
 18. **Plan de la spec 005 (contrato v1.15):** `WeekStrip` recibe `done` (días de pesas hechos). `plan` no conoce `training`: `app` cruza la semana con `training.listWorkouts`. Un día en `done` dibuja ✓ relleno de acento y su `aria-label` dice "hecha"; hoy hecho suma el anillo de hoy.
+19. **Días hechos en `WeekStrip`, antes de T15 de la spec 005 (contrato v1.16, 18-nov-2026):** hecho = día de pesas cuya fecha está en `done`, también si es futuro (AC-33); cardio, descanso y "fuera del programa" nunca llevan ✓; las fechas de otra semana se ignoran; `data-mark="done"` con ✓ en `--bg` sobre `--accent`; `aria-label` "…, hecha". `done` es obligatorio: hasta que T19 conecte los días reales, `app` pasa un conjunto vacío.

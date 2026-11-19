@@ -57,6 +57,17 @@ function statusOf(level: number): PainStatus {
   return 'normal';
 }
 
+/** RN-HLT-02: the text of a level's band. Trusts its input (0-10 from the selector). */
+export function bandMessage(level: number): string {
+  return BAND_MESSAGES[statusOf(level)];
+}
+
+/** RN-HLT-06: the red flag notice, the emergency one with bladder_bowel; undefined without flags. */
+export function redFlagMessage(flags: readonly RedFlag[]): string | undefined {
+  if (flags.length === 0) return undefined;
+  return flags.includes('bladder_bowel') ? EMERGENCY_MESSAGE : RED_FLAG_MESSAGE;
+}
+
 // RN-HLT-02, 06, 07. Invalid input is a programming error (like RN-PLN-16): it throws.
 export function assessPain(level: number, redFlags: readonly RedFlag[]): PainAssessment {
   const checked = checkPainInput(level, redFlags);
@@ -69,11 +80,8 @@ export function assessPain(level: number, redFlags: readonly RedFlag[]): PainAss
     message: BAND_MESSAGES[status],
     blocksProgression: status === 'alert' || flags.length > 0,
   };
-  if (flags.length > 0) {
-    assessment.redFlagMessage = flags.includes('bladder_bowel')
-      ? EMERGENCY_MESSAGE
-      : RED_FLAG_MESSAGE;
-  }
+  const flagMessage = redFlagMessage(flags);
+  if (flagMessage !== undefined) assessment.redFlagMessage = flagMessage;
   return assessment;
 }
 

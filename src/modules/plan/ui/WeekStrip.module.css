@@ -45,6 +45,15 @@
   border-color: var(--border);
 }
 
+/* Workout done (spec 005): ✓ in --bg over --accent (14.10:1). The ✓ is the cue that does not
+   depend on color (WCAG 1.4.11). */
+.done {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.875rem;
+}
+
 .cardio {
   border-style: dotted;
   border-color: var(--text-muted);

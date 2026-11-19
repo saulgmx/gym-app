@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assessPain, checkPainInput } from '../domain/pain';
+import { assessPain, bandMessage, checkPainInput, redFlagMessage } from '../domain/pain';
 import type { RedFlag } from '../domain/types';
 
 // RN-HLT-01, 02, 06, 07, 15 (contract v1.4, decision 6): pain input and its classification.
@@ -170,5 +170,45 @@ describe('assessPain', () => {
       message: NORMAL,
       blocksProgression: false,
     });
+  });
+});
+
+// Contract v1.8, decision 10: the texts the components derive from their own value.
+describe('bandMessage', () => {
+  it.each([
+    [0, NORMAL],
+    [3, NORMAL],
+    [4, ATTENTION],
+    [6, ATTENTION],
+    [7, ALERT],
+    [10, ALERT],
+  ])('RN-HLT-02: el nivel %i da el mensaje de su banda, el mismo que assessPain', (level, text) => {
+    expect(bandMessage(level)).toBe(text);
+    expect(bandMessage(level)).toBe(assessPain(level, []).message);
+  });
+});
+
+describe('redFlagMessage', () => {
+  it('RN-HLT-06: sin banderas es undefined', () => {
+    expect(redFlagMessage([])).toBeUndefined();
+  });
+
+  it.each(['radiating', 'numbness', 'weakness'] as const)(
+    'RN-HLT-06: con %s, el aviso de consultar a un médico',
+    (flag) => {
+      expect(redFlagMessage([flag])).toBe(RED_FLAG);
+    },
+  );
+
+  it('RN-HLT-06: con bladder_bowel en cualquier posición, el de urgencias', () => {
+    expect(redFlagMessage(['bladder_bowel'])).toBe(EMERGENCY);
+    expect(redFlagMessage(['numbness', 'bladder_bowel'])).toBe(EMERGENCY);
+    expect(redFlagMessage(['bladder_bowel', 'weakness'])).toBe(EMERGENCY);
+  });
+
+  it('RN-HLT-06: assessPain da el mismo redFlagMessage', () => {
+    for (const flags of [['numbness'], ['weakness', 'bladder_bowel']] as RedFlag[][]) {
+      expect(assessPain(2, flags).redFlagMessage).toBe(redFlagMessage(flags));
+    }
   });
 });

@@ -116,8 +116,9 @@ describe('WeekStrip', () => {
     { kind: 'rest', position },
   ];
 
-  function renderWeek1(today: LocalDate) {
-    render(<WeekStrip days={week1} weekStart={MONDAY} today={today} />);
+  // done is empty unless a test says otherwise: spec 003 behaves as before (contract v1.16).
+  function renderWeek1(today: LocalDate, done: ReadonlySet<LocalDate> = new Set()) {
+    render(<WeekStrip days={week1} weekStart={MONDAY} today={today} done={done} />);
     const items = within(screen.getByRole('list', { name: 'Semana' })).getAllByRole('listitem');
     const marks = items.map((item) => item.querySelector('[data-mark]'));
     return { items, marks };
@@ -203,7 +204,9 @@ describe('WeekStrip', () => {
   });
 
   it('normaliza weekStart al lunes, como getWeekPlan (RN-PLN-10)', () => {
-    render(<WeekStrip days={week1} weekStart={date('2026-11-19')} today={WEDNESDAY} />);
+    render(
+      <WeekStrip days={week1} weekStart={date('2026-11-19')} today={WEDNESDAY} done={new Set()} />,
+    );
 
     expect(screen.getAllByRole('img')[2]).toHaveAccessibleName(
       'miércoles, hoy, Full body B, pendiente',
@@ -212,11 +215,79 @@ describe('WeekStrip', () => {
 
   it('fuera del programa: "—" a la vista y "fuera del programa" para el lector', async () => {
     const days = await plan.getWeekPlan(date('2026-11-09'));
-    render(<WeekStrip days={days} weekStart={date('2026-11-09')} today={date('2026-11-12')} />);
+    render(
+      <WeekStrip
+        days={days}
+        weekStart={date('2026-11-09')}
+        today={date('2026-11-12')}
+        done={new Set()}
+      />,
+    );
 
     const items = screen.getAllByRole('listitem');
     expect(visible(nth(items, 0))).toBe('L —');
     expect(label(nth(items, 0))).toBe('lunes, fuera del programa');
     expect(label(nth(items, 3))).toBe('jueves, hoy, fuera del programa');
+  });
+
+  // Spec 005 (contract v1.16, decision 19): days of the plan already done.
+  const FRIDAY = date('2026-11-20');
+
+  it('spec 005 AC-32: el lunes hecho se dibuja con ✓ y se lee "hecha"', () => {
+    const { items, marks } = renderWeek1(WEDNESDAY, new Set([MONDAY]));
+
+    expect(label(nth(items, 0))).toBe('lunes, Full body A, hecha');
+    expect(marks[0]?.getAttribute('data-mark')).toBe('done');
+    expect(visible(nth(items, 0))).toBe('L ✓');
+    // The rest stays as in spec 003.
+    expect(label(nth(items, 4))).toBe('viernes, Full body A, pendiente');
+  });
+
+  it('spec 005 AC-33: un día de pesas futuro en done también está hecho', () => {
+    const { items, marks } = renderWeek1(WEDNESDAY, new Set([FRIDAY]));
+
+    expect(label(nth(items, 4))).toBe('viernes, Full body A, hecha');
+    expect(marks[4]?.getAttribute('data-mark')).toBe('done');
+    expect(label(nth(items, 2))).toBe('miércoles, hoy, Full body B, pendiente');
+  });
+
+  it('spec 005 AC-34: hoy hecho lleva ✓ y el anillo de hoy', () => {
+    const { items, marks } = renderWeek1(WEDNESDAY, new Set([WEDNESDAY]));
+
+    expect(label(nth(items, 2))).toBe('miércoles, hoy, Full body B, hecha');
+    expect(marks[2]?.getAttribute('data-mark')).toBe('done');
+    expect(marks[2]?.hasAttribute('data-today')).toBe(true);
+    expect(visible(nth(items, 2))).toBe('X ✓');
+  });
+
+  it('spec 005 AC-36: un día de pesas pasado fuera de done sigue "no hecha"', () => {
+    const { items, marks } = renderWeek1(WEDNESDAY, new Set([FRIDAY]));
+
+    expect(label(nth(items, 0))).toBe('lunes, Full body A, no hecha');
+    expect(marks[0]?.getAttribute('data-mark')).toBe('workout');
+  });
+
+  it('spec 005 §7: cardio y descanso en done siguen siendo cardio y descanso', () => {
+    const { items, marks } = renderWeek1(
+      WEDNESDAY,
+      new Set([date('2026-11-17'), date('2026-11-19')]),
+    );
+
+    expect(label(nth(items, 1))).toBe('martes, cardio');
+    expect(label(nth(items, 3))).toBe('jueves, descanso');
+    expect(marks.map((m) => m?.getAttribute('data-mark'))).not.toContain('done');
+  });
+
+  it('contrato v1.16: una fecha de otra semana en done no marca nada', () => {
+    // Monday of the next week; the strip is week 1.
+    const { marks } = renderWeek1(WEDNESDAY, new Set([date('2026-11-23')]));
+
+    expect(marks.map((m) => m?.getAttribute('data-mark'))).not.toContain('done');
+  });
+
+  it('contrato v1.16: el ✓ no se lee aparte', () => {
+    const { items } = renderWeek1(WEDNESDAY, new Set([MONDAY, WEDNESDAY]));
+
+    for (const item of items) expect(spoken(item)).toBe('');
   });
 });

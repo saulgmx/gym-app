@@ -8,6 +8,7 @@
   --text-muted: #9fb0a6;
   --accent: #b8f25c;
   --warn: #ffb547;
+  --warn-tint: rgb(255 181 71 / 12%); /* faint --warn behind safety notes; --text on it is 13.6:1 */
   --backdrop: rgb(0 0 0 / 60%); /* behind modal dialogs (ConfirmDialog) */
   --font-heading: 'Space Grotesk Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, sans-serif;
