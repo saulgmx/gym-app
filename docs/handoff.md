@@ -7,7 +7,7 @@
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.8: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date`, la 0.6 `/sesion/:workoutId` (spec 002) la 0.7 (18-nov) el rediseño de "Hoy" en §7.2, §7.3 y §13 (spec 003) y la 0.8 (18-nov) el de la sesión activa en §7.2 (spec 004).
+  - `docs/spec.md` v0.9: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date`, la 0.6 `/sesion/:workoutId` (spec 002) la 0.7 (18-nov) el rediseño de "Hoy" en §7.2, §7.3 y §13 (spec 003) la 0.8 (18-nov) el de la sesión activa en §7.2 (spec 004) y la 0.9 (18-nov) las reglas de dolor de §6.2 (pregunta 8).
   - `docs/architecture.md` v1.3: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
@@ -72,7 +72,6 @@
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
-| 8 | Bandas de dolor fijas aunque cambie el umbral; definición de "sube 3 sesiones". Además: el diseño de "Hoy" muestra el aviso con la **última** lectura ≥ 3/10, y la spec §6.2 lo pide sobre el umbral 2 sesiones seguidas o subiendo 3 (3/10 está en la banda "Normal"); decidir si son dos avisos o cambia la regla (spec 003 §6.6) | Fijas; 3 entradas estrictamente crecientes | health.md §10 | 3 |
 
 ## Historia y siguiente paso
 
@@ -116,7 +115,9 @@
    5. ~~Punto de control B, encabezado y menú~~ (T5–T6, PR #28): `SessionHeader` en una fila con el menú flotante; `Elapsed` en `app/pages/` y `formatElapsed` en `app/format-time.ts`.
    6. ~~Punto de control C, página~~ (T7–T12, PR #29): textos, `ExerciseCard`, `ExitSheet`, `SessionFooter`; bundle 163.58 kB.
    7. ~~Punto de control D, verificación y cierre~~ (T13 en el PR #30, T14 en el iPhone, T15 en el PR de cierre): E2E y axe; axe obligó a nombrar las opciones del aviso con todo su texto visible (spec §6.3). Spec y plan 004 marcados como implementados.
-12. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Empieza por la **pregunta pendiente 8** (bandas de dolor, `modules/health.md` §10), que bloquea la fase; luego la **spec 005** (la 004 es el rediseño de la sesión activa), que parte de `docs/design-cierre.md` (diseño propuesto del Cierre: dolor obligatorio, banderas rojas, notas, sesión parcial; revisar sus decisiones abiertas de §7 antes de escribirla). Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión", el aviso y el chip de espalda en "Hoy" (spec 003 §6.6) y "Terminar y guardar lo hecho" en el aviso de salida de la sesión (spec 004).
+12. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Pasos:
+   1. ~~Pregunta 8~~ (18-nov, `modules/health.md` v1.1 §10, spec v0.9 §6.2): bandas fijas aunque cambie el umbral (RN-HLT-02); "sube 3 sesiones" = 3 últimas lecturas estrictamente crecientes, la última > 0 (RN-HLT-05); aviso en Hoy con la última lectura ≥ 4, banderas rojas o alerta persistente, un solo aviso con texto por causa (RN-HLT-12; reemplaza el "≥ 3/10" del diseño de Hoy).
+   2. **Siguiente:** la **spec 005** (la 004 es el rediseño de la sesión activa), que parte de `docs/design-cierre.md` (diseño propuesto del Cierre: dolor obligatorio, banderas rojas, notas, sesión parcial; revisar sus decisiones abiertas de §7 antes de escribirla). Pruebas primero en `health` (constitución). Trae el ✓ de la tira, "N" de "N de M", las filas "hecha ✓" de "Otra sesión", el aviso y el chip de espalda en "Hoy" (spec 003 §6.6) y "Terminar y guardar lo hecho" en el aviso de salida de la sesión (spec 004).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -177,4 +178,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3 (MVP usable en el gym). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, docs/modules/health.md y docs/design-cierre.md (diseño propuesto de la pantalla de Cierre). Empieza por la pregunta pendiente 8 (bandas de dolor, health.md §10), que bloquea la fase, y luego la spec 005 (la 004 fue el rediseño de la sesión activa), a partir de design-cierre.md y sus decisiones abiertas (§7). Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3 (MVP usable en el gym). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, docs/modules/health.md y docs/design-cierre.md (diseño propuesto de la pantalla de Cierre). La pregunta 8 ya está resuelta (health.md v1.1 §10). Sigue con la spec 005 (la 004 fue el rediseño de la sesión activa), a partir de design-cierre.md y sus decisiones abiertas (§7). Guíame paso a paso, una tarea a la vez."

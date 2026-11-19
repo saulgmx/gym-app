@@ -49,13 +49,13 @@ Lista de las sesiones de entrenamiento de la semana, **sin incluir la de hoy**:
 - Es la versión mínima de "cambiar sesión" para v1: solo lee el plan de la semana (y los workouts hechos en la fase 3).
 
 ### Dolor y molestia lumbar (decidido; **fase 3**, aún no implementado)
-- **Aviso de dolor:** recuadro ámbar (borde y icono #FFB547, fondo tenue) **arriba de la tarjeta**, lo primero que se ve. Solo aparece con la última lectura de **3/10 o más**. Informativo, sin botones. Texto del diseño: "Espalda baja 4/10 en la última sesión. Hoy prioriza la técnica y no añadas carga."
+- **Aviso de dolor:** recuadro ámbar (borde y icono #FFB547, fondo tenue) **arriba de la tarjeta**, lo primero que se ve. Aparece si la última lectura es **4/10 o más**, si tiene banderas rojas o si hay alerta persistente (RN-HLT-12, decidido el 18-nov; reemplaza la propuesta inicial de "3/10 o más", que chocaba con la banda Normal). Informativo, sin botones. Texto del diseño: "Espalda baja 4/10 en la última sesión. Hoy prioriza la técnica y no añadas carga."
 - **Última molestia:** chip "Espalda N/10" **dentro de la tarjeta**, junto a Bloque y RIR, con cualquier lectura registrada.
 - **Sin dato:** no se muestra ni el aviso ni el chip.
 - **D2 (sesión en curso):** no se muestra nada de esto.
 - Alternativas descartadas: chip en la fila superior (se aprieta con día y semana) y aviso dentro de la tarjeta (la hace crecer y baja el CTA).
 - Prototipo: ajuste `espalda` del tablero D (Sin dato / Molestia leve / Dolor); solo se ve con `fases` = "Con fases 3 y 4", con etiqueta "Fase 3".
-- A definir en la spec (`health`): umbral exacto, qué ajusta la app con dolor y el texto definitivo. El registro del dolor sigue siendo al cerrar la sesión.
+- A definir en la spec 005: el texto de cada causa, cuál manda si hay varias y qué ajusta la app con dolor. El disparador ya está decidido (`docs/modules/health.md` v1.1, RN-HLT-12). El registro del dolor sigue siendo al cerrar la sesión.
 
 ### Tira de días (WeekStrip) — decisión: entra
 Es una lista de 7 días (`<ol>` con un `<li>` por día). Cada día es una letra sobre un círculo de 32 px:
@@ -128,6 +128,6 @@ Propuesta de modelo en `plan`: `ScheduleOverride { date, templateId | 'rest' | '
 5. Cambiar sesión queda fuera de v1; D2 ya no lo muestra de todos modos.
 6. **Resuelto:** "Hoy subes" se construye en la fase 4 (`progression`) y se muestra solo cuando hay sugerencia de subida; descanso/cardio, ver "Días de descanso y de cardio".
 7. **Tira de días (WeekStrip):** decidido que entra. Falta definir en la spec el contrato que alimenta la tira (día → sesión/cardio/descanso/override + si ya está hecha). Los módulos no se importan entre sí salvo por `index.ts`: `plan` aporta lo programado y `training` lo hecho; la composición de ambos debe vivir donde ya se componen otros módulos (ver architecture.md), sin ciclos. Cardio y descanso no cuentan para "N de M sesiones".
-8. **Aviso y chip de espalda (fase 3):** definir el contrato de lectura (última lectura de dolor lumbar con fecha y valor 0-10) que `health` expone por su `index.ts`, el umbral del aviso (diseño: 3 o más) y su texto.
+8. **Aviso y chip de espalda (fase 3):** definir el contrato de lectura (última lectura de dolor lumbar con fecha y valor 0-10) que `health` expone por su `index.ts`, el texto del aviso por causa (el disparador ya está decidido: RN-HLT-12, última ≥ 4, banderas rojas o alerta persistente).
 9. ~~Descanso y cardio~~ **Resuelto en la spec 003.** Cardio no se registra en v1; "Otra sesión de esta semana": solo semana ISO actual (RN-TRN-14); las filas "hecha" son fase 3.
 10. ~~Texto de descartar~~ **Resuelto** (RN-TRN-15; ver `docs/design-sesion-activa.md`).

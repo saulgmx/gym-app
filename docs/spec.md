@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.8 (borrador) · **Fecha:** 18-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.9 (borrador) · **Fecha:** 18-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -166,7 +166,9 @@ Entrada: las últimas sesiones del ejercicio y el rango de repeticiones objetivo
 
 Reglas adicionales:
 
-- Si el dolor supera el umbral **2 sesiones seguidas**, o sube durante **3 sesiones seguidas**, mostrar aviso persistente en Hoy.
+- Las bandas 0-3 / 4-6 / 7-10 y sus mensajes son **fijos**: no cambian con el umbral configurable (RF-51), que solo decide el aviso persistente.
+- Si el dolor supera el umbral **2 sesiones seguidas**, o sube durante **3 sesiones seguidas** (3 últimas lecturas estrictamente crecientes, la última > 0), mostrar aviso persistente en Hoy.
+- Hoy también muestra el aviso cuando la **última lectura** está en Atención o Alerta (≥ 4) o tiene banderas rojas, para recordar la acción de su mensaje en la sesión siguiente. Es un solo aviso; su texto depende de la causa.
 - **Banderas rojas** (casilla opcional al cerrar): dolor que baja por la pierna, hormigueo o adormecimiento, debilidad en el pie, problemas de control de vejiga o intestino. Si se marca alguna, mostrar un mensaje destacado para consultar a un médico (urgencias si hay problema de vejiga o intestino) y no sugerir progresión.
 - Aviso permanente en Ajustes: la app no es un dispositivo médico.
 
