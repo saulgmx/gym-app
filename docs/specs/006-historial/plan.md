@@ -192,7 +192,7 @@ Las dos páginas entran en el bundle inicial, como las demás. `React.lazy` comp
 - **`formatBackChip`** pasa de `today/format.ts` a `app/format-pain.ts`.
 
 ### 6.11 Presupuesto del bundle
-Bundle inicial actual: 169.00 kB de 200 kB. Entran dos páginas, tres hooks y unos formatos, sin dependencias nuevas: se estiman 3 a 5 kB. Se mide en la tarea de cierre (`npm run build` y `npm run size`).
+Bundle inicial actual: 169.00 kB de 200 kB. Entran dos páginas, tres hooks y unos formatos, sin dependencias nuevas: se estiman 3 a 5 kB. Se mide en la tarea de cierre (`npm run build` y `npm run size`). **Medido en T16 (19-nov): 171.09 kB** (171 090 bytes, `size-limit --json`), 2.09 kB más que antes y 28.9 kB por debajo del límite.
 
 ## 7. Estrategia de pruebas
 
