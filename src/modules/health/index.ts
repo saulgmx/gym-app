@@ -16,6 +16,7 @@ export function createHealth(deps: { db: Dexie; clock: Clock; ids: IdGenerator }
 }
 
 export { healthStores } from './infrastructure/schema';
+export { formatRedFlags } from './ui/labels';
 export { usePainForWorkouts, usePainSummary } from './ui/hooks';
 export { PainNotice } from './ui/PainNotice';
 export { PainSelector } from './ui/PainSelector';

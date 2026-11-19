@@ -1,17 +1,11 @@
 import { redFlagMessage } from '../domain/pain';
 import { RED_FLAGS, type RedFlag } from '../domain/types';
+import { RED_FLAG_LABELS } from './labels';
 import styles from './pain.module.css';
 import { SafetyNote } from './SafetyNote';
 
 // Red flags of the Cierre (docs/modules/health.md §4, "Componentes"; spec 005 AC-13 to AC-15).
 // The notice comes from the flags themselves, so it shows with no pain level chosen (contract v1.8).
-
-const LABELS: Record<RedFlag, string> = {
-  radiating: 'Dolor que baja por la pierna',
-  numbness: 'Hormigueo o adormecimiento',
-  weakness: 'Debilidad en el pie',
-  bladder_bowel: 'Problemas de control de vejiga o intestino',
-};
 
 export function RedFlagsChecklist({
   value,
@@ -41,7 +35,7 @@ export function RedFlagsChecklist({
               toggle(flag);
             }}
           />
-          <span>{LABELS[flag]}</span>
+          <span>{RED_FLAG_LABELS[flag]}</span>
         </label>
       ))}
       {/* Always in the DOM, so the first notice is announced too. */}

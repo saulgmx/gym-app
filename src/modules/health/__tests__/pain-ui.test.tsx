@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { PainNotice, PainSelector, RedFlagsChecklist, type RedFlag } from '..';
+import { formatRedFlags, PainNotice, PainSelector, RedFlagsChecklist, type RedFlag } from '..';
 
 // The pain components of the Cierre and "Hoy" (contract v1.8, §4 "Componentes", decision 10;
 // spec 005 AC-10 to AC-15, AC-39, AC-43). Texts are literal (spec §6.2, contract §6.1).
@@ -214,5 +214,21 @@ describe('PainNotice', () => {
     for (const icon of icons) expect(icon).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('note')).toHaveTextContent(message, { normalizeWhitespace: true });
     expect(screen.getByRole('note').textContent.trim()).toBe(message);
+  });
+});
+
+describe('formatRedFlags', () => {
+  it('spec 006 AC-18: la etiqueta del Cierre de una señal', () => {
+    expect(formatRedFlags(['numbness'])).toBe('Hormigueo o adormecimiento');
+  });
+
+  it('spec 006 AC-18: varias, con ", " y en el orden de RED_FLAGS aunque lleguen en otro', () => {
+    expect(formatRedFlags(['bladder_bowel', 'radiating', 'weakness', 'numbness'])).toBe(
+      LABELS.join(', '),
+    );
+  });
+
+  it('sin señales → cadena vacía', () => {
+    expect(formatRedFlags([])).toBe('');
   });
 });
