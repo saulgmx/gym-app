@@ -24,18 +24,23 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
   // as a notice from the global unhandledrejection handler.
   ready.catch(() => undefined);
 
+  // One generator for every module, so IDs stay monotonic per device (ADR-0009).
+  const ids = createUuidV7Generator();
+  // health before training: training will take health.painGate (spec 005 T12, RN-TRN-06).
+  const health = createHealth({ db, clock, ids });
+
   return {
     ready,
     plan,
     training: createTraining({
       db,
       clock,
-      ids: createUuidV7Generator(),
+      ids,
       plan,
       suggestions: nullSuggestions,
     }),
     progression: createProgression(),
-    health: createHealth(),
+    health,
     data: createData(),
   };
 }

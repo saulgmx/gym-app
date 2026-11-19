@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.5 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.7 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -12,7 +12,7 @@ Registro del dolor lumbar por sesión, banderas rojas, clasificación y alertas,
 
 | Tabla | Clave e índices | Contenido |
 |---|---|---|
-| `painEntries` | `id, &workoutId, recordedAt` | Un registro de dolor por sesión (índice único en `workoutId`) |
+| `painEntries` | `id, &workoutId` | Un registro de dolor por sesión (índice único en `workoutId`). Sin índice en `recordedAt`: un `Instant` no se ordena como string (ADR-0009), así que las últimas se ordenan en memoria (RN-HLT-14) |
 | `bodyMetrics` | `id, date` | Peso corporal |
 | `healthSettings` | `id` (`'singleton'`) | Umbral de dolor y meta de peso |
 
@@ -67,7 +67,7 @@ interface PainSummary {             // "últimas" = por recordedAt, de la más r
 export function createHealth(deps: { db: Dexie; clock: Clock; ids: IdGenerator }): HealthApi;
 
 // Tablas propias, para que app/db.ts componga db.version(n).stores({...}).
-export const healthStores: Record<'painEntries', string>;   // painEntries: 'id, &workoutId, recordedAt'
+export const healthStores: Record<'painEntries', string>;   // painEntries: 'id, &workoutId'
 
 export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-flag';
 
@@ -76,12 +76,13 @@ export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-f
 interface HealthApi {
   recordPain(workoutId: ID, input: { level: number; redFlags: RedFlag[]; date: LocalDate }): Promise<Result<PainAssessment, HealthError>>; // RF-21, RF-22, RN-HLT-01, 09
   assessPain(level: number, redFlags: RedFlag[]): PainAssessment;      // puro, para la vista previa del Cierre
-  getPainSummary(): Promise<PainSummary>;
-  hasPainEntry(workoutId: ID): Promise<boolean>;
+  getPainSummary(): Promise<PainSummary>;                              // RN-HLT-14, 17
+  hasPainEntry(workoutId: ID): Promise<boolean>;                       // RN-HLT-18
   painGate: PainGate;                                                  // { hasPainEntry }, para training
 }
+// Todas las operaciones async rechazan si falla la base (RN-HLT-16).
 
-export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando
+export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando (RN-HLT-19)
 
 // Componentes (spec 005 plan §6.9). Más adelante: PainHistoryChart (RF-33), BodyWeightChart (RF-34).
 function PainSelector(props: { value: number | null; onChange: (level: number) => void; assessment: PainAssessment | null }): JSX.Element;
@@ -132,13 +133,17 @@ No escucha eventos.
 | RN-HLT-06 | Cualquier bandera roja → `redFlagMessage` destacado y `blocksProgression = true`. Con `bladder_bowel`, el mensaje indica acudir a urgencias (§6.1), aunque haya otras banderas. Sin banderas, `PainAssessment` no tiene la propiedad `redFlagMessage` (no basta con `undefined`: `exactOptionalPropertyTypes`). | spec §6.2 |
 | RN-HLT-07 | `alert` (7-10) → `blocksProgression = true`. `blocksProgression` es `true` solo con `alert` o con alguna bandera (RN-HLT-06); `normal` y `attention` sin banderas no bloquean. | spec §6.2 |
 | RN-HLT-08 | La alerta persistente es **derivada**: se calcula con las últimas entradas y desaparece sola cuando dejan de cumplirse las condiciones. Una bandera roja mantiene la alerta hasta que se registra una sesión sin banderas: `red_flag` se cumple solo si la **última** entrada tiene banderas. `persistentAlert` devuelve una sola razón, con prioridad `red_flag` → `over_threshold_2x` → `rising_3x` (el orden de RN-HLT-13); sin entradas, `null`. | Spec 005 (AC-45) |
-| RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza, con el mismo `id` y `recordedAt` nuevo (permite reintentar el cierre). | RF-21 |
+| RN-HLT-09 | Una entrada de dolor por workout. Registrar de nuevo sobre el mismo workout la reemplaza, con el mismo `id` y `recordedAt` nuevo (permite reintentar el cierre). `recordPain` valida primero (`checkPainInput`); con un error devuelve ese `Result` sin leer ni escribir la base. Si es válida, guarda `{ id, workoutId, date, recordedAt: clock.now(), level, redFlags }` con el nivel y las banderas normalizados, y devuelve `ok(assessPain(...))`. La búsqueda por `workoutId` y la escritura van en una transacción `rw`: si existe, la entrada se reemplaza entera (nivel, banderas, `date` y `recordedAt` nuevos) y solo conserva el `id`; `ids.next()` solo se llama al crear. Dos pestañas que registran el mismo workout se serializan y queda una sola entrada, la última. `health` no comprueba que el workout exista (no conoce `training`; lo garantiza el Cierre) ni valida `date` (`LocalDate` tipado que `app` toma del workout). | RF-21, spec 005 |
 | RN-HLT-10 | `weightKg` del peso corporal en [30, 250]; una medición por día (la nueva reemplaza). [PROPUESTO] | RF-34 |
 | RN-HLT-11 | Promedio semanal de peso: media de las mediciones de la semana ISO; la meta se compara contra el cambio entre promedios semanales. | plan.md |
 | RN-HLT-12 | Aviso de dolor en Hoy: se muestra si `latestAssessment.status` no es `normal`, si `latest.redFlags` no está vacío o si `persistentAlert` no es `null`. Es un solo aviso; su texto depende de la causa (RN-HLT-13, §6.1). Sin entradas, no hay aviso. `noticeOf` es `null` exactamente cuando no se cumple ninguna de esas condiciones; `rising_3x` puede dar aviso con la última entrada en `normal` ([1, 2, 3], AC-40). | spec §6.2 |
 | RN-HLT-13 | Causa del aviso de Hoy (RN-HLT-12) cuando hay varias, de mayor a menor prioridad: `bladder_bowel` en la última → otra bandera roja en la última → `alert` (7-10) → `over_threshold_2x` → `rising_3x` → `attention` (4-6). Se muestra un solo texto, el de la causa de mayor prioridad (§6.1). La causa combina `assessPain` de la última entrada con `persistentAlert`. Con umbral 3, `over_threshold_2x` siempre llega con la última ≥ 4, así que gana a `attention`. | Spec 005 |
-| RN-HLT-14 | Las "últimas entradas" (RN-HLT-04, 05, 08, 12) se ordenan por `recordedAt`, de la más reciente a la más antigua: una sesión vieja cerrada tarde es la última. | Spec 005 plan §6.3 |
+| RN-HLT-14 | Las "últimas entradas" (RN-HLT-04, 05, 08, 12) se ordenan por `recordedAt`, de la más reciente a la más antigua: una sesión vieja cerrada tarde es la última. `getPainSummary` lee todas las entradas y las ordena en memoria con `compareInstants` (ADR-0009: nunca como string, ni por `id`, que se conserva al reemplazar); con instantes iguales, primero el `id` mayor, para que el orden sea determinista. | Spec 005 plan §6.3 |
 | RN-HLT-15 | `redFlags` solo contiene valores de `RedFlag` y ninguno se repite; si no, `health/invalid-red-flag`, por la primera bandera que falle en el orden recibido. | RF-21, spec 005 |
+| RN-HLT-16 | Un fallo del almacenamiento (la base lanza) es un error inesperado: la promesa rechaza, no se devuelve un `Result`, y lo muestra el aviso genérico (ADR-0010), como RN-TRN-18. Vale para todas las operaciones del servicio; un fallo a mitad del reemplazo de RN-HLT-09 no deja nada a medias (transacción). | ADR-0010, spec 005 |
+| RN-HLT-17 | `getPainSummary` arma el resumen con el dominio sobre las entradas de RN-HLT-14: `latest` es la `PainEntry` completa más reciente, `latestAssessment = assessPain(latest)`, `persistentAlert` y `notice` con `threshold`, que es la constante 3 del servicio hasta Ajustes (RF-51). Sin entradas: `{ latest: null, latestAssessment: null, persistentAlert: null, notice: null, threshold: 3 }`. | Spec 005 |
+| RN-HLT-18 | `hasPainEntry(workoutId)` es `true` si existe una entrada con ese `workoutId` y `false` si no (también con uno desconocido). `painGate` es `{ hasPainEntry }`, la misma función. | RN-TRN-06, spec 005 |
+| RN-HLT-19 | `usePainSummary(health)` (en `ui/hooks.ts`, con `useLiveQuery`) devuelve `undefined` solo mientras carga y nunca `null`: sin entradas devuelve el resumen vacío de RN-HLT-17. No lleva clave, porque no recibe parámetros y `health` es una sola instancia por `compose` (sus dependencias son `[health]`). Se actualiza solo al cambiar `painEntries`: `getPainSummary` solo espera promesas de Dexie y el resto es síncrono. Un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta, como RN-TRN-19. | RN-TRN-19, spec 005 |
 
 ### 6.1 Textos [PROPUESTO]
 
@@ -177,6 +182,18 @@ Desde aquí, las listas de entradas van de la más reciente a la más antigua (`
 - Textos (§6.1): `attention` y `alert` con N; `over_threshold_2x` con "por encima de 3/10" (U); `latestFirst` [3, 2, 1] → "(1 → 2 → 3)".
 - `PainAlertRaised` se publica solo en la transición de "sin alerta" a "con alerta".
 
+Servicio (integración con `fake-indexeddb`, spec 005 T5):
+
+- RN-HLT-09: un nivel o una bandera inválidos devuelven el error sin tocar la base (ni lectura ni escritura) y sin llamar a `ids.next()`; válido → guarda la entrada con `recordedAt = clock.now()` y el nivel normalizado (`-0` → 0), y devuelve la evaluación; registrar otra vez el mismo workout conserva el `id`, cambia nivel, banderas, `date` y `recordedAt`, no duplica y no llama a `ids.next()`; dos `recordPain` concurrentes del mismo workout dejan una sola entrada.
+- RN-HLT-14: una sesión del lunes cerrada después de la del martes es la última; dos `recordedAt` con offsets distintos se ordenan por instante, no por string; con instantes iguales, primero el `id` mayor.
+- RN-HLT-17: sin entradas, el resumen vacío con `threshold: 3`; con entradas, `latest`, `latestAssessment`, `persistentAlert` y `notice` coinciden con el dominio.
+- RN-HLT-18: `hasPainEntry` y `painGate.hasPainEntry` → `true` tras registrar, `false` con un workout desconocido.
+- RN-HLT-16: si la base lanza, `recordPain`, `getPainSummary` y `hasPainEntry` rechazan; un fallo a mitad del reemplazo deja la entrada anterior intacta.
+
+Hook (spec 005 T8):
+
+- RN-HLT-19: `undefined` en el primer render y luego el resumen vacío (nunca `null`); registrar dolor, nuevo o reemplazado, actualiza el resultado sin volver a renderizar desde fuera; con otra instancia de `health` consulta la nueva; una lectura que lanza (un *hook* `reading` de Dexie) hace llegar su error al *error boundary*. No sirve una base cerrada: `liveQuery` espera en silencio a que se abra y el hook se queda en `undefined`. Que otra pestaña escriba no se prueba con `fake-indexeddb`, como en `training`.
+
 ## 9. Trazabilidad
 
 RF-21, RF-22, RF-33, RF-34, RF-51, spec §6.2.
@@ -193,6 +210,8 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 5. **Plan de la spec 005 (contrato v1.3):** API reducida a lo que usa el Cierre (`recordPain`, `assessPain`, `getPainSummary`, `hasPainEntry`, `painGate`), `createHealth` sin `bus`, `healthStores`, `HealthErrorCode`, `usePainSummary(health)` y los componentes `PainSelector`, `RedFlagsChecklist` y `PainNotice` (`PainAlertBanner` pasa a llamarse así). `PainSummary` gana `notice` y pierde `series` y `since` hasta que se usen. Orden por `recordedAt` (RN-HLT-14). Funciones del dominio en §4.
 6. **Entrada y clasificación del dolor (contrato v1.4, 18-nov-2026, antes de T1 de la spec 005):** se revisa primero el nivel y se devuelve solo el primer error; no finitos rechazados y `-0` como 0; `checkPainInput` válido devuelve el nivel normalizado y un arreglo nuevo de banderas en su orden; `assessPain` lanza con una entrada inválida (error de programación); `status` y `message` solo dependen del nivel y `redFlagMessage` solo existe con banderas; `blocksProgression` = `alert` o alguna bandera; RN-HLT-15 para las banderas; los mensajes técnicos citan su regla (RN-HLT-01, 02, 06, 07, 15).
 7. **Alertas y aviso de "Hoy" (contrato v1.5, 18-nov-2026, antes de T3 de la spec 005):** `persistentAlert` y `noticeOf` reciben `Pick<PainEntry, 'level' | 'redFlags'>` de la más reciente a la más antigua y confían en su entrada (orden del servicio, entradas validadas al guardarse, umbral constante); solo cuentan las 2 o 3 primeras y con menos no se cumple la condición; `persistentAlert` da una sola razón (`red_flag` → `over_threshold_2x` → `rising_3x`) y `red_flag` solo con banderas en la última; RN-HLT-08 deja de ser `[PROPUESTO]` (AC-45); `noticeOf` es `null` exactamente cuando no se cumple RN-HLT-12; N y U como enteros y "a → b → c" en orden cronológico; los textos con valores son funciones en `messages.ts` (RN-HLT-04, 05, 08, 12, 13).
+8. **Servicio y almacenamiento (contrato v1.6, 18-nov-2026, antes de T5 de la spec 005):** `painEntries` pierde el índice `recordedAt` (ADR-0009: un `Instant` no se ordena como string; corrige el plan §4) y las últimas se ordenan en memoria con `compareInstants`, con empate por `id` mayor (RN-HLT-14); `recordPain` valida sin tocar la base, normaliza, reemplaza en una transacción conservando solo el `id` y llama a `ids.next()` solo al crear; `health` no comprueba que el workout exista ni valida `date` (RN-HLT-09); un fallo de la base rechaza (RN-HLT-16); resumen vacío y `threshold: 3` constante (RN-HLT-17); `hasPainEntry` y `painGate` (RN-HLT-18).
+9. **Hook (contrato v1.7, 18-nov-2026, antes de T8 de la spec 005):** `usePainSummary` devuelve `undefined` solo al cargar y nunca `null`, sin clave porque no tiene parámetros, se actualiza con `painEntries` y lanza sus errores en el render (RN-HLT-19).
 
 Preguntas abiertas:
 

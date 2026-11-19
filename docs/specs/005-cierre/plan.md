@@ -23,7 +23,7 @@ Ya escritos en `modules/health.md` v1.3, `modules/training.md` v1.20 y `modules/
 **`health` v1.3:**
 
 ```ts
-export const healthStores: Record<'painEntries', string>;   // 'id, &workoutId, recordedAt'
+export const healthStores: Record<'painEntries', string>;   // 'id, &workoutId' (contrato v1.6)
 
 export function createHealth(deps: { db: Dexie; clock: Clock; ids: IdGenerator }): HealthApi;
 // `bus` llega cuando se publiquen los eventos de §5 (fase 4), como en training (P-7).
@@ -81,7 +81,7 @@ export function useCompletedWorkouts(training: TrainingApi, range: { from: Local
 
 ## 4. Datos
 
-- **Base v3** en `app/db.ts`: `db.version(3).stores({ ...planStores, ...trainingStores, ...healthStores })`. Solo añade `painEntries`; no hace falta `upgrade` (las tablas de v2 no cambian). Índice único en `workoutId` (RN-HLT-09) y en `recordedAt` para leer las últimas.
+- **Base v3** en `app/db.ts`: `db.version(3).stores({ ...planStores, ...trainingStores, ...healthStores })`. Solo añade `painEntries`; no hace falta `upgrade` (las tablas de v2 no cambian). Índice único en `workoutId` (RN-HLT-09). Sin índice en `recordedAt` (contrato `health` v1.6): un `Instant` no se ordena como string (ADR-0009), así que `getPainSummary` lee todas las entradas y las ordena con `compareInstants` (RN-HLT-14); es una por sesión, unas 200 al año.
 - Sin índice nuevo en `workouts` (§3, `listWorkouts`).
 - `PainEntry` se guarda tal cual (como las filas de `training`).
 - Exportación: sin cambios hasta la spec 007, que añade el `DataPort` de `health`.
