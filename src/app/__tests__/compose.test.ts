@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { Dexie } from 'dexie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as kernel from '@/shared/kernel';
 import { fixedClock } from '@/shared/kernel';
 import { compose } from '../compose';
 import { openDatabase } from '../db';
@@ -8,6 +9,12 @@ import planSeed from '../seed/plan-seed.json';
 
 // Spec 001 plan §5 (startup): `ready` resolves with a valid seed and rejects with an invalid one
 // or when the database does not open (AC-21, shown by use(ready) in T17).
+
+// The real kernel, with the UUIDv7 factory counted (spec 005 T7: one generator per device).
+vi.mock('@/shared/kernel', async (importOriginal) => {
+  const actual = await importOriginal<typeof kernel>();
+  return { ...actual, createUuidV7Generator: vi.fn(actual.createUuidV7Generator) };
+});
 
 const clock = fixedClock('2026-11-18T08:00:00-06:00');
 const opened: Dexie[] = [];
@@ -32,6 +39,30 @@ const brokenIndexedDB = {
 } as unknown as IDBFactory;
 
 describe('compose', () => {
+  it('ADR-0009: training y health comparten un solo IdGenerator (monótono por dispositivo)', () => {
+    vi.mocked(kernel.createUuidV7Generator).mockClear();
+
+    start(planSeed);
+
+    expect(kernel.createUuidV7Generator).toHaveBeenCalledTimes(1);
+  });
+
+  it('AC-46: health guarda el dolor en la base de la app', async () => {
+    const app = start(planSeed);
+    await app.ready;
+    const started = await app.training.startWorkout(clock.today());
+    if (!started.ok) throw new Error(started.error.code);
+
+    const recorded = await app.health.recordPain(started.value.id, {
+      level: 3,
+      redFlags: [],
+      date: started.value.date,
+    });
+
+    expect(recorded.ok).toBe(true);
+    expect(await app.health.hasPainEntry(started.value.id)).toBe(true);
+  });
+
   it('ready resuelve con el seed real y el plan queda cargado', async () => {
     const app = start(planSeed);
 
@@ -90,16 +121,17 @@ describe('compose', () => {
 });
 
 describe('openDatabase', () => {
-  it("abre 'gym-app' en la versión 2 con las tablas de plan y training", async () => {
+  it("abre 'gym-app' en la versión 3 con las tablas de plan, training y health", async () => {
     const db = openDatabase();
     opened.push(db);
     await db.open();
 
     expect(db.name).toBe('gym-app');
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3);
     expect(db.tables.map((t) => t.name).sort()).toEqual([
       'blocks',
       'exercises',
+      'painEntries',
       'programs',
       'sets',
       'templates',
