@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { HealthApi } from '@/modules/health';
 import type { TrainingApi, Workout } from '@/modules/training';
-import { err, fixedClock, type LocalDate } from '@/shared/kernel';
+import { err, fixedClock, type Clock, type Instant, type LocalDate } from '@/shared/kernel';
 import type { AppServices } from '../context';
 import { GENERIC_ERROR_MESSAGE } from '../errors/messages';
 import { closeTestDatabases, createTestServices, renderRoute, type Entry } from './test-app';
@@ -155,6 +155,50 @@ describe('encabezado y resumen', () => {
       expect(summaryValues()).toEqual(['52 min', '6 series', '3 de 7 ejercicios']);
     });
   });
+
+  it('spec §6.1: los minutos se calculan al abrir y no cambian con el reloj', async () => {
+    // A clock one minute later on every read: a page that reads `now` again would move.
+    let minute = 52;
+    const ticking: Clock = {
+      now: () => `2026-11-16T18:${String(minute++).padStart(2, '0')}:00-06:00` as Instant,
+      today: () => MONDAY,
+    };
+    const { services, workout } = await withWorkout(ticking);
+    await doPartial(services.training, workout);
+    await open(closePath(workout), services);
+    await screen.findByRole('heading', { level: 1, name: 'Sesión terminada' });
+    const opened = summaryValues()[0];
+
+    await act(() => done(services.training, workout, 2, 2));
+
+    await waitFor(() => {
+      expect(summaryValues()[1]).toBe('6 series');
+    });
+    expect(summaryValues()[0]).toBe(opened);
+  });
+
+  it('una sesión del viernes cerrada el sábado: su fecha, sin minutos, y el dolor con su día', async () => {
+    const services = createTestServices({
+      clock: fixedClock('2026-11-21T09:00:00-06:00'),
+      seedClock: fixedClock('2026-11-20T18:00:00-06:00'),
+    });
+    await services.ready;
+    const started = await services.training.startWorkout('2026-11-20' as LocalDate);
+    if (!started.ok) throw new Error(started.error.code);
+    const workout = started.value;
+    await doPartial(services.training, workout);
+    const { router, user } = await open(closePath(workout), services);
+
+    expect(await screen.findByText('Viernes 20 de noviembre · Full body A')).toBeInTheDocument();
+    expect(summaryValues()).toEqual(['5 series', '3 de 7 ejercicios']);
+    await user.click(screen.getByRole('button', { name: '2' }));
+    await act(() => user.click(saveButton()));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    expect((await services.health.getPainSummary()).latest?.date).toBe('2026-11-20');
+  });
 });
 
 describe('dolor, banderas y notas', () => {
@@ -295,7 +339,9 @@ describe('guardar', () => {
   it('AC-25: si guardar el dolor rechaza, no cierra, muestra el error genérico y se puede reintentar', async () => {
     const { services, workout } = await withWorkout();
     await doAll(services.training, workout);
-    const finish = vi.fn(services.training.finishWorkout);
+    const finish = vi.fn((...args: Parameters<TrainingApi['finishWorkout']>) =>
+      services.training.finishWorkout(...args),
+    );
     let fail = true;
     const spied = withTraining(
       withHealth(services, {
@@ -345,7 +391,9 @@ describe('guardar', () => {
   it('AC-26: si el dolor se guarda y cerrar rechaza, al reintentar se reemplaza y no se duplica', async () => {
     const { services, workout } = await withWorkout();
     await doAll(services.training, workout);
-    const record = vi.fn(services.health.recordPain);
+    const record = vi.fn((...args: Parameters<HealthApi['recordPain']>) =>
+      services.health.recordPain(...args),
+    );
     let fail = true;
     const spied = withTraining(withHealth(services, { recordPain: record }), {
       finishWorkout: (id, input) =>
@@ -378,7 +426,7 @@ describe('guardar', () => {
   it('AC-27: mientras guarda, el botón dice "Guardando…" y está deshabilitado; se guarda una vez', async () => {
     const { services, workout } = await withWorkout();
     await doAll(services.training, workout);
-    const gate = deferred<void>();
+    const gate = deferred<undefined>();
     const record = vi.fn(async (...args: Parameters<HealthApi['recordPain']>) => {
       await gate.promise;
       return services.health.recordPain(...args);
@@ -397,7 +445,7 @@ describe('guardar', () => {
     expect(record).toHaveBeenCalledTimes(1);
 
     await act(async () => {
-      gate.resolve();
+      gate.resolve(undefined);
       await gate.promise;
     });
     await waitFor(() => {
@@ -408,7 +456,7 @@ describe('guardar', () => {
   it('plan §6.5: al cerrar desde esta página no aparece "Esta sesión ya está guardada."', async () => {
     const { services, workout } = await withWorkout();
     await doAll(services.training, workout);
-    const gate = deferred<void>();
+    const gate = deferred<undefined>();
     const spied = withTraining(services, {
       finishWorkout: async (id, input) => {
         const result = await services.training.finishWorkout(id, input);
@@ -428,7 +476,7 @@ describe('guardar', () => {
     expect(screen.queryByText('Esta sesión ya está guardada.')).not.toBeInTheDocument();
 
     await act(async () => {
-      gate.resolve();
+      gate.resolve(undefined);
       await gate.promise;
     });
     await waitFor(() => {

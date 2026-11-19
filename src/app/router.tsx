@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { ErrorFallback } from './errors/ErrorFallback';
 import { AppLayout } from './layout/AppLayout';
-import { ClosePage } from './pages/ClosePage';
+import { ClosePage } from './pages/close/ClosePage';
 import { DayPreviewPage } from './pages/DayPreviewPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SessionPage } from './pages/SessionPage';

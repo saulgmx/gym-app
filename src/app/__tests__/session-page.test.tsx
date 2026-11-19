@@ -572,7 +572,8 @@ describe('sesión no disponible', () => {
     await expectUnavailable();
   });
 
-  it('AC-28: un workout completado', async () => {
+  // Spec 005 AC-28 replaces spec 002 AC-28 for a completed workout: it says it was saved.
+  it('spec 005 AC-28: un workout completado dice que ya está guardado', async () => {
     const { services, workout } = await withWorkout();
     const completed = editView(services, (view) => ({
       ...view,
@@ -580,7 +581,8 @@ describe('sesión no disponible', () => {
     }));
     await open(`/sesion/${workout.id}/1`, completed);
 
-    await expectUnavailable();
+    expect(await screen.findByText('Esta sesión ya está guardada.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Volver a Hoy' })).toHaveAttribute('href', '/');
   });
 
   it('mientras carga, nada más que el título de la pestaña', () => {
