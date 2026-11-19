@@ -158,6 +158,14 @@ Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage
 - `useCompletedWorkouts(training, { from: weekStart, to: addDays(weekStart, 6) })` → `done = new Set(workouts.map(w => w.plannedFor))` para `WeekSection` (N y tira), `OtherDays` (filas "hecha ✓") y la tarjeta.
 - `usePainSummary(health)` → `PainNotice` arriba de la tarjeta y `back` (nivel) para el chip de `DayCard`, solo en el estado D.
 - **Día hecho:** si `done` tiene hoy, `DoneDayCard` (nuevo, en `app/pages/today/`) llama a `useWorkoutView` con el workout de hoy y muestra "Hecha ✓" y "52 min · 10 series" con `workoutSummary(view, finishedAt)`; si hay dos, el más reciente (spec §7). `ExerciseDetails` no se muestra.
+- Detalle aprobado antes de T19 (18-nov):
+  - **Tres consultas nuevas**, todas antes de pintar: `useCompletedWorkouts`, `usePainSummary` y `useWorkoutView` del workout de hoy si está hecho. Esta última vive en `TodayContent`, con un id vacío si no hay, para que `DoneDayCard` no aparezca a medias.
+  - **"N" de "N de M"** cuenta los días de pesas de la semana que están en `done`, no el tamaño del conjunto: dos workouts del mismo día (dato roto) cuentan una vez. `WeekSection` recibe `done` y se lo pasa a `WeekStrip`, en lugar del conjunto vacío de T15.
+  - **`DoneDayCard`**, si hoy es de pesas y está en `done`: el workout más reciente con ese `plannedFor` (el primero de `listWorkouts`). Lleva el eyebrow "Tu sesión de hoy", el título, los chips (bloque, RIR, "Descarga", "Espalda") con "Hecha ✓" como un chip más (el ✓ `aria-hidden`, se lee "Hecha") y la línea "52 min · 10 series" de `workoutSummary(view, ahora)`, que usa `finishedAt`. Sin "Empezar sesión" ni `ExerciseDetails`. Sin vista (dato roto), sin esa línea.
+  - **`OtherDays`:** cada día lleva `done`. Uno hecho es texto gris (`--text-muted`), no un enlace: "Lun 16 · Full body A · hecha ✓", con el ✓ `aria-hidden`. La sección sigue aunque todos estén hechos.
+  - **`PainNotice`** entre la fila superior y la tarjeta, en todos los estados de D (pesas, hecho, cardio, descanso, fuera del programa), si `notice` no es `null`; nunca en D2 (AC-44).
+  - **Chip "Espalda N/10"** con la última entrada, en las tarjetas con chips (pesas, hecho, cardio, descanso; "fuera del programa" no tiene); desde 4 lleva `data-warn` y el CSS lo pinta en `--warn`. Sin entradas no hay chip (AC-37); en D2 tampoco (AC-44).
+  - Pruebas: `today-page.test.tsx` (AC-32 a AC-34, AC-36 a AC-45, sobre el seed real) y `day-card.test.tsx` (chip y `data-warn`); las de la spec 003 siguen igual sin sesiones hechas ni dolor.
 - **Vista previa** (`/dia/:date`): con el día en `done`, "Ya hiciste esta sesión." en lugar de `StartWorkoutButton`. `training/already-done` tiene su texto en `app/errors/messages.ts` por si llega igual (otra pestaña).
 
 ### 6.8 Sesión activa
