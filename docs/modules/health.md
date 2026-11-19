@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.9 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.10 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -93,6 +93,8 @@ function PainSelector(props: { value: number | null; onChange: (level: number) =
 function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void }): JSX.Element;
 function PainNotice(props: { notice: NonNullable<PainSummary['notice']> }): JSX.Element;   // aviso ámbar de Hoy
 export { PainSelector, RedFlagsChecklist, PainNotice } from './ui';
+// Etiquetas de las señales (spec 006 plan §6.4): las del Cierre, en ui/labels.ts, que RedFlagsChecklist también usa.
+export function formatRedFlags(flags: RedFlag[]): string;   // "Hormigueo o adormecimiento, Debilidad en el pie" (orden de RED_FLAGS)
 
 // Futuro (fuera de las specs 005 y 006)
 //   recordBodyWeight(date: LocalDate, weightKg: number): Promise<Result<BodyMetric>>;  // RF-34
@@ -236,6 +238,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 9. **Hook (contrato v1.7, 18-nov-2026, antes de T8 de la spec 005):** `usePainSummary` devuelve `undefined` solo al cargar y nunca `null`, sin clave porque no tiene parámetros, se actualiza con `painEntries` y lanza sus errores en el render (RN-HLT-19).
 10. **Componentes (contrato v1.8, 18-nov-2026, antes de T13 de la spec 005):** `PainSelector` y `RedFlagsChecklist` pierden `assessment` y derivan su texto de su propio `value` con `bandMessage` y `redFlagMessage`, porque el aviso de las banderas debe salir sin nivel elegido (AC-14 parte de AC-7); los textos viven con los componentes; no se puede quitar la elección del dolor; las regiones `aria-live` están siempre en el DOM; las banderas vuelven en el orden de `RED_FLAGS`; `legend` con `h2`; `PainNotice` con `role="note"` y sin `aria-live`; `SafetyNote` interno (§4, "Componentes").
 11. **Spec 006, historial (contrato v1.9, 19-nov-2026):** `getPainForWorkouts` sale de "Futuro" y entra en `HealthApi` con su hook `usePainForWorkouts` (RN-HLT-20), para el chip de la lista y el detalle. El historial muestra el nivel y las señales marcadas, sin los mensajes de banda ni de las señales: son consejos para la próxima sesión y solo salen en el Cierre y en "Hoy".
+12. **Plan de la spec 006 (contrato v1.10, 19-nov-2026):** `formatRedFlags` exporta las etiquetas del Cierre para el detalle del historial; las etiquetas salen de `RedFlagsChecklist` a `ui/labels.ts`. `getPainForWorkouts` lee por el índice único `&workoutId` (`anyOf`).
 
 Preguntas abiertas:
 

@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.24 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.25 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -115,11 +115,15 @@ interface TrainingApi {
   getActiveWorkoutView(): Promise<WorkoutView | undefined>;                               // el activo de RN-TRN-01, armado como RN-TRN-17
   getExerciseHistory(exerciseId: ID, opts?: { limit?: number; before?: LocalDate }): Promise<ExerciseSession[]>;
   finishWorkout(workoutId: ID, input: { notes?: string }): Promise<Result<Workout>>;      // RF-20, RF-23, RN-TRN-22
-  listWorkouts(range: { from: LocalDate; to: LocalDate }): Promise<Workout[]>;            // RN-TRN-23, 26; RF-32 en la spec 006
+  listWorkouts(range: { from: LocalDate; to: LocalDate }): Promise<Workout[]>;            // RN-TRN-23, 26 ("Hoy")
+  listWorkoutHistory(): Promise<HistoryEntry[]>;                                            // RN-TRN-28: todos los completed, sin rango (spec 006 plan §6.1)
 }
 
-// Spec 006 (historial): la consulta de RN-TRN-28 (lista con resumen, con su hook) y la función pura de
-// RN-TRN-29 (detalle) entran con nombre en el plan técnico de la spec 006.
+// Historial (spec 006). HistoryEntry: una fila de la lista; HistoryItem: un ítem del detalle.
+interface HistoryEntry { workout: Workout; summary: WorkoutSummary }                     // RN-TRN-28
+interface HistoryItem { exerciseId: ID; replaces: ID | null; sets: SetLog[] }           // RN-TRN-29; replaces = options[0] si se eligió otro
+export function historyDetail(view: Pick<WorkoutView, 'workout' | 'sets'>): HistoryItem[] | null; // domain/history.ts, puro; null si no está completed
+export function formatDoneSet(set: SetLog, metric: Exercise['metric']): string;          // "100 × 10 · RIR 2", "Asist. 20 × 8 · RIR 2", "40 s · RIR 2"
 // Más adelante
 //   getWorkoutExerciseIds(workoutId: ID): Promise<ID[]>;   // fase 4 (progression)
 //   dataPort: DataPort;                                    // spec 007
@@ -132,6 +136,7 @@ export function useWorkoutView(training: TrainingApi, id: ID): WorkoutView | nul
 export function useActiveWorkout(training: TrainingApi): Workout | null | undefined;
 export function useActiveWorkoutView(training: TrainingApi): WorkoutView | null | undefined; // "Hoy" en D2 (spec 003)
 export function useCompletedWorkouts(training: TrainingApi, range: { from: LocalDate; to: LocalDate }): Workout[] | undefined; // días hechos (spec 005)
+export function useWorkoutHistory(training: TrainingApi): HistoryEntry[] | undefined; // RN-TRN-19 con clave fija; [] sin sesiones (spec 006)
 
 // Avance de la sesión en curso (RN-TRN-20 y 21, spec 003). El dominio (progressOf) recibe el tiempo
 // por serie como función; application lo arma con plan.setSeconds, porque solo application importa plan.
@@ -310,3 +315,4 @@ RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32.
 24. **Servicio y almacenamiento del cierre, antes de T11 de la spec 005 (contrato v1.22, 18-nov-2026):** `finishWorkout` no pregunta al `PainGate` si no se puede cerrar y vuelve a comprobar dentro de la transacción (RN-TRN-22); `createIfAllowed` y su resultado, con `active` antes que `done` (RN-TRN-24); `listWorkouts` por el índice `date` con `LocalDate` como string (RN-TRN-26); `useCompletedWorkouts` con clave `from|to` y `[]` en vez de `null`; `painGate` obligatorio en `createTraining`. Los textos de los cuatro errores nuevos entraron en T10, porque el mapa de `app` exige uno por código para compilar.
 25. **Spec 005b, una sola sesión cerrada por día (contrato v1.23, 19-nov-2026):** pregunta 9 del handoff. RN-TRN-27 y el error `training/day-already-trained`; `createIfAllowed` suma la razón `trained`, después de `active` y `done`. Solo cuenta `date`; se bloquea al iniciar y no al cerrar. Sin API ni índice nuevos: la interfaz sabe si ya se entrenó hoy con `useCompletedWorkouts` (RN-TRN-26, que filtra por `date`). Los dos `completed` del 18-nov en el iPhone se toleran.
 26. **Spec 006, historial (contrato v1.24, 19-nov-2026):** RN-TRN-28 (lista con resumen en una consulta) y RN-TRN-29 (detalle: series hechas del ejercicio elegido por ítem, ítems sin series incluidos, solo `completed`). Sin índice ni migración. Los nombres de la API los fija el plan técnico de la spec 006.
+27. **Plan de la spec 006 (contrato v1.25, 19-nov-2026):** `listWorkoutHistory()` sin rango (todos los `completed`, índice `status`, dos lecturas en una transacción `r` con `findCompletedStates`), con su hook `useWorkoutHistory`; `historyDetail` puro en `domain/history.ts`; `formatDoneSet` exportado para la línea de cada serie. `listWorkouts(range)` no cambia.

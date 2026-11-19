@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.17 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.18 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -118,12 +118,14 @@ interface PlanApi {
   jumpToWeek(week: number, today: LocalDate): Promise<Result<void>>; // RF-03: recalcula startDate
   updateTemplate(id: ID, items: TemplateItem[]): Promise<Result<void>>; // RF-04 (v1.0)
   dataPort: DataPort;
-  // Spec 006: el bloque de una semana del programa (RN-PLN-28) entra con nombre en su plan técnico.
+  getBlocks(): Promise<Block[]>;                                     // por startWeek; sin programa lanza (RN-PLN-22); spec 006
 }
 
 // Hooks reactivos (ui, useLiveQuery). Reciben la API: `ui` no lee el contexto de `app`.
 export function useTodayPlan(plan: PlanApi, date: LocalDate): TodayPlan | undefined;
 export function useWeekPlan(plan: PlanApi, weekStart: LocalDate): TodayPlan[] | undefined;
+export function useBlocks(plan: PlanApi): Block[] | undefined;      // RN-PLN-26 con clave fija (spec 006)
+export function blockOfWeek(blocks: Block[], week: number): Block | null; // RN-PLN-28, pura (domain/schedule.ts)
 
 // Duración estimada (RN-PLN-27, spec 003): funciones puras del dominio. training reutiliza setSeconds
 // y EXERCISE_CHANGE_SECONDS para el tiempo restante (RN-TRN-20).
@@ -258,3 +260,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, s
 18. **Plan de la spec 005 (contrato v1.15):** `WeekStrip` recibe `done` (días de pesas hechos). `plan` no conoce `training`: `app` cruza la semana con `training.listWorkouts`. Un día en `done` dibuja ✓ relleno de acento y su `aria-label` dice "hecha"; hoy hecho suma el anillo de hoy.
 19. **Días hechos en `WeekStrip`, antes de T15 de la spec 005 (contrato v1.16, 18-nov-2026):** hecho = día de pesas cuya fecha está en `done`, también si es futuro (AC-33); cardio, descanso y "fuera del programa" nunca llevan ✓; las fechas de otra semana se ignoran; `data-mark="done"` con ✓ en `--bg` sobre `--accent`; `aria-label` "…, hecha". `done` es obligatorio: hasta que T19 conecte los días reales, `app` pasa un conjunto vacío.
 20. **Spec 006, historial (contrato v1.17, 19-nov-2026):** RN-PLN-28, el bloque de una semana por su número y no por fecha, para los encabezados del historial. La forma (función pura o consulta) la fija el plan técnico de la spec 006.
+21. **Plan de la spec 006 (contrato v1.18, 19-nov-2026):** RN-PLN-28 como `blockOfWeek(blocks, week)` pura, con `getBlocks()` y `useBlocks` para que la lista resuelva todos sus bloques en una lectura. Se descartó `getBlockForWeek(week)` (una llamada por grupo).
