@@ -41,6 +41,8 @@ export const errorMessages: Record<ErrorCode, string> = {
   'training/nothing-done': 'No hay series hechas para guardar.',
   'training/notes-too-long': 'Las notas pueden tener hasta 2000 caracteres.',
   'training/already-done': 'Ya hiciste esta sesión.',
+  // Spec 005b (plan §6.5): also the notice of "Otra sesión" and the text of the day preview.
+  'training/day-already-trained': 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.',
   // health (spec 005 plan §6.10): they guard the API; the selector and checkboxes cannot send them.
   'health/pain-out-of-range': 'El dolor va de 0 a 10.',
   'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',

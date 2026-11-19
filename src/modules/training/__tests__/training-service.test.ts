@@ -920,3 +920,99 @@ describe('startWorkout de un día ya hecho (RN-TRN-24)', () => {
     ).toMatchObject({ ok: false, error: { code: 'training/already-done' } });
   });
 });
+
+// Spec 005b, AC-1 to AC-6. The fake plan only has workouts on Monday 16 and Friday 20, so the
+// examples start on Saturday 21 with plannedFor Friday 20.
+describe('startWorkout en un día ya entrenado (RN-TRN-27)', () => {
+  const saved = (
+    key: string,
+    d: string,
+    plannedFor: string,
+    status: Workout['status'] = 'completed',
+    extra: Partial<Workout> = {},
+  ): WorkoutState => ({
+    workout: { ...stored(key, status, d), plannedFor: date(plannedFor), ...extra },
+    sets: [],
+  });
+  const startFriday = (service: ReturnType<typeof setup>['service']) =>
+    service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') });
+
+  it('RN-TRN-27: con un completed del sábado, otro día del plan ese sábado → day-already-trained, sin details y sin crear nada (AC-1)', async () => {
+    const { service, store } = setup({
+      initial: [saved('lunes-el-sabado', '2026-11-21', '2026-11-16')],
+    });
+
+    const result = await startFriday(service);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('training/day-already-trained');
+    expect(result.error.message).toMatch(/RN-TRN-27/);
+    expect(result.error).not.toHaveProperty('details');
+    expect(store.workouts.size).toBe(1);
+  });
+
+  it('RN-TRN-27: si el día del plan también está hecho, gana already-done (AC-2)', async () => {
+    const { service } = setup({
+      initial: [saved('viernes-el-sabado', '2026-11-21', '2026-11-20')],
+    });
+
+    expect(await startFriday(service)).toMatchObject({
+      ok: false,
+      error: { code: 'training/already-done' },
+    });
+  });
+
+  it('RN-TRN-27: con uno activo gana workout-already-active (AC-3)', async () => {
+    const { service } = setup({
+      initial: [
+        saved('lunes-el-sabado', '2026-11-21', '2026-11-16'),
+        saved('activo', '2026-11-16', '2026-11-16', 'in_progress'),
+      ],
+    });
+
+    expect(await startFriday(service)).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-already-active' },
+    });
+  });
+
+  it('RN-TRN-27: un discarded del mismo día no lo impide (AC-4)', async () => {
+    const { service } = setup({
+      initial: [saved('descartado', '2026-11-21', '2026-11-16', 'discarded')],
+    });
+
+    expect((await startFriday(service)).ok).toBe(true);
+  });
+
+  it('RN-TRN-27: solo cuenta el date: un completed de otro día cuyo plannedFor es este día no lo impide (AC-5)', async () => {
+    const { service } = setup({ initial: [saved('otro-dia', '2026-11-20', '2026-11-21')] });
+
+    expect((await startFriday(service)).ok).toBe(true);
+  });
+
+  it('RN-TRN-27: cuenta el día de inicio, no el de finishedAt: una sesión de la noche anterior cerrada tras medianoche no lo impide (AC-6)', async () => {
+    const { service } = setup({
+      initial: [
+        saved('noche', '2026-11-20', '2026-11-16', 'completed', {
+          startedAt: instant('2026-11-20T23:50:00-06:00'),
+          finishedAt: instant('2026-11-21T00:40:00-06:00'),
+        }),
+      ],
+    });
+
+    expect((await startFriday(service)).ok).toBe(true);
+  });
+
+  it('RN-TRN-27: tras cerrar una sesión, otra de la semana el mismo día → day-already-trained (T23 de la spec 005)', async () => {
+    const { service, store, workout, setOf } = await started();
+    expectOk(await service.logSet(setOf('prensa'), { weightKg: 60, reps: 10 }));
+    expectOk(await service.toggleSetDone(setOf('prensa')));
+    expectOk(await service.finishWorkout(workout.id, {}));
+
+    expect(
+      await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-16') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/day-already-trained' } });
+    expect(store.workouts.size).toBe(1);
+  });
+});

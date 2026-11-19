@@ -33,7 +33,7 @@ export function memoryRepository(initial: WorkoutState[] = []) {
           .filter((w) => w.status === 'in_progress')
           .map((w) => structuredClone(w)),
       ),
-    // RN-TRN-01, then RN-TRN-24, as the Dexie transaction checks them.
+    // RN-TRN-01, then RN-TRN-24 and RN-TRN-27, as the Dexie transaction checks them.
     createIfAllowed: (workout, newSets) => {
       const all = [...workouts.values()];
       const active = all.find((w) => w.status === 'in_progress');
@@ -42,6 +42,9 @@ export function memoryRepository(initial: WorkoutState[] = []) {
       }
       if (all.some((w) => w.status === 'completed' && w.plannedFor === workout.plannedFor)) {
         return Promise.resolve({ created: false, reason: 'done' });
+      }
+      if (all.some((w) => w.status === 'completed' && w.date === workout.date)) {
+        return Promise.resolve({ created: false, reason: 'trained' });
       }
       add({ workout, sets: newSets });
       return Promise.resolve({ created: true });
