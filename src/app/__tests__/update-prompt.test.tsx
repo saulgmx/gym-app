@@ -8,8 +8,9 @@ import { AppErrorBoundary } from '../errors/AppErrorBoundary';
 import { UpdatePrompt } from '../pwa/UpdatePrompt';
 import { closeTestDatabases, createTestServices } from './test-app';
 
-// Spec 000 AC-32 and plan §6.12, and spec 002 AC-37 (plan §6.8): no prompt during an active
-// session. The vite-plugin-pwa virtual module is simulated; training is the real module.
+// Spec 000 AC-32 and plan §6.12, spec 002 AC-37 (plan §6.8) and spec 005 AC-50 (plan §7.1): no
+// prompt during an active session. The vite-plugin-pwa virtual module is simulated; training and
+// health are the real modules.
 
 const sw = vi.hoisted(() => ({
   waiting: false,
@@ -107,6 +108,39 @@ describe('AC-37: aplazado durante una sesión activa', () => {
     expect(prompt()).not.toBeInTheDocument();
 
     await services.training.discardWorkout(workout.id);
+
+    expect(await screen.findByText('Hay una versión nueva.')).toBeInTheDocument();
+  });
+
+  it('spec 005 AC-50: con una sesión activa no aparece, y aparece al cerrarla', async () => {
+    sw.waiting = true;
+    const { services, workout } = await withActiveSession();
+    renderPrompt(services);
+    await settle();
+    expect(prompt()).not.toBeInTheDocument();
+
+    // What the Cierre does (plan §5): a done set (RN-TRN-22), the pain, then finishWorkout.
+    const view = await services.training.getWorkoutView(workout.id);
+    const [set] = view?.sets ?? [];
+    if (!view || !set) throw new Error('No sets in the workout');
+    const weighted = view.exercises[set.exerciseId]?.metric === 'weight';
+    await services.training.logSet(
+      set.id,
+      weighted ? { weightKg: 60, reps: 10, rir: 3 } : { reps: 10, rir: 3 },
+    );
+    const marked = await services.training.toggleSetDone(set.id);
+    if (!marked.ok) throw new Error(marked.error.code);
+    const pain = await services.health.recordPain(workout.id, {
+      level: 2,
+      redFlags: [],
+      date: workout.date,
+    });
+    if (!pain.ok) throw new Error(pain.error.code);
+    await settle();
+    expect(prompt()).not.toBeInTheDocument(); // still in_progress until finishWorkout
+
+    const finished = await services.training.finishWorkout(workout.id, {});
+    if (!finished.ok) throw new Error(finished.error.code);
 
     expect(await screen.findByText('Hay una versión nueva.')).toBeInTheDocument();
   });

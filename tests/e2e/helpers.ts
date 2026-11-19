@@ -112,6 +112,27 @@ export async function storedStartedAt(page: Page): Promise<string> {
   );
 }
 
+/** Every row of a table of the app's `gym-app` database, read straight from IndexedDB. */
+export async function storedRows<Row>(page: Page, table: string): Promise<Row[]> {
+  return page.evaluate(
+    (name) =>
+      new Promise<Row[]>((resolve, reject) => {
+        const open = indexedDB.open('gym-app');
+        open.onerror = () => {
+          reject(new Error('Cannot open gym-app'));
+        };
+        open.onsuccess = () => {
+          const request = open.result.transaction(name).objectStore(name).getAll();
+          request.onsuccess = () => {
+            open.result.close();
+            resolve(request.result as Row[]);
+          };
+        };
+      }),
+    table,
+  );
+}
+
 /**
  * Waits until a confirmed value is written (RN-TRN-03). A field is saved a few milliseconds after
  * Enter; a reload in between would abort the write, which no user can do that fast.
@@ -122,3 +143,54 @@ export async function waitForStoredSet(
 ) {
   await expect.poll(async () => (await storedSets(page)).some(matches)).toBe(true);
 }
+
+// Spec 005: the session and the Cierre, shared by close.spec and a11y.spec.
+
+const SESSION_URL = /\/sesion\/([^/]+)\/(\d+)$/;
+
+/** Types a value and confirms it with Enter, as on the phone keyboard. */
+async function type(page: Page, name: string, value: string) {
+  const field = page.getByRole('textbox', { name });
+  await field.fill(value);
+  await field.press('Enter');
+}
+
+/** Logs set `n` of the exercise on screen and marks it done (RN-TRN-04: values first). */
+export async function doSet(page: Page, n: number, withKilos: boolean) {
+  const set = `Serie ${String(n)}`;
+  if (withKilos) await type(page, `${set}, kilos`, '40');
+  await type(page, `${set}, repeticiones`, '10');
+  await type(page, `${set}, RIR`, '3');
+  const check = page.getByRole('checkbox', { name: `${set} hecha` });
+  await check.click();
+  await expect(check).toBeChecked();
+}
+
+/** Starts Full body A from "Hoy" (already open) and returns the workout ID. */
+export async function startSession(page: Page): Promise<string> {
+  await page.getByRole('button', { name: 'Empezar sesión' }).click();
+  await expect(page).toHaveURL(SESSION_URL);
+  await expect(page.getByText('Ejercicio 1 de 7')).toBeVisible();
+  const id = SESSION_URL.exec(page.url())?.[1];
+  if (!id) throw new Error('No workout ID in the URL');
+  return id;
+}
+
+/** From "Hoy" (already open): starts, does the first set and opens the Cierre from the sheet. */
+export async function cierreWithOneSet(page: Page): Promise<string> {
+  const id = await startSession(page);
+  await doSet(page, 1, true);
+  await page.getByRole('button', { name: 'Salir de la sesión' }).click();
+  await page
+    .getByRole('dialog', { name: '¿Salir de la sesión?' })
+    .getByRole('link', { name: 'Terminar y guardar lo hecho' })
+    .click();
+  await expect(page).toHaveURL(`/sesion/${id}/cierre`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Sesión terminada' })).toBeVisible();
+  return id;
+}
+
+export const painLevel = (page: Page, n: number) =>
+  page
+    .getByRole('group', { name: 'Dolor lumbar' })
+    .getByRole('button', { name: String(n), exact: true });

@@ -1,6 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { freezeClockAt, openTodayOn, smallTouchTargets, USER_TIME_ZONE } from './helpers';
+import {
+  doSet,
+  freezeClockAt,
+  openTodayOn,
+  painLevel,
+  smallTouchTargets,
+  startSession,
+  USER_TIME_ZONE,
+} from './helpers';
 import { PAGES } from './pages';
 
 // Spec 000 AC-26 and spec 001 AC-22: no WCAG 2.2 A/AA violations.
@@ -244,6 +252,116 @@ test.describe('spec 004 AC-35: la sesión rediseñada', () => {
 
       await page.getByRole('button', { name: 'Salir de la sesión' }).click();
       await expect(page.getByRole('dialog', { name: '¿Salir de la sesión?' })).toBeVisible();
+      expect(await fits(page)).toBe(true);
+    });
+  });
+});
+
+// Spec 005 AC-47 (plan §7.1): the Cierre, "Hoy" with done days, the pain notice and chip, and the
+// exit sheet with four options, without WCAG 2.2 A/AA violations and with 44 px targets; and at
+// 320 px wide, without overflowing. The error on saving stays in close-page.test.tsx.
+test.describe('spec 005 AC-47: el Cierre y "Hoy" con sesiones hechas', () => {
+  test.use({ timezoneId: USER_TIME_ZONE });
+
+  async function expectAccessible(page: Page) {
+    const { violations } = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await smallTouchTargets(page)).toEqual([]);
+  }
+
+  /** The longest Cierre: alert band, both warnings of the red flags and a note. */
+  async function fillCierre(page: Page) {
+    await painLevel(page, 8).click();
+    await page.getByRole('checkbox', { name: 'Hormigueo o adormecimiento' }).check();
+    await page
+      .getByRole('checkbox', { name: 'Problemas de control de vejiga o intestino' })
+      .check();
+    await expect(page.getByText('Acude a urgencias.', { exact: false })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Notas de la sesión (opcional)' }).fill('Buena sesión');
+  }
+
+  test('aviso de salida, Cierre vacío y lleno, "Hoy" hecho con aviso y chip, ya guardada', async ({
+    page,
+  }) => {
+    await freezeClockAt(page, '2026-11-16T18:00:00-06:00');
+    await page.goto('/');
+    const id = await startSession(page);
+    await doSet(page, 1, true);
+
+    await page.getByRole('button', { name: 'Salir de la sesión' }).click();
+    const sheet = page.getByRole('dialog', { name: '¿Salir de la sesión?' });
+    await expect(sheet.locator('a, button')).toHaveCount(4);
+    await expectAccessible(page);
+
+    await sheet.getByRole('link', { name: 'Terminar y guardar lo hecho' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Sesión terminada' })).toBeVisible();
+    await expectAccessible(page);
+
+    await fillCierre(page);
+    await expectAccessible(page);
+
+    await page.getByRole('button', { name: 'Guardar sesión' }).click();
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('note')).toBeVisible();
+    await expect(page.getByText('Espalda 8/10', { exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'Tu sesión de hoy' })
+        .getByRole('listitem')
+        .filter({ hasText: /^Hecha\s*✓$/ }),
+    ).toBeVisible();
+    await expectAccessible(page);
+
+    await page.goto(`/sesion/${id}/cierre`);
+    await expect(page.getByText('Esta sesión ya está guardada.')).toBeVisible();
+    await expectAccessible(page);
+
+    // Wednesday: the done row in "Otra sesión de esta semana".
+    await freezeClockAt(page, '2026-11-18T08:00:00-06:00');
+    await page.goto('/');
+    await expect(page.getByText('Lun 16 · Full body A · hecha')).toBeVisible();
+    await expectAccessible(page);
+  });
+
+  test('Cierre sin series hechas', async ({ page }) => {
+    await freezeClockAt(page, '2026-11-16T18:00:00-06:00');
+    await page.goto('/');
+    const id = await startSession(page);
+    await page.goto(`/sesion/${id}/cierre`);
+    await expect(page.getByText('No hay series hechas para guardar.')).toBeVisible();
+    await expectAccessible(page);
+  });
+
+  test.describe('a 320 px de ancho', () => {
+    test.use({ viewport: { width: 320, height: 640 } });
+
+    const fits = (page: Page) =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      );
+
+    test('el aviso de salida, el Cierre lleno y "Hoy" con aviso y chip, sin desbordar', async ({
+      page,
+    }) => {
+      await freezeClockAt(page, '2026-11-16T18:00:00-06:00');
+      await page.goto('/');
+      await startSession(page);
+      await doSet(page, 1, true);
+
+      await page.getByRole('button', { name: 'Salir de la sesión' }).click();
+      const sheet = page.getByRole('dialog', { name: '¿Salir de la sesión?' });
+      await expect(sheet.locator('a, button')).toHaveCount(4);
+      expect(await fits(page)).toBe(true);
+
+      await sheet.getByRole('link', { name: 'Terminar y guardar lo hecho' }).click();
+      await fillCierre(page);
+      expect(await fits(page)).toBe(true);
+      // The 11 levels wrap in two rows, each still 44 px (spec §6.1).
+      expect(await smallTouchTargets(page)).toEqual([]);
+
+      await page.getByRole('button', { name: 'Guardar sesión' }).click();
+      await expect(page.getByRole('note')).toBeVisible();
+      await expect(page.getByText('Espalda 8/10', { exact: true })).toBeVisible();
       expect(await fits(page)).toBe(true);
     });
   });
