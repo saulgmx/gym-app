@@ -387,8 +387,55 @@ describe('getPainSummary', () => {
   });
 });
 
+describe('getPainForWorkouts', () => {
+  async function recordTwo(health: ReturnType<typeof setup>['health']) {
+    okValue(
+      await health.recordPain(id('w1'), { level: 2, redFlags: [], date: date('2026-11-16') }),
+    );
+    okValue(
+      await health.recordPain(id('w2'), {
+        level: 5,
+        redFlags: ['numbness'],
+        date: date('2026-11-18'),
+      }),
+    );
+  }
+
+  it('RN-HLT-20: la entrada guardada de cada id que tiene una; los demás no están', async () => {
+    const { db, health } = setup();
+    await recordTwo(health);
+    const stored = await entries(db);
+
+    const pain = await health.getPainForWorkouts([id('w2'), id('w-sin-dolor'), id('w1')]);
+
+    expect(pain.size).toBe(2);
+    expect(pain.get(id('w1'))).toEqual(stored.find((e) => e.workoutId === 'w1'));
+    expect(pain.get(id('w2'))).toEqual(stored.find((e) => e.workoutId === 'w2'));
+    expect(pain.has(id('w-sin-dolor'))).toBe(false);
+  });
+
+  it('RN-HLT-20: los ids repetidos cuentan una vez', async () => {
+    const { health } = setup();
+    await recordTwo(health);
+
+    const pain = await health.getPainForWorkouts([id('w1'), id('w1'), id('w2'), id('w1')]);
+
+    expect([...pain.keys()].sort()).toEqual(['w1', 'w2']);
+  });
+
+  it('RN-HLT-20: con la lista vacía devuelve un mapa vacío sin leer la base', async () => {
+    const { db, health } = setup();
+    await recordTwo(health);
+    db.close(); // any read would now reject with DatabaseClosedError
+
+    const pain = await health.getPainForWorkouts([]);
+
+    expect(pain).toEqual(new Map());
+  });
+});
+
 describe('fallos del almacenamiento', () => {
-  it('RN-HLT-16: si la base falla, recordPain, getPainSummary y hasPainEntry rechazan', async () => {
+  it('RN-HLT-16: si la base falla, recordPain, getPainSummary, hasPainEntry y getPainForWorkouts rechazan', async () => {
     const { db, health } = setup();
     db.close();
 
@@ -400,6 +447,7 @@ describe('fallos del almacenamiento', () => {
     await expect(health.getPainSummary()).rejects.toMatchObject(closed);
     await expect(health.hasPainEntry(id('w1'))).rejects.toMatchObject(closed);
     await expect(health.painGate.hasPainEntry(id('w1'))).rejects.toMatchObject(closed);
+    await expect(health.getPainForWorkouts([id('w1')])).rejects.toMatchObject(closed);
   });
 
   it('RN-HLT-16: un fallo a mitad del reemplazo rechaza y deja la entrada anterior intacta', async () => {
