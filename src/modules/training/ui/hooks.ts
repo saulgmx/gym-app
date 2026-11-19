@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { ID, LocalDate } from '@/shared/kernel';
-import type { WorkoutView } from '../application/ports';
+import type { HistoryEntry, WorkoutView } from '../application/ports';
 import type { TrainingApi } from '../application/service';
 import type { ExerciseSession, Workout } from '../domain/types';
 
@@ -52,4 +52,9 @@ export function useCompletedWorkouts(
   range: { from: LocalDate; to: LocalDate },
 ): Workout[] | undefined {
   return useKeyedQuery(`${range.from}|${range.to}`, () => training.listWorkouts(range), training);
+}
+
+// The history list (spec 006, RN-TRN-28): [] when there are none, never null. Fixed key.
+export function useWorkoutHistory(training: TrainingApi): HistoryEntry[] | undefined {
+  return useKeyedQuery('history', () => training.listWorkoutHistory(), training);
 }

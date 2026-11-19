@@ -36,6 +36,7 @@ export {
   useActiveWorkoutView,
   useCompletedWorkouts,
   useLastSession,
+  useWorkoutHistory,
   useWorkoutView,
 } from './ui/hooks';
 export { SetRow } from './ui/SetRow';
@@ -44,6 +45,7 @@ export { SetTable } from './ui/SetTable';
 
 export type { TrainingApi } from './application/service';
 export type {
+  HistoryEntry,
   PainGate,
   PlanReader,
   PrefillSuggestion,
