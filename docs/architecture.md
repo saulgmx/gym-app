@@ -291,7 +291,7 @@ db.version(n).stores({ // n = versión en la que ya existen todas (fin del MVP)
   suggestions: 'exerciseId',
   progressionSettings: 'id',
   // health
-  painEntries: 'id, &workoutId, recordedAt',
+  painEntries: 'id, &workoutId',   // sin índice en recordedAt: un Instant no se ordena como string (ADR-0009)
   bodyMetrics: 'id, date',
   healthSettings: 'id',
   // data
