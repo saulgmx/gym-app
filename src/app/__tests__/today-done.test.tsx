@@ -5,7 +5,7 @@ import type { RedFlag } from '@/modules/health';
 import type { Workout } from '@/modules/training';
 import { fixedClock, type Clock, type ID, type Instant, type LocalDate } from '@/shared/kernel';
 import type { AppServices } from '../context';
-import { closeTestDatabases, createTestServices, renderRoute } from './test-app';
+import { closeTestDatabases, createTestServices, lastTestDatabase, renderRoute } from './test-app';
 
 // "Hoy" with done sessions and the pain notice (spec 005 AC-32 to AC-45; plan §6.7) over the real
 // seed. Week 1 from Monday 2026-11-16: Mon Full body A, Tue cardio, Wed Full body B, Thu rest,
@@ -152,9 +152,10 @@ describe('días hechos (AC-32 a AC-36)', () => {
     expect(dayLabel('viernes')).toHaveAccessibleName('viernes, Full body A, hecha');
     expect(dayLabel('miércoles')).toHaveAccessibleName('miércoles, hoy, Full body B, pendiente');
     expect(screen.getByText('1 de 3 sesiones')).toBeInTheDocument();
-    // Today (Wednesday) is still to do: the done card goes by plannedFor, not by date.
-    expect(within(card()).getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+    // Today (Wednesday) is still to do: the done card goes by plannedFor, not by date. Since spec
+    // 005b (AC-9) it cannot be started today, so the button gives way to a text.
     expect(chipsOf(card())).not.toContain('Hecha ✓');
+    expect(within(card()).getByText('Ya entrenaste hoy (Full body A del viernes).')).toBeVisible();
   });
 
   it('AC-34: el miércoles hecho ese día: tarjeta con "Hecha ✓", "52 min · N series" y sin CTA', async () => {
@@ -345,6 +346,117 @@ describe('aviso de dolor y chip "Espalda" (AC-37 a AC-45)', () => {
     expect(chipsOf(card())).toEqual(expect.arrayContaining(['Hecha ✓', 'Espalda 4/10']));
     // 4 is already amber (spec 005 §6.3: "en ámbar desde 4").
     expect(backChip()).toHaveAttribute('data-warn');
+  });
+});
+
+// Spec 005b (RN-TRN-27): a real day (the workout's date) has at most one closed session.
+describe('una sola sesión cerrada por día (spec 005b AC-8 a AC-12, AC-17)', () => {
+  const NOTICE = 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.';
+  const details = () => screen.queryByText(/^Ver (los \d+ ejercicios|el ejercicio)$/);
+
+  it('AC-8: el miércoles hecho ese día: tarjeta hecha, aviso en "Otra sesión" y sus filas siguen siendo enlaces', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    await closeSession(ctx, { on: '2026-11-18' });
+
+    await openToday(ctx.services);
+
+    expect(chipsOf(card())).toContain('Hecha ✓');
+    expect(within(card()).queryByText(/^Ya entrenaste hoy \(/)).not.toBeInTheDocument();
+    const region = others();
+    expect(within(region).getByText(NOTICE)).toBeVisible();
+    expect(within(region).getByRole('link', { name: 'Lun 16 · Full body A' })).toBeVisible();
+    expect(within(region).getByRole('link', { name: 'Vie 20 · Full body A' })).toBeVisible();
+  });
+
+  it('AC-9: el viernes hecho el miércoles: la tarjeta del miércoles sin "Empezar sesión", con el texto y sus ejercicios', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    await closeSession(ctx, { on: '2026-11-18', plannedFor: '2026-11-20' });
+
+    await openToday(ctx.services);
+
+    const region = card();
+    expect(within(region).getByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
+    expect(within(region).getByText(/^7 ejercicios · ~\d+ min$/)).toBeVisible();
+    expect(within(region).getByText('Ya entrenaste hoy (Full body A del viernes).')).toBeVisible();
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument();
+    expect(details()).toHaveTextContent('Ver los 7 ejercicios');
+    expect(dayLabel('viernes')).toHaveAccessibleName('viernes, Full body A, hecha');
+    expect(dayLabel('miércoles')).toHaveAccessibleName('miércoles, hoy, Full body B, pendiente');
+    const rows = others();
+    expect(within(rows).getByText(NOTICE)).toBeVisible();
+    expect(within(rows).getByRole('link', { name: 'Lun 16 · Full body A' })).toBeVisible();
+    expect(within(rows).getByText(/^Vie 20 · Full body A · hecha/)).toBeVisible();
+  });
+
+  it('AC-10: el lunes hecho el martes (cardio): la tarjeta de cardio no cambia y "Otra sesión" lleva el aviso', async () => {
+    const ctx = await setup('2026-11-17T20:00:00-06:00');
+    await closeSession(ctx, { on: '2026-11-17', plannedFor: '2026-11-16' });
+
+    await openToday(ctx.services);
+
+    expect(within(card()).getByRole('heading', { level: 2, name: 'Cardio' })).toBeVisible();
+    expect(within(card()).queryByText(/^Ya entrenaste hoy/)).not.toBeInTheDocument();
+    const rows = others();
+    expect(within(rows).getByText(NOTICE)).toBeVisible();
+    expect(within(rows).getByText(/^Lun 16 · Full body A · hecha/)).toBeVisible();
+    expect(within(rows).getByRole('link', { name: 'Mié 18 · Full body B' })).toBeVisible();
+    expect(within(rows).getByRole('link', { name: 'Vie 20 · Full body A' })).toBeVisible();
+  });
+
+  it('AC-11: al día siguiente ya no hay aviso y el miércoles (pasado, no hecho) vuelve a ser un enlace', async () => {
+    const ctx = await setup('2026-11-19T08:00:00-06:00');
+    await closeSession(ctx, { on: '2026-11-18', plannedFor: '2026-11-20' });
+
+    await openToday(ctx.services);
+
+    const rows = others();
+    expect(within(rows).queryByText(NOTICE)).not.toBeInTheDocument();
+    expect(within(rows).getByRole('link', { name: 'Mié 18 · Full body B' })).toHaveAttribute(
+      'href',
+      '/dia/2026-11-18',
+    );
+  });
+
+  it('AC-12: con una sesión en curso, D2 como siempre: ni el texto ni "Otra sesión"', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    await closeSession(ctx, { on: '2026-11-18', plannedFor: '2026-11-20' });
+    // Started with Thursday's date, so RN-TRN-27 lets it in; Monday's plan, same week.
+    const active = await ctx.services.training.startWorkout(date('2026-11-19'), {
+      plannedFor: date('2026-11-16'),
+    });
+    if (!active.ok) throw new Error(active.error.code);
+
+    await openToday(ctx.services);
+
+    expect(screen.getByRole('region', { name: 'Sesión en curso' })).toBeInTheDocument();
+    expect(screen.queryByText(/^Ya entrenaste hoy/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Otra sesión de esta semana' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('AC-17: dos sesiones cerradas el mismo día (datos de antes de RN-TRN-27) se muestran sin fallar ni borrar nada', async () => {
+    const ctx = await setup('2026-11-18T20:00:00-06:00');
+    const friday = await closeSession(ctx, { on: '2026-11-17', plannedFor: '2026-11-20' });
+    await closeSession(ctx, { on: '2026-11-18' });
+    // The API no longer allows it: move Friday's session to Wednesday in storage.
+    await lastTestDatabase()
+      .table<Workout>('workouts')
+      .update(friday.id, { date: date('2026-11-18') });
+
+    await openToday(ctx.services);
+
+    expect(dayLabel('miércoles')).toHaveAccessibleName('miércoles, hoy, Full body B, hecha');
+    expect(dayLabel('viernes')).toHaveAccessibleName('viernes, Full body A, hecha');
+    expect(screen.getByText('2 de 3 sesiones')).toBeInTheDocument();
+    expect(chipsOf(card())).toContain('Hecha ✓');
+    expect(within(others()).getByText(NOTICE)).toBeVisible();
+    expect(
+      await ctx.services.training.listWorkouts({
+        from: date('2026-11-16'),
+        to: date('2026-11-22'),
+      }),
+    ).toHaveLength(2);
   });
 });
 
