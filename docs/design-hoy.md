@@ -47,6 +47,7 @@ Lista de las sesiones de entrenamiento de la semana, **sin incluir la de hoy**:
 - **Aparece en todos los estados de D** (día de entrenamiento, descanso y cardio), al final de la pantalla, debajo de la tira. **No aparece en D2** (sesión en curso).
 - Hoy no se incluye en la lista.
 - Es la versión mínima de "cambiar sesión" para v1: solo lee el plan de la semana (y los workouts hechos en la fase 3).
+- **Ya entrenaste hoy (spec 005b):** un día real admite una sola sesión cerrada (RN-TRN-27). Si hoy ya hay una, la sección sigue visible con el texto "Ya entrenaste hoy. Podrás empezar otra sesión mañana." bajo el título; las filas pendientes siguen abriendo la vista previa, que no tiene "Empezar sesión". La tarjeta de un día de pesas pendiente cambia "Empezar sesión" por "Ya entrenaste hoy (<sesión> del <día>)."; la de cardio o descanso no cambia.
 
 ### Dolor y molestia lumbar (decidido; **fase 3**, aún no implementado)
 - **Aviso de dolor:** recuadro ámbar (borde y icono #FFB547, fondo tenue) **arriba de la tarjeta**, lo primero que se ve. Aparece si la última lectura es **4/10 o más**, si tiene banderas rojas o si hay alerta persistente (RN-HLT-12, decidido el 18-nov; reemplaza la propuesta inicial de "3/10 o más", que chocaba con la banda Normal). Informativo, sin botones. Texto del diseño: "Espalda baja 4/10 en la última sesión. Hoy prioriza la técnica y no añadas carga."
@@ -106,7 +107,7 @@ La app ya tenía una tarjeta de "Sesión en curso" con "Continuar sesión" y "De
 - No se muestran "Hoy subes" ni la lista de ejercicios mientras hay sesión en curso (se ven en la sesión activa).
 
 ## Vista previa del día (`/dia/:date`, implementada)
-Se abre desde "Otra sesión de esta semana". Enlace **"Volver a Hoy"** (44 px, acento); `h1` con la fecha larga ("Viernes 20 de noviembre"); tarjeta con el nombre de la sesión (`h2`), el RIR una sola vez ("RIR 3-4"), la lista de ejercicios (nombre, series × reps o × s y la nota de la plantilla debajo) y **"Empezar sesión"** (crea el workout con `plannedFor` = ese día). Sin cargas ni RIR por fila. Solo días de pesas de la semana ISO actual; otra fecha, hoy mismo o una sesión en curso redirigen a Hoy. Tablero: "Vista previa del día".
+Se abre desde "Otra sesión de esta semana". Enlace **"Volver a Hoy"** (44 px, acento); `h1` con la fecha larga ("Viernes 20 de noviembre"); tarjeta con el nombre de la sesión (`h2`), el RIR una sola vez ("RIR 3-4"), la lista de ejercicios (nombre, series × reps o × s y la nota de la plantilla debajo) y **"Empezar sesión"** (crea el workout con `plannedFor` = ese día). Sin cargas ni RIR por fila. Solo días de pesas de la semana ISO actual; otra fecha, hoy mismo o una sesión en curso redirigen a Hoy. Tablero: "Vista previa del día". Un día del plan ya hecho dice "Ya hiciste esta sesión." (spec 005); si no, y hoy ya hay una sesión cerrada, "Ya entrenaste hoy. Podrás empezar otra sesión mañana." (spec 005b). Ninguno de los dos tiene "Empezar sesión".
 
 ## Cambiar la sesión del día (hoja "Cambiar") — FUTURO, fuera de v1
 Se pospone por ser un cambio mayor. En v1 solo existe "Otra sesión de esta semana" (en todos los estados de D, no en D2). El tablero "Hoja: cambiar la sesión de hoy" y el icono ⇄ se conservan solo como referencia.

@@ -1,13 +1,13 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; siguiente: proponer la pregunta 9) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; spec 005b aprobada; siguiente: su plan técnico) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
 - **Documentación SDD completa (16-nov):**
   - `docs/README.md`: mapa de documentos, jerarquía de autoridad, flujo spec → plan → tareas → código, convenciones de IDs.
   - `docs/constitution.md` v1.0: principios P-1 a P-8 y checklist de revisión.
-  - `docs/spec.md` v0.10: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date`, la 0.6 `/sesion/:workoutId` (spec 002) la 0.7 (18-nov) el rediseño de "Hoy" en §7.2, §7.3 y §13 (spec 003) la 0.8 (18-nov) el de la sesión activa en §7.2 (spec 004) la 0.9 (18-nov) las reglas de dolor de §6.2 (pregunta 8) y la 0.10 (18-nov) el Cierre en §7.2 (spec 005).
+  - `docs/spec.md` v0.11: spec de producto (qué y por qué). Las secciones 8-10 ahora remiten a la arquitectura y los contratos. La 0.4 (17-nov) fija el bloqueo total de los ejercicios `high` en §6.5; la 0.5 añade la ruta `/dia/:date`, la 0.6 `/sesion/:workoutId` (spec 002) la 0.7 (18-nov) el rediseño de "Hoy" en §7.2, §7.3 y §13 (spec 003) la 0.8 (18-nov) el de la sesión activa en §7.2 (spec 004) la 0.9 (18-nov) las reglas de dolor de §6.2 (pregunta 8) la 0.10 (18-nov) el Cierre en §7.2 (spec 005) y la 0.11 (19-nov) una sola sesión cerrada por día en §7.2 (spec 005b).
   - `docs/architecture.md` v1.3: módulos, capas, diagramas de secuencia, persistencia, conceptos transversales, escenarios de calidad QS-01 a QS-10.
   - `docs/adr/`: ADR-0001 a 0012 (0009 UUIDv7 y fechas, 0010 `Result`, 0011 hosting en Vercel con dominio propio, 0012 Zod valida la forma y el dominio las reglas, que reemplaza a 0007).
   - `docs/modules/`: contratos de `plan`, `training`, `progression`, `health`, `data` y `shared`, con reglas RN-* y pruebas de contrato.
@@ -78,7 +78,6 @@
 
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
-| 9 | En T23 se pudo cerrar una segunda sesión el mismo día desde "Otra sesión de esta semana" (la spec lo permite: RN-TRN-24 solo impide repetir el mismo `plannedFor`). **Decidido (18-nov): una sola sesión cerrada por fecha** (opción 2). Falta especificarla: un RN nuevo en `training` y el ajuste de "Hoy" (ocultar "Otra sesión" o no dejar empezar) y de la vista previa | Spec corta propia (005b) o dentro de la 006; **es lo siguiente**: proponerla en el próximo chat | `training.md`, spec 005 §8 | 3 |
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 
 ## Historia y siguiente paso
@@ -134,7 +133,8 @@
    8. ~~Punto de control D, componentes~~ (T13–T15, PR #40): `PainSelector`, `RedFlagsChecklist`, `PainNotice` y `SafetyNote` (interno); `bandMessage` y `redFlagMessage`; token `--warn-tint`; `WeekStrip` con `done`. Contratos `health` v1.8 (los componentes ya no reciben `assessment`: el aviso de banderas sale sin nivel, AC-14) y `plan` v1.16.
    9. ~~Punto de control E, páginas~~ (T16–T21, PR #41): Cierre en `app/pages/close/`, "Terminar sesión" y "Terminar y guardar lo hecho", "Hoy" con días hechos, aviso y chip "Espalda", vista previa de un día hecho. Detalle en plan §6.5 a §6.8. AC-35 se lee contra la redirección de la spec 002 (spec §8, decisión 17). Bundle **168.76 kB** de 200 kB.
    10. ~~Punto de control F, verificación y cierre~~ (T22 en el PR #44, T23 en el iPhone el 18-nov, T25 en el PR de cierre): alcance del E2E aprobado antes de escribirlo (plan §7.1, spec §8 decisión 18: AC-24 sin barra de pestañas); `close.spec.ts` (sesión completa y parcial hasta "Hoy", salir sin guardar, sin conexión, pie fijo) y el bloque de `a11y.spec.ts`, 90/90 en 5 repeticiones; AC-50 como prueba de componente en `update-prompt.test.tsx` (un SW nuevo esperando necesita dos builds). Spec y plan 005 marcados como implementados. **Queda T24** (tuya, no bloquea): validar los textos de salud con el traumatólogo; si cambian, PR de docs y `domain/messages.ts`; si no, quitar `[PROPUESTO]`.
-   11. **Siguiente: pregunta 9** (una sola sesión cerrada por fecha, decidida el 18-nov): proponer la spec (RN nuevo en `training`, "Hoy" y la vista previa) y decidir si es una 005b o parte de la 006. Luego la spec 006 (historial) y la 007 (exportar e importar, `data`).
+   11. ~~Pregunta 9~~ (decidida el 18-nov): **spec 005b aprobada** (19-nov): `docs/specs/005b-una-sesion-por-dia/spec.md` (AC-1 a AC-19). Un día real (`date`) admite una sola sesión cerrada: RN-TRN-27 y `training/day-already-trained`, comprobado en `createIfAllowed` después de `active` y `done` (contrato `training` v1.23); solo al iniciar, no al cerrar. Si hoy ya hay una sesión cerrada, "Otra sesión de esta semana" sigue visible con el aviso "Ya entrenaste hoy. Podrás empezar otra sesión mañana." y enlaces a la vista previa, que no tiene "Empezar sesión"; la tarjeta de un día de pesas pendiente cambia el botón por "Ya entrenaste hoy (Full body A del viernes)."; cardio y descanso no cambian. Sin API ni índice nuevos (`useCompletedWorkouts`). Las dos sesiones cerradas del 18-nov en el iPhone se toleran (AC-17). Spec v0.11 (§7.2) y `design-hoy.md`.
+   12. **Siguiente: plan técnico de la spec 005b** (`docs/specs/005b-una-sesion-por-dia/plan.md`), luego sus tareas. Después, la spec 006 (historial) y la 007 (exportar e importar, `data`).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -207,4 +207,4 @@ Notas para retomar:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005-cierre/spec.md (§4.3 a §4.5 y §8), docs/modules/training.md (RN-TRN-14, 23 y 24) y docs/design-hoy.md. La spec 005 (Cierre) está implementada. Sigue con la pregunta 9 del handoff (una sola sesión cerrada por fecha, ya decidida): propón la spec, con el RN nuevo de training y lo que cambia en 'Hoy' y en la vista previa, y si va como 005b o dentro de la 006. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005b-una-sesion-por-dia/spec.md, docs/modules/training.md (RN-TRN-24, 26 y 27) y docs/specs/005-cierre/plan.md como referencia. La spec 005b está aprobada. Propón su plan técnico (plan.md) con la plantilla de docs/templates/feature-plan.md. Guíame paso a paso, una tarea a la vez."
