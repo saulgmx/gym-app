@@ -39,6 +39,25 @@ export function memoryRepository(initial: WorkoutState[] = []) {
       add({ workout, sets: newSets });
       return Promise.resolve({ created: true });
     },
+    // RN-TRN-01, then RN-TRN-24, as the Dexie transaction checks them.
+    createIfAllowed: (workout, newSets) => {
+      const all = [...workouts.values()];
+      const active = all.find((w) => w.status === 'in_progress');
+      if (active) {
+        return Promise.resolve({ created: false, reason: 'active', activeId: active.id });
+      }
+      if (all.some((w) => w.status === 'completed' && w.plannedFor === workout.plannedFor)) {
+        return Promise.resolve({ created: false, reason: 'done' });
+      }
+      add({ workout, sets: newSets });
+      return Promise.resolve({ created: true });
+    },
+    findCompletedBetween: (from, to) =>
+      Promise.resolve(
+        [...workouts.values()]
+          .filter((w) => w.status === 'completed' && from <= w.date && w.date <= to)
+          .map((w) => structuredClone(w)),
+      ),
     mutate: (workoutId, fn) => {
       const workout = workouts.get(workoutId);
       if (!workout) return Promise.resolve(undefined);

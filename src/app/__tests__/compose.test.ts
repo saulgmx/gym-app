@@ -63,6 +63,31 @@ describe('compose', () => {
     expect(await app.health.hasPainEntry(started.value.id)).toBe(true);
   });
 
+  it('RN-TRN-06: training cierra con el painGate de health (spec 005 T12)', async () => {
+    const app = start(planSeed);
+    await app.ready;
+    const started = await app.training.startWorkout(clock.today());
+    if (!started.ok) throw new Error(started.error.code);
+    const workout = started.value;
+    const view = await app.training.getWorkoutView(workout.id);
+    const first = view?.sets.find((s) => s.exerciseId === workout.items[0]?.exerciseId);
+    if (!first) throw new Error('no first set');
+    expect((await app.training.logSet(first.id, { weightKg: 60, reps: 10 })).ok).toBe(true);
+    expect((await app.training.toggleSetDone(first.id)).ok).toBe(true);
+
+    expect(await app.training.finishWorkout(workout.id, {})).toMatchObject({
+      ok: false,
+      error: { code: 'training/pain-required' },
+    });
+    expect(
+      (await app.health.recordPain(workout.id, { level: 2, redFlags: [], date: workout.date })).ok,
+    ).toBe(true);
+    expect(await app.training.finishWorkout(workout.id, {})).toMatchObject({
+      ok: true,
+      value: { status: 'completed' },
+    });
+  });
+
   it('ready resuelve con el seed real y el plan queda cargado', async () => {
     const app = start(planSeed);
 

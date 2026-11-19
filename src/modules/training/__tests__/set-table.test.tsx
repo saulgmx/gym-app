@@ -102,6 +102,7 @@ beforeEach(() => {
     ids: sequentialIds(),
     plan,
     suggestions: { getPrefill: () => Promise.resolve(null) },
+    painGate: { hasPainEntry: () => Promise.resolve(true) },
   });
 });
 
@@ -301,6 +302,7 @@ describe('guardar un campo (RN-TRN-03)', () => {
       ids: sequentialIds('slow'),
       plan: slow,
       suggestions: { getPrefill: () => Promise.resolve(null) },
+      painGate: { hasPainEntry: () => Promise.resolve(true) },
     });
     await show(prensa.id);
 

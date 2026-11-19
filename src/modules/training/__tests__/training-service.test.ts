@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixedClock, sequentialIds, type ID, type Instant, type LocalDate } from '@/shared/kernel';
 import type {
   Exercise,
+  PainGate,
   PlanReader,
   ProgramPosition,
   SessionTemplate,
@@ -119,19 +120,27 @@ function fakePlan(missing: string[] = []) {
 }
 
 function setup(
-  options: { initial?: WorkoutState[]; suggestions?: SuggestionProvider; missing?: string[] } = {},
+  options: {
+    initial?: WorkoutState[];
+    suggestions?: SuggestionProvider;
+    missing?: string[];
+    painGate?: PainGate;
+  } = {},
 ) {
   const store = memoryRepository(options.initial);
   const plan = fakePlan(options.missing);
   const suggestions = options.suggestions ?? { getPrefill: vi.fn(() => Promise.resolve(null)) };
+  // A pain entry exists unless the test says otherwise (RN-TRN-06).
+  const painGate = options.painGate ?? { hasPainEntry: vi.fn(() => Promise.resolve(true)) };
   const service = createTrainingService({
     repository: store.repository,
     plan,
     suggestions,
+    painGate,
     clock: saturday,
     ids: sequentialIds('id'),
   });
-  return { service, store, plan, suggestions };
+  return { service, store, plan, suggestions, painGate };
 }
 
 const expectOk = <T>(result: { ok: true; value: T } | { ok: false; error: { code: string } }) => {
@@ -660,5 +669,239 @@ describe('getExerciseHistory (RN-TRN-08)', () => {
 
   it('sin sesiones del ejercicio → []', async () => {
     expect(await history().getExerciseHistory(id('jalon'))).toEqual([]);
+  });
+});
+
+// Spec 005 (contract v1.22, decision 24): closing, the list of closed workouts and a day done.
+
+describe('finishWorkout (RN-TRN-06, 22)', () => {
+  // Friday's session started on Saturday, with Prensa 1 done.
+  async function withDoneSet(options: Parameters<typeof setup>[0] = {}) {
+    const ctx = await started(options);
+    expectOk(await ctx.service.logSet(ctx.setOf('prensa'), { weightKg: 60, reps: 10 }));
+    expectOk(await ctx.service.toggleSetDone(ctx.setOf('prensa')));
+    return ctx;
+  }
+
+  it('RN-TRN-22: con dolor cierra y guarda completed, finishedAt del reloj y las notas (AC-18)', async () => {
+    const { service, store, workout, painGate } = await withDoneSet();
+
+    const closed = expectOk(await service.finishWorkout(workout.id, { notes: '  Buena sesión ' }));
+
+    expect(closed).toMatchObject({
+      id: workout.id,
+      status: 'completed',
+      finishedAt: saturday.now(),
+      notes: 'Buena sesión',
+    });
+    expect(store.workouts.get(workout.id)).toEqual(closed);
+    expect(painGate.hasPainEntry).toHaveBeenCalledWith(workout.id);
+  });
+
+  it('RN-TRN-22: las series no hechas siguen guardadas (AC-20)', async () => {
+    const { service, store, workout } = await withDoneSet();
+
+    expectOk(await service.finishWorkout(workout.id, {}));
+
+    const own = [...store.sets.values()].filter((s) => s.workoutId === workout.id);
+    expect(own).toHaveLength(4);
+    expect(own.filter((s) => !s.done)).toHaveLength(3);
+  });
+
+  it('RN-TRN-06: sin dolor → pain-required y no cambia nada', async () => {
+    const painGate = { hasPainEntry: vi.fn(() => Promise.resolve(false)) };
+    const { service, store, workout } = await withDoneSet({ painGate });
+
+    const result = await service.finishWorkout(workout.id, {});
+
+    expect(result).toMatchObject({ ok: false, error: { code: 'training/pain-required' } });
+    expect(store.workouts.get(workout.id)?.status).toBe('in_progress');
+  });
+
+  it('RN-TRN-22: un workout inexistente → workout-not-found, sin preguntar al PainGate', async () => {
+    const { service, painGate } = setup();
+
+    expect(await service.finishWorkout(id('nadie'), {})).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-not-found' },
+    });
+    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+  });
+
+  it('RN-TRN-22: sin series hechas → nothing-done, sin preguntar al PainGate', async () => {
+    const { service, workout, painGate } = await started();
+
+    expect(await service.finishWorkout(workout.id, {})).toMatchObject({
+      ok: false,
+      error: { code: 'training/nothing-done' },
+    });
+    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+  });
+
+  it('RN-TRN-07: un workout descartado → workout-closed, sin preguntar al PainGate', async () => {
+    const { service, workout, painGate } = await withDoneSet();
+    expectOk(await service.discardWorkout(workout.id));
+
+    expect(await service.finishWorkout(workout.id, {})).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-closed' },
+    });
+    expect(painGate.hasPainEntry).not.toHaveBeenCalled();
+  });
+
+  it('RN-TRN-22: si otra pestaña cierra mientras se pregunta al PainGate → workout-closed (AC-31)', async () => {
+    const ctx = await withDoneSet({
+      painGate: {
+        hasPainEntry: vi.fn((workoutId: ID) => {
+          // The other tab closes it after this tab read the workout and before its transaction.
+          const w = ctx.store.workouts.get(workoutId);
+          if (w) ctx.store.workouts.set(workoutId, { ...w, status: 'completed' });
+          return Promise.resolve(true);
+        }),
+      },
+    });
+
+    expect(await ctx.service.finishWorkout(ctx.workout.id, { notes: 'mía' })).toMatchObject({
+      ok: false,
+      error: { code: 'training/workout-closed' },
+    });
+    expect(ctx.store.workouts.get(ctx.workout.id)).not.toHaveProperty('notes');
+  });
+
+  it('RN-TRN-18: si el PainGate rechaza, finishWorkout rechaza y no cambia nada', async () => {
+    const painGate = { hasPainEntry: vi.fn(() => Promise.reject(new Error('disk failure'))) };
+    const { service, store, workout } = await withDoneSet({ painGate });
+
+    await expect(service.finishWorkout(workout.id, {})).rejects.toThrow(/disk failure/);
+    expect(store.workouts.get(workout.id)?.status).toBe('in_progress');
+  });
+
+  it('RN-TRN-22: notas de 2001 caracteres → notes-too-long y no cambia nada', async () => {
+    const { service, store, workout } = await withDoneSet();
+
+    expect(await service.finishWorkout(workout.id, { notes: 'a'.repeat(2001) })).toMatchObject({
+      ok: false,
+      error: { code: 'training/notes-too-long' },
+    });
+    expect(store.workouts.get(workout.id)?.status).toBe('in_progress');
+  });
+});
+
+describe('listWorkouts (RN-TRN-26)', () => {
+  const at = (key: string, status: Workout['status'], d: string, startedAt?: string) => ({
+    workout: {
+      ...stored(key, status, d),
+      ...(startedAt ? { startedAt: instant(startedAt) } : {}),
+    },
+    sets: [],
+  });
+
+  it('RN-TRN-26: solo completed, con los límites incluidos, del más reciente al más antiguo', async () => {
+    const { service } = setup({
+      initial: [
+        at('antes', 'completed', '2026-11-15'),
+        at('lunes', 'completed', '2026-11-16'),
+        at('miercoles', 'completed', '2026-11-18'),
+        at('descartado', 'discarded', '2026-11-19'),
+        at('domingo', 'completed', '2026-11-22'),
+        at('despues', 'completed', '2026-11-23'),
+      ],
+    });
+
+    const listed = await service.listWorkouts({ from: date('2026-11-16'), to: date('2026-11-22') });
+
+    expect(listed.map((w) => w.id)).toEqual(['domingo', 'miercoles', 'lunes']);
+  });
+
+  it('RN-TRN-26: in_progress no sale', async () => {
+    const { service } = setup({ initial: [at('curso', 'in_progress', '2026-11-18')] });
+
+    expect(
+      await service.listWorkouts({ from: date('2026-11-16'), to: date('2026-11-22') }),
+    ).toEqual([]);
+  });
+
+  it('RN-TRN-26: el mismo día, por startedAt como instante y no como string', async () => {
+    // 10:00+01:00 is 09:00Z, before 09:30Z, though it sorts after it as a string.
+    const { service } = setup({
+      initial: [
+        at('madrid', 'completed', '2026-11-18', '2026-11-18T10:00:00+01:00'),
+        at('londres', 'completed', '2026-11-18', '2026-11-18T09:30:00+00:00'),
+      ],
+    });
+
+    const listed = await service.listWorkouts({ from: date('2026-11-18'), to: date('2026-11-18') });
+
+    expect(listed.map((w) => w.id)).toEqual(['londres', 'madrid']);
+  });
+
+  it('RN-TRN-26: con from > to → []', async () => {
+    const { service } = setup({ initial: [at('lunes', 'completed', '2026-11-16')] });
+
+    expect(
+      await service.listWorkouts({ from: date('2026-11-22'), to: date('2026-11-16') }),
+    ).toEqual([]);
+  });
+});
+
+describe('startWorkout de un día ya hecho (RN-TRN-24)', () => {
+  const friday = (status: Workout['status']): WorkoutState => ({
+    workout: { ...stored(`viernes-${status}`, status, '2026-11-20') },
+    sets: [],
+  });
+
+  it('RN-TRN-24: un día con un completed → already-done, sin details y sin crear nada (AC-35)', async () => {
+    const { service, store } = setup({ initial: [friday('completed')] });
+
+    const result = await service.startWorkout(date('2026-11-21'), {
+      plannedFor: date('2026-11-20'),
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('training/already-done');
+    expect(result.error.message).toMatch(/RN-TRN-24/);
+    expect(result.error).not.toHaveProperty('details');
+    expect(store.workouts.size).toBe(1);
+  });
+
+  it('RN-TRN-24: con uno activo gana workout-already-active', async () => {
+    const active: WorkoutState = {
+      workout: stored('activo', 'in_progress', '2026-11-16'),
+      sets: [],
+    };
+    const { service } = setup({ initial: [friday('completed'), active] });
+
+    expect(
+      await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/workout-already-active' } });
+  });
+
+  it('RN-TRN-23: un discarded de ese día no lo cuenta como hecho', async () => {
+    const { service } = setup({ initial: [friday('discarded')] });
+
+    expect(
+      (await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') })).ok,
+    ).toBe(true);
+  });
+
+  it('RN-TRN-24: un completed de otro día no bloquea este', async () => {
+    const monday: WorkoutState = { workout: stored('lunes', 'completed', '2026-11-16'), sets: [] };
+    const { service } = setup({ initial: [monday] });
+
+    expect(
+      (await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') })).ok,
+    ).toBe(true);
+  });
+
+  it('RN-TRN-24: tras cerrar una sesión, iniciar el mismo día del plan → already-done', async () => {
+    const { service, workout, setOf } = await started();
+    expectOk(await service.logSet(setOf('prensa'), { weightKg: 60, reps: 10 }));
+    expectOk(await service.toggleSetDone(setOf('prensa')));
+    expectOk(await service.finishWorkout(workout.id, {}));
+
+    expect(
+      await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/already-done' } });
   });
 });

@@ -13,6 +13,7 @@ const date = (s: string) => s as LocalDate;
 const saturday = fixedClock('2026-11-21T09:30:00-06:00');
 
 const noSuggestions = { getPrefill: () => Promise.resolve(null) };
+const withPain = { hasPainEntry: () => Promise.resolve(true) }; // RN-TRN-06
 
 const opened: Dexie[] = [];
 
@@ -38,6 +39,7 @@ const training = (db: Dexie, prefix = 'id') =>
     ids: sequentialIds(prefix),
     plan,
     suggestions: noSuggestions,
+    painGate: withPain,
   });
 
 const ok = <T>(result: { ok: true; value: T } | { ok: false; error: { code: string } }) => {
@@ -251,5 +253,71 @@ describe('getExerciseHistory', () => {
     expect(session).toMatchObject({ workoutId: workout.id, date: '2026-11-21', repRange: [8, 12] });
     expect(session?.sets.map((s) => s.id)).toEqual([setId]);
     expect(await service.getExerciseHistory(jalon.id)).toEqual([]);
+  });
+});
+
+describe('cerrar y días hechos (spec 005, contrato v1.22)', () => {
+  // Starts a session on `day`, marks Prensa 1 and closes it.
+  async function closeOn(service: ReturnType<typeof training>, db: Dexie, day: string) {
+    const workout = ok(await service.startWorkout(date(day)));
+    const setId = (await setsOf(db, 'prensa')).find(
+      (s) => s.workoutId === workout.id && s.setNumber === 1,
+    )?.id;
+    if (!setId) throw new Error('no Prensa set');
+    ok(await service.logSet(setId, { weightKg: 60, reps: 10 }));
+    ok(await service.toggleSetDone(setId));
+    return ok(await service.finishWorkout(workout.id, { notes: 'Bien' }));
+  }
+
+  it('RN-TRN-22: el cierre se guarda y otra conexión lo ve completed (AC-18)', async () => {
+    const name = crypto.randomUUID();
+    const closed = await closeOn(training(openDb(name)), openDb(name), '2026-11-21');
+
+    const { workouts } = await dump(openDb(name));
+
+    expect(workouts).toEqual([closed]);
+    expect(closed).toMatchObject({
+      status: 'completed',
+      finishedAt: saturday.now(),
+      notes: 'Bien',
+    });
+  });
+
+  it('RN-TRN-26: listWorkouts lee de la base solo los completed del rango, en orden', async () => {
+    const db = openDb();
+    const service = training(db);
+    const first = await closeOn(service, db, '2026-11-20');
+    const discarded = ok(await service.startWorkout(date('2026-11-21')));
+    ok(await service.discardWorkout(discarded.id));
+    const last = await closeOn(service, db, '2026-11-22');
+    ok(await service.startWorkout(date('2026-11-21'))); // in progress, inside the range
+
+    const listed = await service.listWorkouts({ from: date('2026-11-20'), to: date('2026-11-22') });
+
+    expect(listed.map((w) => w.id)).toEqual([last.id, first.id]);
+  });
+
+  it('RN-TRN-24: dos startWorkout a la vez de un día ya hecho, desde dos conexiones, no crean nada', async () => {
+    const name = crypto.randomUUID();
+    const db = openDb(name);
+    await closeOn(training(db, 'x'), db, '2026-11-21');
+    const [a, b] = [training(openDb(name), 'a'), training(openDb(name), 'b')];
+
+    const results = await Promise.all([
+      a.startWorkout(date('2026-11-21')),
+      b.startWorkout(date('2026-11-21')),
+    ]);
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: 'training/already-done' }) as unknown,
+      }),
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: 'training/already-done' }) as unknown,
+      }),
+    ]);
+    expect((await dump(openDb(name))).workouts).toHaveLength(1);
   });
 });
