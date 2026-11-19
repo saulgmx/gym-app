@@ -56,3 +56,13 @@
   border-color: var(--warn);
   color: var(--warn);
 }
+
+/* "Ver detalle" of a done day (spec 006 AC-33): a secondary link of 44 px, below the summary. */
+.detail {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  margin-top: 0.25rem;
+  color: var(--accent);
+  font-weight: 600;
+}

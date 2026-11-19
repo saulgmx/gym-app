@@ -128,7 +128,7 @@ describe('DayCard con una sesión cerrada hoy', () => {
   it('spec 005b AC-8: un día de pesas ya hecho conserva su tarjeta, sin el texto', () => {
     // view null: broken data, the card shows no summary line (spec 005 plan §6.7).
     const now = '2026-11-16T19:00:00-06:00' as Instant;
-    renderCard(deloadDay, { trained: friday, done: { view: null, now } });
+    renderCard(deloadDay, { trained: friday, done: { workoutId: id('w'), view: null, now } });
 
     expect(screen.getByText('Hecha')).toBeInTheDocument();
     expect(screen.queryByText(/Ya entrenaste hoy/)).not.toBeInTheDocument();
@@ -151,5 +151,18 @@ describe('DayCard con una sesión cerrada hoy', () => {
       expect(screen.queryByText(/Ya entrenaste hoy/)).not.toBeInTheDocument();
       unmount();
     }
+  });
+});
+
+describe('DayCard de un día hecho (spec 006 AC-33)', () => {
+  it('spec 006 AC-33: "Ver detalle" lleva al detalle de su sesión, aunque no haya resumen', () => {
+    renderCard(deloadDay, {
+      done: { workoutId: id('w-hecho'), view: null, now: '2026-11-16T19:00:00-06:00' as Instant },
+    });
+
+    expect(screen.getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+      'href',
+      '/historial/w-hecho',
+    );
   });
 });

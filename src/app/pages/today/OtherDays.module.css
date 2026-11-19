@@ -34,7 +34,7 @@
   text-decoration: none;
 }
 
-/* A day already done: grey text, not a link (spec 005 §6.3, AC-32). */
+/* A day already done: grey (spec 005 §6.3, AC-32), a link to its detail since spec 006 AC-34. */
 .done {
   display: flex;
   align-items: center;
@@ -42,4 +42,5 @@
   min-height: 3rem;
   padding: 0 1rem;
   color: var(--text-muted);
+  text-decoration: none;
 }
