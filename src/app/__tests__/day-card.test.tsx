@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Block, PlannedItem, ProgramPosition, TodayPlan } from '@/modules/plan';
-import type { ID, LocalDate } from '@/shared/kernel';
+import type { ID, Instant, LocalDate } from '@/shared/kernel';
 import { AppContext } from '../context';
 import { DayCard } from '../pages/today/DayCard';
 import { closeTestDatabases, createTestServices } from './test-app';
@@ -63,11 +63,11 @@ const deloadDay: TodayPlan = {
 afterEach(closeTestDatabases);
 
 // "Empezar sesión" needs the app services and a router.
-function renderCard(today: TodayPlan) {
+function renderCard(today: TodayPlan, props: Partial<Parameters<typeof DayCard>[0]> = {}) {
   render(
     <AppContext value={createTestServices()}>
       <MemoryRouter>
-        <DayCard today={today} date={'2026-11-16' as LocalDate} />
+        <DayCard today={today} date={'2026-11-16' as LocalDate} {...props} />
       </MemoryRouter>
     </AppContext>,
   );
@@ -95,5 +95,61 @@ describe('DayCard', () => {
     renderCard(normal);
 
     expect(screen.queryByText('Descarga')).not.toBeInTheDocument();
+  });
+});
+
+// Spec 005b §6.1 (RN-TRN-27): another session was already closed today.
+describe('DayCard con una sesión cerrada hoy', () => {
+  const friday = { name: 'Full body A', plannedFor: '2026-11-20' as LocalDate };
+  const TEXT = 'Ya entrenaste hoy (Full body A del viernes).';
+
+  it('spec 005b AC-9: un día de pesas pendiente cambia "Empezar sesión" por el texto y conserva título, resumen y chips', () => {
+    renderCard(deloadDay, { trained: friday });
+
+    const region = screen.getByRole('region', { name: 'Tu sesión de hoy' });
+    expect(within(region).getByText(TEXT)).toBeInTheDocument();
+    expect(within(region).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(region).getByRole('heading', { name: 'Push' })).toBeInTheDocument();
+    expect(within(region).getByText('1 ejercicio · ~15 min')).toBeInTheDocument();
+    expect(
+      within(region)
+        .getAllByRole('listitem')
+        .map((chip) => chip.textContent),
+    ).toEqual(['Bloque de prueba', 'RIR 4', 'Descarga']);
+  });
+
+  it('sin sesión cerrada hoy, "Empezar sesión" sigue y no hay texto', () => {
+    renderCard(deloadDay, { trained: null });
+
+    expect(screen.getByRole('button', { name: 'Empezar sesión' })).toBeInTheDocument();
+    expect(screen.queryByText(/Ya entrenaste hoy/)).not.toBeInTheDocument();
+  });
+
+  it('spec 005b AC-8: un día de pesas ya hecho conserva su tarjeta, sin el texto', () => {
+    // view null: broken data, the card shows no summary line (spec 005 plan §6.7).
+    const now = '2026-11-16T19:00:00-06:00' as Instant;
+    renderCard(deloadDay, { trained: friday, done: { view: null, now } });
+
+    expect(screen.getByText('Hecha')).toBeInTheDocument();
+    expect(screen.queryByText(/Ya entrenaste hoy/)).not.toBeInTheDocument();
+  });
+
+  it('spec 005b decisión 4: cardio, descanso y fuera del programa no cambian', () => {
+    const days: TodayPlan[] = [
+      { kind: 'cardio', position, note: 'Cardio suave 30-40 min' },
+      { kind: 'rest', position },
+      { kind: 'none', position: { ...position, status: 'finished' } },
+    ];
+    for (const day of days) {
+      const { unmount } = render(
+        <AppContext value={createTestServices()}>
+          <MemoryRouter>
+            <DayCard today={day} date={'2026-11-16' as LocalDate} trained={friday} />
+          </MemoryRouter>
+        </AppContext>,
+      );
+      expect(screen.queryByText(/Ya entrenaste hoy/)).not.toBeInTheDocument();
+      unmount();
+    }
   });
 });
