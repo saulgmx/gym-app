@@ -194,3 +194,31 @@ export const painLevel = (page: Page, n: number) =>
   page
     .getByRole('group', { name: 'Dolor lumbar' })
     .getByRole('button', { name: String(n), exact: true });
+
+// Spec 005b: one closed session per day (RN-TRN-27), shared by close.spec and a11y.spec.
+
+export const TRAINED_TODAY = 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.';
+
+/** Opens "Hoy" on Wednesday 18 at 18:00 (Full body B, still to do). */
+export async function openWednesday(page: Page) {
+  await openTodayOn(page, '2026-11-18T18:00:00-06:00');
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+}
+
+/**
+ * From "Hoy" on Wednesday (already open): opens Friday's preview from "Otra sesión de esta
+ * semana", starts Full body A, does one set and saves it with pain 0. Ends on "Hoy" and returns
+ * the workout ID. Only clicks, no page loads, so it also works offline.
+ */
+export async function closeFridayOnWednesday(page: Page): Promise<string> {
+  await page
+    .getByRole('region', { name: 'Otra sesión de esta semana' })
+    .getByRole('link', { name: 'Vie 20 · Full body A' })
+    .click();
+  await expect(page).toHaveURL('/dia/2026-11-20');
+  const id = await cierreWithOneSet(page);
+  await painLevel(page, 0).click();
+  await page.getByRole('button', { name: 'Guardar sesión' }).click();
+  await expect(page).toHaveURL('/');
+  return id;
+}

@@ -1,11 +1,14 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   cierreWithOneSet,
+  closeFridayOnWednesday,
   doSet,
   freezeClockAt,
+  openWednesday,
   painLevel,
   startSession,
   storedRows,
+  TRAINED_TODAY,
   USER_TIME_ZONE,
   waitForControllingWorker,
 } from './helpers';
@@ -304,4 +307,68 @@ test.describe('spec 005: el Cierre', () => {
       });
     });
   }
+});
+
+// Spec 005b (RN-TRN-27): one closed session per day. Detail in plan §7.
+test.describe('spec 005b: una sola sesión cerrada por día', () => {
+  interface StoredDay extends StoredWorkout {
+    date: string;
+    plannedFor: string;
+  }
+
+  /** "Hoy" on Wednesday after closing Friday's session that day (AC-8, AC-9). */
+  async function expectWednesdayTrained(page: Page) {
+    const card = page.getByRole('region', { name: 'Tu sesión de hoy' });
+    await expect(card.getByRole('heading', { level: 2, name: 'Full body B' })).toBeVisible();
+    await expect(card.getByText('Ya entrenaste hoy (Full body A del viernes).')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toHaveCount(0);
+    const others = page.getByRole('region', { name: 'Otra sesión de esta semana' });
+    await expect(others.getByText(TRAINED_TODAY)).toBeVisible();
+    await expect(others.getByText(/^Vie 20 · Full body A · hecha/)).toBeVisible();
+  }
+
+  test('AC-8, AC-9, AC-13, AC-14: el viernes hecho el miércoles; "Hoy" y las vistas previas ya no dejan empezar', async ({
+    page,
+  }) => {
+    await openWednesday(page);
+    const id = await closeFridayOnWednesday(page);
+
+    await expectWednesdayTrained(page);
+    expect(await storedRows<StoredDay>(page, 'workouts')).toEqual([
+      expect.objectContaining({
+        id,
+        status: 'completed',
+        date: '2026-11-18',
+        plannedFor: '2026-11-20',
+      }),
+    ]);
+
+    // AC-14: Friday itself is done, which wins.
+    await page.goto('/dia/2026-11-20');
+    await expect(page.getByText('Ya hiciste esta sesión.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toHaveCount(0);
+
+    // AC-13: Monday is not done, but today is already trained.
+    await page.goto('/dia/2026-11-16');
+    await expect(page.getByRole('heading', { level: 2, name: 'Full body A' })).toBeVisible();
+    await expect(page.getByText(TRAINED_TODAY)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toHaveCount(0);
+  });
+
+  test('AC-19: sin conexión, igual', async ({ page, context }) => {
+    await openWednesday(page);
+    await waitForControllingWorker(page);
+
+    await context.setOffline(true);
+    await closeFridayOnWednesday(page);
+
+    await expectWednesdayTrained(page);
+    await page
+      .getByRole('region', { name: 'Otra sesión de esta semana' })
+      .getByRole('link', { name: 'Lun 16 · Full body A' })
+      .click();
+    await expect(page).toHaveURL('/dia/2026-11-16');
+    await expect(page.getByText(TRAINED_TODAY)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Empezar sesión' })).toHaveCount(0);
+  });
 });
