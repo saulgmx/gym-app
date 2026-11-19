@@ -23,7 +23,10 @@ export function WeekSection({
         <h2 id={titleId}>Esta semana</h2>
         <p>{formatWeekSessions(0, planned)}</p>
       </div>
-      <WeekStrip days={days} weekStart={weekStart} today={today} />
+      <WeekStrip days={days} weekStart={weekStart} today={today} done={NONE_DONE} />
     </section>
   );
 }
+
+// Spec 005 T15: no day done yet; T19 passes the real ones from useCompletedWorkouts.
+const NONE_DONE: ReadonlySet<LocalDate> = new Set();

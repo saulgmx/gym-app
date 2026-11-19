@@ -5,8 +5,8 @@ import styles from './WeekStrip.module.css';
 
 // Week strip, Monday to Sunday (spec 003 §6.4, design-hoy "Tira de días"). Not interactive. Each
 // day is a role="img" inside its <li>, so the strip stays a list of 7 days and each day reads as
-// "<day>, [hoy,] <session>, <state>". The drawn initial and mark are only decoration. "Hecha" with
-// its ✓ arrives in phase 3 (P-7).
+// "<day>, [hoy,] <session>, <state>". The drawn initial and mark are only decoration. A workout day
+// whose date is in `done` is "hecha" with a ✓ (spec 005, contract v1.16); app computes `done`.
 
 const DAYS = [
   ['L', 'lunes'],
@@ -18,7 +18,7 @@ const DAYS = [
   ['D', 'domingo'],
 ] as const;
 
-type Mark = 'workout' | 'cardio' | 'rest' | 'none';
+type Mark = 'workout' | 'done' | 'cardio' | 'rest' | 'none';
 
 interface DayLook {
   mark: Mark;
@@ -29,9 +29,11 @@ interface DayLook {
 // A past workout day is "no hecha" and looks like a pending one (design-hoy): the empty ring
 // (~1.5:1 contrast) is never the only cue, because a pending workout is the only day with no
 // mark inside (spec 003 §6.4, WCAG 1.4.11).
-function lookOf(day: TodayPlan, offset: number): DayLook {
+// Only a workout day can be done: cardio is not recorded in v1 (spec 005 §7).
+function lookOf(day: TodayPlan, offset: number, isDone: boolean): DayLook {
   switch (day.kind) {
     case 'workout':
+      if (isDone) return { mark: 'done', text: '✓', spoken: `${day.template.name}, hecha` };
       return {
         mark: 'workout',
         text: offset === 0 ? '●' : '',
@@ -50,10 +52,12 @@ export function WeekStrip({
   days,
   weekStart,
   today,
+  done,
 }: {
   days: TodayPlan[];
   weekStart: LocalDate;
   today: LocalDate;
+  done: ReadonlySet<LocalDate>; // workout days done (RN-TRN-23); dates of other weeks are ignored
 }) {
   const monday = startOfIsoWeek(weekStart);
   return (
@@ -61,8 +65,9 @@ export function WeekStrip({
       {DAYS.map(([initial, dayName], i) => {
         const day = days[i];
         if (!day) return null;
-        const offset = daysBetween(today, addDays(monday, i));
-        const { mark, text, spoken } = lookOf(day, offset);
+        const dayDate = addDays(monday, i);
+        const offset = daysBetween(today, dayDate);
+        const { mark, text, spoken } = lookOf(day, offset, done.has(dayDate));
         const isToday = offset === 0;
         const label = `${dayName}, ${isToday ? 'hoy, ' : ''}${spoken}`;
         return (
