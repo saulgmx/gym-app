@@ -289,6 +289,46 @@ export function chooseExercise(
   return changed(workout, put, workout);
 }
 
+const MAX_NOTES = 2000; // UTF-16 code units, as the field's maxlength counts them (RN-TRN-22)
+
+/** RN-TRN-22: the first two checks of closing, so the service asks PainGate only when it can close. */
+export function checkFinishable(state: WorkoutState): Result<void, TrainingError> {
+  const isClosed = closed(state);
+  if (isClosed) return isClosed;
+  if (!state.sets.some((s) => s.done)) {
+    return fail('training/nothing-done', `Workout ${state.workout.id} has no done set (RN-TRN-22)`);
+  }
+  return ok(undefined);
+}
+
+/** RN-TRN-22: closed → nothing done → no pain → notes too long; unfinished sets stay as they are. */
+export function finishWorkout(
+  state: WorkoutState,
+  input: { notes?: string; now: Instant; hasPain: boolean },
+): Change<Workout> {
+  const finishable = checkFinishable(state);
+  if (!finishable.ok) return finishable;
+  if (!input.hasPain) {
+    return fail(
+      'training/pain-required',
+      `Workout ${state.workout.id} has no pain entry (RN-TRN-06)`,
+    );
+  }
+  const notes = input.notes?.trim() ?? '';
+  if (notes.length > MAX_NOTES) {
+    return fail(
+      'training/notes-too-long',
+      `Notes have ${String(notes.length)} characters, more than ${String(MAX_NOTES)} (RN-TRN-22)`,
+    );
+  }
+
+  const workout: Workout = { ...state.workout, status: 'completed', finishedAt: input.now };
+  // Empty notes leave no property behind, also over notes the workout already had.
+  if (notes === '') delete workout.notes;
+  else workout.notes = notes;
+  return changed(workout, [], workout);
+}
+
 /** RN-TRN-15: discarded, keeping every set; no finishedAt (that belongs to closing). */
 export function discardWorkout(state: WorkoutState): Change<Workout> {
   const isClosed = closed(state);

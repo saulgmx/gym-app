@@ -9,6 +9,7 @@ import {
   trainingStores,
   useActiveWorkout,
   useActiveWorkoutView,
+  useCompletedWorkouts,
   useLastSession,
   useWorkoutView,
   type TrainingApi,
@@ -34,6 +35,7 @@ function open(planReader: PlanReader = plan) {
     ids: sequentialIds(),
     plan: planReader,
     suggestions: { getPrefill: () => Promise.resolve(null) },
+    painGate: { hasPainEntry: () => Promise.resolve(true) },
   });
 }
 
@@ -187,6 +189,65 @@ describe('useLastSession', () => {
       expect(nextDay.result.current?.workoutId).toBe(workout.id);
     });
     expect(sameDay.result.current).toBeNull();
+  });
+});
+
+describe('useCompletedWorkouts (spec 005)', () => {
+  async function closeOne() {
+    const workout = await start();
+    const setId = await firstPrensaSet();
+    await training.logSet(setId, { weightKg: 60, reps: 10 });
+    await training.toggleSetDone(setId);
+    const closed = await training.finishWorkout(workout.id, {});
+    if (!closed.ok) throw new Error(closed.error.code);
+    return closed.value;
+  }
+  const week = { from: date('2026-11-16'), to: date('2026-11-22') };
+
+  it('RN-TRN-26: undefined mientras carga, [] sin sesiones y se actualiza al cerrar', async () => {
+    const { result } = renderHook(() => useCompletedWorkouts(training, week));
+    expect(result.current).toBeUndefined();
+    await waitFor(() => {
+      expect(result.current).toEqual([]);
+    });
+
+    const closed = await closeOne();
+
+    await waitFor(() => {
+      expect(result.current?.map((w) => w.id)).toEqual([closed.id]);
+    });
+  });
+
+  it('RN-TRN-26: una sesión en curso no aparece', async () => {
+    await start();
+    const { result } = renderHook(() => useCompletedWorkouts(training, week));
+    await waitFor(() => {
+      expect(result.current).toEqual([]);
+    });
+  });
+
+  it('RN-TRN-19: al cambiar de rango nunca devuelve el resultado del anterior', async () => {
+    await closeOne(); // Saturday 21, inside week
+    const seen: (string[] | undefined)[] = [];
+    const { result, rerender } = renderHook(
+      ({ range }) => {
+        const value = useCompletedWorkouts(training, range);
+        seen.push(value?.map((w) => w.id));
+        return value;
+      },
+      { initialProps: { range: week } },
+    );
+    await waitFor(() => {
+      expect(result.current).toHaveLength(1);
+    });
+    seen.length = 0;
+
+    rerender({ range: { from: date('2026-11-23'), to: date('2026-11-29') } });
+
+    await waitFor(() => {
+      expect(result.current).toEqual([]);
+    });
+    expect(seen.every((ids) => ids === undefined || ids.length === 0)).toBe(true);
   });
 });
 

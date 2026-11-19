@@ -45,3 +45,11 @@ export function useLastSession(
     training,
   );
 }
+
+// Days done of a range (spec 005, RN-TRN-23, 26): [] when there are none, never null.
+export function useCompletedWorkouts(
+  training: TrainingApi,
+  range: { from: LocalDate; to: LocalDate },
+): Workout[] | undefined {
+  return useKeyedQuery(`${range.from}|${range.to}`, () => training.listWorkouts(range), training);
+}

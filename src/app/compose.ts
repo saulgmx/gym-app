@@ -26,7 +26,7 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
 
   // One generator for every module, so IDs stay monotonic per device (ADR-0009).
   const ids = createUuidV7Generator();
-  // health before training: training will take health.painGate (spec 005 T12, RN-TRN-06).
+  // health before training, which takes health.painGate (RN-TRN-06).
   const health = createHealth({ db, clock, ids });
 
   return {
@@ -38,6 +38,7 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
       ids,
       plan,
       suggestions: nullSuggestions,
+      painGate: health.painGate, // RN-TRN-06
     }),
     progression: createProgression(),
     health,

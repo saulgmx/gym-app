@@ -69,6 +69,7 @@ describe('openDatabase', () => {
       ids: sequentialIds('t'),
       plan,
       suggestions: { getPrefill: () => Promise.resolve(null) },
+      painGate: { hasPainEntry: () => Promise.resolve(false) },
     });
     const started = await training.startWorkout('2026-11-16' as LocalDate);
     if (!started.ok) throw new Error(started.error.code);

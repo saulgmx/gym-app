@@ -101,8 +101,11 @@ export type TrainingErrorCode =
   | 'training/max-sets-reached'
   | 'training/set-not-removable'
   | 'training/invalid-exercise-choice'
-  | 'training/item-has-done-sets';
-// 'training/pain-required' arrives with finishWorkout (phase 3).
+  | 'training/item-has-done-sets'
+  | 'training/pain-required' // RN-TRN-06, 22 (spec 005)
+  | 'training/nothing-done'
+  | 'training/notes-too-long'
+  | 'training/already-done'; // RN-TRN-24
 
 export type SetField = 'weightKg' | 'reps' | 'rir';
 export type SetValueProblem = 'missing' | 'not-a-number' | 'out-of-range' | 'step' | 'not-allowed';

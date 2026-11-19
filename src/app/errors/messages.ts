@@ -1,3 +1,4 @@
+import type { HealthErrorCode } from '@/modules/health';
 import type { PlanErrorCode } from '@/modules/plan';
 import type {
   InvalidSetValuesDetails,
@@ -13,7 +14,7 @@ export const GENERIC_ERROR_MESSAGE =
   'Algo salió mal. Tus datos guardados no se han perdido. Recarga la app para continuar.';
 
 /** Union of every module's error codes. */
-export type ErrorCode = PlanErrorCode | TrainingErrorCode;
+export type ErrorCode = PlanErrorCode | TrainingErrorCode | HealthErrorCode;
 
 /** Adding a code to ErrorCode without its message here breaks tsc. */
 export const errorMessages: Record<ErrorCode, string> = {
@@ -34,6 +35,15 @@ export const errorMessages: Record<ErrorCode, string> = {
   'training/set-not-removable': 'No puedes quitar una serie hecha ni la única del ejercicio.',
   'training/invalid-exercise-choice': GENERIC_ERROR_MESSAGE, // a bug, not a user mistake
   'training/item-has-done-sets': 'Para cambiar de ejercicio, desmarca las series hechas.',
+  // Spec 005 (plan §6.10). Only nothing-done and already-done can come from the interface; the
+  // others guard the API. pain-required repeats the help of AC-10.
+  'training/pain-required': 'Elige el nivel de dolor para poder guardar.',
+  'training/nothing-done': 'No hay series hechas para guardar.',
+  'training/notes-too-long': 'Las notas pueden tener hasta 2000 caracteres.',
+  'training/already-done': 'Ya hiciste esta sesión.',
+  // health (spec 005 plan §6.10): they guard the API; the selector and checkboxes cannot send them.
+  'health/pain-out-of-range': 'El dolor va de 0 a 10.',
+  'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
 };
 
 // The detail of invalid-set-values, by field and reason (RN-TRN-04). Decimal comma, as typed.
