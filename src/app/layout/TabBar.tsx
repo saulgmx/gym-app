@@ -22,6 +22,13 @@ export function TabBar() {
         </svg>
         Hoy
       </Link>
+      {/* Without `end`, so the tab stays current on a session detail (spec 006 AC-3). */}
+      <NavLink to="/historial" className={cx(styles.tab)}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" className={styles.icon}>
+          <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+        </svg>
+        Historial
+      </NavLink>
       <NavLink to="/progreso" className={cx(styles.tab)}>
         <svg aria-hidden="true" viewBox="0 0 24 24" className={styles.icon}>
           <path d="M4 20V4M4 20h16M8 16l4-5 3 3 5-6" />

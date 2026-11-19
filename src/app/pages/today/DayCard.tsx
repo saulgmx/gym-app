@@ -3,13 +3,9 @@ import { formatRir, plannedSessionSeconds, type TodayPlan } from '@/modules/plan
 import { workoutSummary, type WorkoutView } from '@/modules/training';
 import type { Instant, LocalDate } from '@/shared/kernel';
 import { formatLongDate } from '../../format-date';
+import { formatBackChip } from '../../format-pain';
 import { StartWorkoutButton } from '../StartWorkoutButton';
-import {
-  formatBackChip,
-  formatDoneSummary,
-  formatSessionSummary,
-  formatTrainedToday,
-} from './format';
+import { formatDoneSummary, formatSessionSummary, formatTrainedToday } from './format';
 import styles from './DayCard.module.css';
 
 // "Tu sesión de hoy" (spec 003 §6.2, AC-1, AC-5, AC-7 to AC-9; spec 005 AC-34, §6.3). One eyebrow

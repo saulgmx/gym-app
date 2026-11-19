@@ -1,4 +1,4 @@
-import type { LocalDate } from '@/shared/kernel';
+import { addDays, type LocalDate } from '@/shared/kernel';
 
 // Visible dates in Spanish (spec 001 plan §6.7, §6.11). A LocalDate is formatted at UTC midnight,
 // as the kernel computes it (ADR-0009), so the device's time zone never shifts the day.
@@ -45,4 +45,16 @@ export function formatShortDateTitle(date: LocalDate): string {
   const day = weekday.format(instant);
   const month = shortMonth.format(instant).replace('.', '');
   return `${day.charAt(0).toUpperCase()}${day.slice(1)} ${String(instant.getUTCDate())} ${month}`;
+}
+
+/** "16-22 nov", or "30 nov-6 dic" when the week crosses a month (also a year, without it): the
+ *  week of a history group (spec 006 §6.1). The month has no period, as in formatShortDateTitle. */
+export function formatWeekRange(weekStart: LocalDate): string {
+  const from = new Date(`${weekStart}T00:00:00Z`);
+  const to = new Date(`${addDays(weekStart, 6)}T00:00:00Z`);
+  const month = (d: Date) => shortMonth.format(d).replace('.', '');
+  const day = (d: Date) => String(d.getUTCDate());
+  return month(from) === month(to)
+    ? `${day(from)}-${day(to)} ${month(to)}`
+    : `${day(from)} ${month(from)}-${day(to)} ${month(to)}`;
 }

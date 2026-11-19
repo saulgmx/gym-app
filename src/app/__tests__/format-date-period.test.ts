@@ -55,4 +55,11 @@ describe('short names with a period', () => {
     expect(formatShortDay('2026-11-16' as LocalDate)).toBe('Lun 16');
     expect(formatShortDay('2026-11-20' as LocalDate)).toBe('Vie 20');
   });
+
+  it('spec 006 AC-6: formatWeekRange → "16-22 nov" y "30 nov-6 dic", sin punto', async () => {
+    const { formatWeekRange } = await importFormatDate();
+
+    expect(formatWeekRange('2026-11-16' as LocalDate)).toBe('16-22 nov');
+    expect(formatWeekRange('2026-11-30' as LocalDate)).toBe('30 nov-6 dic');
+  });
 });

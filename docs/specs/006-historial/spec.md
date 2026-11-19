@@ -49,7 +49,7 @@ Las fechas suponen un programa que empieza el lunes 16-nov-2026; hoy es el miér
 | **M18**: Full body A del viernes | mié 18-nov | vie 20-nov | 2 de Prensa, 1.ª de Press de banca, 2 de Dominadas (5 en 3 ejercicios) | 18:00 → 18:30 | 5, "Hormigueo o adormecimiento" |
 | **L23**: Full body B | lun 23-nov | lun 23-nov | todas | 18:00 → 18:45 | 3, sin señales |
 
-En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2, Dominadas se hizo con la alternativa Jalón al pecho, y hay una serie extra de Press de banca (3.ª, 60 kg × 8, RIR 1). Una de las Dominadas de M18 fue con asistencia de 20 kg × 8 y RIR 2. La nota de L16 es "Buena sesión".
+En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2 y Dominadas se hizo con la alternativa Jalón al pecho. En L23 hay una serie extra de Fondos en paralelas (3.ª, 0 kg × 8, RIR 1), además de las planificadas. Una de las Dominadas de M18 fue con asistencia de 20 kg × 8 y RIR 2. La nota de L16 es "Buena sesión".
 
 ### 4.1 Navegación
 
@@ -86,7 +86,7 @@ En L16, la 2.ª serie de Prensa fue de 100 kg × 9 con RIR 2, Dominadas se hizo 
 | AC-19 | L16 | Miro "Ejercicios" | `h2` "Ejercicios" y los 7 en el orden de la sesión, cada uno con su nombre en `h3` y sus series hechas en una lista ordenada por `setNumber` |
 | AC-20 | AC-19 | Miro Prensa | "1 · 100 × 10 · RIR 2" y "2 · 100 × 9 · RIR 2" (kilos con coma decimal, como la sesión) |
 | AC-21 | AC-19 | Miro Dominadas | El `h3` dice "Jalón al pecho" y debajo "En lugar de Dominadas" (el ejercicio elegido, RN-TRN-13) |
-| AC-22 | AC-19 | Miro Press de banca | La 3.ª serie lleva la marca "Extra" |
+| AC-22 | L23 | Miro Fondos en paralelas | La 3.ª serie lleva la marca "Extra" |
 | AC-23 | M18 | Miro Dominadas | La serie con asistencia dice "Asist. 20 × 8 · RIR 2" |
 | AC-24 | Un ejercicio medido por tiempo (Plancha) con una serie de 40 s y RIR 2 | Miro su detalle | "1 · 40 s · RIR 2"; uno medido por repeticiones (`metric: 'reps'`) muestra solo las reps: "1 · 12 · RIR 1" |
 | AC-25 | M18 | Miro los ejercicios | Los 4 sin series hechas salen en su orden, con su nombre en gris y "Sin series" (decisión 4). Las series no hechas de Press de banca no salen (RN-TRN-08) |
@@ -148,7 +148,7 @@ Cambios de documentos hechos al aprobar (19-nov):
 - **Vacío:** el texto de AC-4, sin enlaces.
 
 ### 6.2 Detalle (`/historial/:workoutId`)
-- Con barra inferior y "Historial" marcada. Encabezado: flecha "Volver" (botón de 44 px con `aria-label="Volver"`), `h1` con el nombre, y debajo la fecha larga (`formatLongDateTitle`), "Semana N" y, si `plannedFor ≠ date`, "sesión del viernes".
+- Con barra inferior y "Historial" marcada. Encabezado: flecha "Volver" (enlace de 44 px con `aria-label="Volver"`, §8 decisión 10), `h1` con el nombre, y debajo la fecha larga (`formatLongDateTitle`), "Semana N" y, si `plannedFor ≠ date`, "sesión del viernes".
 - **Resumen:** las mismas tres cifras del Cierre (`<dl>`), sin recalcular en vivo.
 - **Dolor lumbar:** `h2`, el nivel "N/10" grande (ámbar desde 4) y, si las hay, "Señales de alarma: …" con las etiquetas del Cierre separadas por coma, en el orden de `RED_FLAGS`. **Sin los mensajes de banda ni de las señales:** son consejos para la próxima sesión y en "Hoy" ya se muestran con la última entrada; repetirlos en sesiones viejas confunde (§8, decisión 7).
 - **Ejercicios:** `h2` "Ejercicios"; por ítem, `h3` con el nombre del ejercicio elegido, "En lugar de <principal>" si es una alternativa, y una `<ol>` con una línea por serie hecha: "N · <valor> · RIR R", donde el valor es el de la celda "anterior" de la sesión (`formatPrevious`: "100 × 10", "Asist. 20 × 8", "12", "40 s"); las extra llevan "Extra" al final. Sin series hechas: el `h3` en `--text-muted` y "Sin series".
@@ -171,7 +171,7 @@ Cambios de documentos hechos al aprobar (19-nov):
 - **Reloj hacia atrás:** minutos = 0 (RN-TRN-25).
 - **Fecha de inicio cambiada (RF-03):** el número de semana y el bloque salen de `programWeek`, guardado al iniciar (RN-PLN-28); dos semanas ISO distintas pueden tener el mismo número y salen como dos grupos, cada uno con su rango de fechas.
 - **Semana con sesiones de dos `programWeek`** (solo si se cambió la fecha de inicio a mitad de semana): el encabezado usa el `programWeek` de la sesión más reciente del grupo.
-- **Ejercicio borrado del catálogo:** el nombre sale de `WorkoutView.exercises`; si falta, "Ejercicio desconocido" (no debería pasar: el catálogo no se borra en v1).
+- **Ejercicio borrado del catálogo:** `useWorkoutView` lanza si `plan` no devuelve uno (RN-TRN-17), así que el detalle muestra el error genérico (ADR-0010); no hay texto propio (§8, decisión 10). No debería pasar: el catálogo no se borra en v1.
 - **Muchas sesiones:** se leen todas. Con 3-4 por semana son ~200 al año y la consulta usa el índice `date`; si en la verificación pasa de 100 ms, el plan propone una carga por partes en otra spec.
 - **Posición al volver a la lista:** no se conserva el desplazamiento (no se pide; el navegador lo hace con "atrás", no con la flecha).
 - **Sesión cerrada en otra pestaña con el detalle abierto:** no aplica, solo se abren sesiones `completed`, que no cambian (RN-TRN-07).
@@ -192,6 +192,11 @@ Propuestas al escribir la spec, aprobadas con ella (19-nov):
 7. **Sin consejos en el detalle:** se muestra el nivel y las señales marcadas, pero no los mensajes de banda ni de las señales (§6.2). Reemplaza el "mensaje" de la propuesta inicial.
 8. **Bloque por número de semana** (RN-PLN-28) y no por fecha: el historial no cambia si se ajusta la fecha de inicio.
 9. **API:** los nombres (`listWorkoutHistory`/`useWorkoutHistory` en `training`, `historyDetail` en el dominio, la consulta del bloque en `plan`) los fija el plan técnico; esta spec fija las reglas.
+
+Decisiones durante la implementación (19-nov, antes de T14):
+
+10. **Detalle:** sin "Ejercicio desconocido", porque RN-TRN-17 hace lanzar la consulta si falta un ejercicio (el contrato manda sobre esta spec, `docs/README.md`); una sesión sin `programWeek` dice "· Fuera del programa" en lugar de "· Semana N" (AC-14), como el grupo de la lista; el `<title>` es "Historial · Gym" mientras carga y cuando la sesión no está en el historial; "Volver" es un enlace con `aria-label`, porque navega (§6.2 decía botón).
+11. **La serie extra de los ejemplos pasa de L16 a L23** (Fondos en paralelas, la 3.ª): con ella en L16, AC-7 y AC-16 habrían sido "11 series", porque las extra hechas cuentan (RN-TRN-25). Va en Fondos porque es el ítem de Full body B con margen (`[2, 3]`, RN-TRN-10); Press inclinado ya empieza con su máximo en la semana 2.
 
 ## 9. Checklist de la constitución
 

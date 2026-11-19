@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { closeTestDatabases, renderRoute, tapToNavigate } from './test-app';
@@ -41,6 +41,36 @@ describe('app router', () => {
     expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
   });
 
+  it('spec 006 AC-1: three tabs in order, Hoy, Historial and Progreso', async () => {
+    await renderAt('/');
+    const bar = tabBar();
+    if (!bar) throw new Error('no TabBar');
+
+    expect(
+      within(bar)
+        .getAllByRole('link')
+        .map((l) => l.textContent),
+    ).toEqual(['Hoy', 'Historial', 'Progreso']);
+  });
+
+  it('spec 006 AC-2: tapping Historial navigates to /historial and marks only that tab', async () => {
+    const router = await renderAt('/');
+    await screen.findByRole('list', { name: 'Semana' });
+    await tapToNavigate(userEvent.setup(), screen.getByRole('link', { name: 'Historial' }));
+
+    expect(router.state.location.pathname).toBe('/historial');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Historial' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Historial' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('spec 006 AC-3: on a session detail, Historial stays the current tab', async () => {
+    await renderAt('/historial/w1');
+
+    expect(screen.getByRole('link', { name: 'Historial' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
+  });
+
   it('AC-24: /sesion/:workoutId/:exerciseIndex shows the session page without TabBar', async () => {
     await renderAt('/sesion/w1/0');
     // w1 does not exist, so the page says so (spec 002 AC-28).
@@ -71,6 +101,7 @@ describe('app router', () => {
   it.each([
     ['/', 'Hoy · Gym'],
     ['/progreso', 'Progreso · Gym'],
+    ['/historial', 'Historial · Gym'],
     ['/sesion/w1/0', 'Sesión · Gym'],
     ['/sesion/w1', 'Sesión · Gym'], // "Continuar sesión" (spec 002 plan §6.7)
     ['/sesion/w1/cierre', 'Cierre de sesión · Gym'],

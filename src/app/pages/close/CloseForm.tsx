@@ -4,7 +4,7 @@ import type { WorkoutView } from '@/modules/training';
 import type { Instant } from '@/shared/kernel';
 import { formatLongDateTitle } from '../../format-date';
 import { CloseFooter } from './CloseFooter';
-import { CloseSummary } from './CloseSummary';
+import { SummaryFigures } from '../SummaryFigures';
 import { CLOSE_TEXTS } from './format';
 import styles from './close.module.css';
 
@@ -57,7 +57,7 @@ export function CloseForm({
           {formatLongDateTitle(workout.date)} · {workout.name}
         </p>
       </header>
-      <CloseSummary view={view} now={now} showTime={showTime} />
+      <SummaryFigures view={view} now={now} showTime={showTime} />
       <PainSelector value={level} onChange={setLevel} />
       <RedFlagsChecklist value={redFlags} onChange={setRedFlags} />
       <div className={styles.notes}>

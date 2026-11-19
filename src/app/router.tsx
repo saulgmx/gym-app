@@ -3,6 +3,8 @@ import { ErrorFallback } from './errors/ErrorFallback';
 import { AppLayout } from './layout/AppLayout';
 import { ClosePage } from './pages/close/ClosePage';
 import { DayPreviewPage } from './pages/DayPreviewPage';
+import { HistoryDetailPage } from './pages/history/HistoryDetailPage';
+import { HistoryPage } from './pages/history/HistoryPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SessionPage } from './pages/SessionPage';
 import { TodayPage } from './pages/TodayPage';
@@ -19,6 +21,8 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <TodayPage /> },
           { path: 'dia/:date', element: <DayPreviewPage /> },
+          { path: 'historial', element: <HistoryPage /> },
+          { path: 'historial/:workoutId', element: <HistoryDetailPage /> },
           { path: 'progreso', element: <ProgressPage /> },
         ],
       },

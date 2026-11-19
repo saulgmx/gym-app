@@ -1,18 +1,19 @@
 import { workoutSummary, type WorkoutView } from '@/modules/training';
 import type { Instant } from '@/shared/kernel';
-import { itemsFigure, minutesFigure, setsFigure, type Figure } from './format';
-import styles from './close.module.css';
+import { itemsFigure, minutesFigure, setsFigure, type Figure } from '../format-summary';
+import styles from './SummaryFigures.module.css';
 
-// The three figures of the Cierre (spec 005 §6.1, AC-7 to AC-9; RN-TRN-25). `now` and `showTime`
-// are fixed when the page opens; sets and exercises follow the live view (spec §7).
-export function CloseSummary({
+// The three figures of a session (RN-TRN-25): the Cierre (spec 005 §6.1, AC-7 to AC-9) and the
+// history detail (spec 006 §6.2). In the Cierre, `now` and `showTime` are fixed when the page
+// opens and sets and exercises follow the live view (spec 005 §7).
+export function SummaryFigures({
   view,
   now,
   showTime,
 }: {
-  view: WorkoutView;
+  view: Pick<WorkoutView, 'workout' | 'sets'>;
   now: Instant;
-  showTime: boolean; // the workout is from today (AC-9)
+  showTime: boolean; // the Cierre hides the minutes of a workout from another day (spec 005 AC-9)
 }) {
   const summary = workoutSummary(view, now);
   const figures: [string, Figure][] = [
