@@ -1,9 +1,10 @@
 import { Suspense, use, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { PlanExerciseList, useTodayPlan } from '@/modules/plan';
-import { useActiveWorkout } from '@/modules/training';
+import { useActiveWorkout, useCompletedWorkouts } from '@/modules/training';
 import { addDays, startOfIsoWeek, type LocalDate } from '@/shared/kernel';
 import { useApp } from '../context';
+import { errorMessages } from '../errors/messages';
 import { formatLongDateTitle, formatShortDay } from '../format-date';
 import { useToday } from '../hooks/useToday';
 import { StartWorkoutButton } from './StartWorkoutButton';
@@ -47,11 +48,16 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
   use(ready);
   const day = useTodayPlan(plan, date);
   const active = useActiveWorkout(training);
+  // Spec 005 AC-35: a day already done (by plannedFor, RN-TRN-23), followed live, so another tab
+  // that closes it turns the button into the text. Starting here leaves it in_progress, not done.
+  const weekStart = startOfIsoWeek(date);
+  const completed = useCompletedWorkouts(training, { from: weekStart, to: addDays(weekStart, 6) });
   // Decided on the first answer only: the session this page starts must not send it back.
   const [blocked, setBlocked] = useState<boolean | null>(null);
   if (blocked === null && active !== undefined) setBlocked(active !== null);
-  if (!day || blocked === null) return null;
+  if (!day || blocked === null || !completed) return null;
   if (blocked || day.kind !== 'workout') return <Navigate to="/" replace />;
+  const done = completed.some((w) => w.plannedFor === date);
 
   return (
     <>
@@ -60,7 +66,11 @@ function DayPreview({ date, today }: { date: LocalDate; today: LocalDate }) {
         <h2>{day.template.name}</h2>
         <SessionRir items={day.plannedItems} />
         <PlanExerciseList items={day.plannedItems} />
-        <StartWorkoutButton date={today} plannedFor={date} />
+        {done ? (
+          <p>{errorMessages['training/already-done']}</p>
+        ) : (
+          <StartWorkoutButton date={today} plannedFor={date} />
+        )}
       </section>
     </>
   );

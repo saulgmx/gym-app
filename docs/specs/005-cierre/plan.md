@@ -184,7 +184,7 @@ Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage
 `app/errors/messages.ts` añade `training/nothing-done` ("No hay series hechas para guardar."), `training/notes-too-long`, `training/already-done` ("Ya hiciste esta sesión."), `training/pain-required`, `health/pain-out-of-range` y `health/invalid-red-flag` (ADR-0010). Desde la interfaz solo pueden llegar los dos primeros y `already-done`; los demás protegen la API.
 
 ### 6.11 Presupuesto del bundle
-Bundle inicial actual: 163.58 kB de 200 kB. `health` entra en el bundle inicial porque "Hoy" usa `usePainSummary`; son funciones y componentes pequeños, sin dependencias nuevas. Se mide en la tarea de cierre del punto de control C. **Medido al cerrar el punto de control C (18-nov): 165.8 kB** (`health` y el cierre de `training`, sin páginas nuevas todavía).
+Bundle inicial actual: 163.58 kB de 200 kB. `health` entra en el bundle inicial porque "Hoy" usa `usePainSummary`; son funciones y componentes pequeños, sin dependencias nuevas. Se mide en la tarea de cierre del punto de control C. **Medido al cerrar el punto de control C (18-nov): 165.8 kB** (`health` y el cierre de `training`, sin páginas nuevas todavía). **Medido al cerrar el punto de control E (T21, 18-nov): 168.76 kB** (con el Cierre, sus entradas y "Hoy" con sesiones hechas y dolor), 31.24 kB por debajo del límite.
 
 ## 7. Estrategia de pruebas
 

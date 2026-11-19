@@ -220,6 +220,34 @@ describe('DayPreviewPage con un día hecho (spec 005)', () => {
     expect(await screen.findByText('Ya hiciste esta sesión.')).toBeInTheDocument();
   });
 
+  it('plan §6.7: no muestra "Empezar sesión" hasta saber si el día está hecho', async () => {
+    const services = createTestServices({ clock: SATURDAY });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const slow: AppServices = {
+      ...services,
+      training: {
+        ...services.training,
+        listWorkouts: async (range) => {
+          await gate;
+          return services.training.listWorkouts(range);
+        },
+      },
+    };
+    await openDay('/dia/2026-11-20', slow);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+    expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
+
+    await act(async () => {
+      release();
+      await gate;
+    });
+    expect(await screen.findByRole('button', { name: 'Empezar sesión' })).toBeInTheDocument();
+  });
+
   it('spec §8, decisión 17: la vista previa de hoy, aunque esté hecho, sigue llevando a "Hoy"', async () => {
     const services = createTestServices({ clock: at('2026-11-18') });
     await services.ready;
