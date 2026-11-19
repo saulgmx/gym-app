@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.10 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.11 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -160,7 +160,7 @@ No escucha eventos.
 | RN-HLT-17 | `getPainSummary` arma el resumen con el dominio sobre las entradas de RN-HLT-14: `latest` es la `PainEntry` completa más reciente, `latestAssessment = assessPain(latest)`, `persistentAlert` y `notice` con `threshold`, que es la constante 3 del servicio hasta Ajustes (RF-51). Sin entradas: `{ latest: null, latestAssessment: null, persistentAlert: null, notice: null, threshold: 3 }`. | Spec 005 |
 | RN-HLT-18 | `hasPainEntry(workoutId)` es `true` si existe una entrada con ese `workoutId` y `false` si no (también con uno desconocido). `painGate` es `{ hasPainEntry }`, la misma función. | RN-TRN-06, spec 005 |
 | RN-HLT-19 | `usePainSummary(health)` (en `ui/hooks.ts`, con `useLiveQuery`) devuelve `undefined` solo mientras carga y nunca `null`: sin entradas devuelve el resumen vacío de RN-HLT-17. No lleva clave, porque no recibe parámetros y `health` es una sola instancia por `compose` (sus dependencias son `[health]`). Se actualiza solo al cambiar `painEntries`: `getPainSummary` solo espera promesas de Dexie y el resto es síncrono. Un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta, como RN-TRN-19. | RN-TRN-19, spec 005 |
-| RN-HLT-20 | `getPainForWorkouts(workoutIds)` devuelve un mapa con la entrada de cada id que tiene una (RN-HLT-09: como mucho una por workout); los ids sin entrada no están; los ids repetidos cuentan una vez; con la lista vacía, mapa vacío sin leer la base. Rechaza si falla la base (RN-HLT-16). `usePainForWorkouts(health, ids)` sigue RN-HLT-19: `undefined` mientras carga o con el resultado de otra lista de ids (la clave son los ids unidos), y se actualiza con `painEntries`. `health` no comprueba que los workouts existan. | RF-32, spec 006 |
+| RN-HLT-20 | `getPainForWorkouts(workoutIds)` devuelve un mapa con la entrada de cada id que tiene una (RN-HLT-09: como mucho una por workout); los ids sin entrada no están; los ids repetidos cuentan una vez; con la lista vacía, mapa vacío sin leer la base. Rechaza si falla la base (RN-HLT-16). `usePainForWorkouts(health, ids)` sigue RN-HLT-19: `undefined` mientras carga o con el resultado de otra lista de ids, y se actualiza con `painEntries`. La clave es `ids.join('|')` en el orden recibido (un UUIDv7 no contiene `|`): la misma lista en otro orden es otra clave y pasa un instante por `undefined`; un arreglo nuevo con los mismos ids en cada render no repite la consulta. Con `[]`, `undefined` y luego un mapa vacío, sin leer la base. Cada valor es la `PainEntry` guardada tal cual; el orden de las claves del mapa no está garantizado (se busca con `get`). `health` no comprueba que los workouts existan. | RF-32, spec 006 |
 
 ### 6.1 Textos [PROPUESTO]
 
@@ -239,6 +239,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 10. **Componentes (contrato v1.8, 18-nov-2026, antes de T13 de la spec 005):** `PainSelector` y `RedFlagsChecklist` pierden `assessment` y derivan su texto de su propio `value` con `bandMessage` y `redFlagMessage`, porque el aviso de las banderas debe salir sin nivel elegido (AC-14 parte de AC-7); los textos viven con los componentes; no se puede quitar la elección del dolor; las regiones `aria-live` están siempre en el DOM; las banderas vuelven en el orden de `RED_FLAGS`; `legend` con `h2`; `PainNotice` con `role="note"` y sin `aria-live`; `SafetyNote` interno (§4, "Componentes").
 11. **Spec 006, historial (contrato v1.9, 19-nov-2026):** `getPainForWorkouts` sale de "Futuro" y entra en `HealthApi` con su hook `usePainForWorkouts` (RN-HLT-20), para el chip de la lista y el detalle. El historial muestra el nivel y las señales marcadas, sin los mensajes de banda ni de las señales: son consejos para la próxima sesión y solo salen en el Cierre y en "Hoy".
 12. **Plan de la spec 006 (contrato v1.10, 19-nov-2026):** `formatRedFlags` exporta las etiquetas del Cierre para el detalle del historial; las etiquetas salen de `RedFlagsChecklist` a `ui/labels.ts`. `getPainForWorkouts` lee por el índice único `&workoutId` (`anyOf`).
+13. **Casos de borde de RN-HLT-20, antes de T3 de la spec 006 (contrato v1.11, 19-nov-2026):** la clave de `usePainForWorkouts` es `ids.join('|')` en el orden recibido; con `[]` da un mapa vacío sin leer la base; los valores son las entradas tal cual y el orden del mapa no está garantizado.
 
 Preguntas abiertas:
 

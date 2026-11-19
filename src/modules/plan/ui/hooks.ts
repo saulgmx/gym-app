@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { LocalDate } from '@/shared/kernel';
 import type { PlanApi } from '../application/service';
-import type { TodayPlan } from '../domain/types';
+import type { Block, TodayPlan } from '../domain/types';
 
 // Reactive plan queries (docs/modules/plan.md §4, RN-PLN-26). They live in `ui` because
 // useLiveQuery needs Dexie (spec 001 plan §6.3) and take the API as a parameter.
@@ -21,4 +21,10 @@ export function useTodayPlan(plan: PlanApi, date: LocalDate): TodayPlan | undefi
 
 export function useWeekPlan(plan: PlanApi, weekStart: LocalDate): TodayPlan[] | undefined {
   return useDatedQuery(weekStart, () => plan.getWeekPlan(weekStart), plan);
+}
+
+// The blocks of the program (spec 006, RN-PLN-26). No parameter, so no key: undefined only while
+// loading, as usePainSummary in health.
+export function useBlocks(plan: PlanApi): Block[] | undefined {
+  return useLiveQuery(() => plan.getBlocks(), [plan]);
 }

@@ -40,6 +40,8 @@ export interface HealthApi {
   assessPain(level: number, redFlags: RedFlag[]): PainAssessment;
   getPainSummary(): Promise<PainSummary>;
   hasPainEntry(workoutId: ID): Promise<boolean>;
+  // RN-HLT-20 (spec 006): the entry of each id that has one; [] answers without reading.
+  getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;
   painGate: PainGate;
 }
 
@@ -93,6 +95,13 @@ export function createHealthService(deps: {
         notice: noticeOf(ordered, PAIN_THRESHOLD),
         threshold: PAIN_THRESHOLD,
       };
+    },
+
+    // RN-HLT-20
+    async getPainForWorkouts(workoutIds) {
+      if (workoutIds.length === 0) return new Map();
+      const found = await repository.findByWorkoutIds(workoutIds);
+      return new Map(found.map((entry) => [entry.workoutId, entry]));
     },
 
     // RN-HLT-18: painGate is the same function.

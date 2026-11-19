@@ -4,7 +4,7 @@ import { Dexie } from 'dexie';
 import { Component, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sequentialIds, type Clock, type ID, type Instant, type LocalDate } from '@/shared/kernel';
-import { createHealth, healthStores, usePainSummary, type HealthApi } from '..';
+import { createHealth, healthStores, usePainForWorkouts, usePainSummary, type HealthApi } from '..';
 
 // usePainSummary over the real health module and IndexedDB in memory (RN-HLT-19, contract v1.7).
 
@@ -124,6 +124,80 @@ function Back() {
   if (summary === undefined) return <p>cargando</p>;
   return <p>{summary.latest ? `${String(summary.latest.level)}/10` : 'sin dolor'}</p>;
 }
+
+describe('usePainForWorkouts', () => {
+  const levels = (pain: Map<ID, { level: number }> | undefined) =>
+    pain && Object.fromEntries([...pain].map(([workoutId, e]) => [workoutId, e.level]));
+
+  it('RN-HLT-20: undefined en el primer render y luego la entrada de cada id que tiene una', async () => {
+    await record('w1', 2, '2026-11-16T19:00:00-06:00');
+    await record('w2', 5, '2026-11-18T19:00:00-06:00');
+
+    const { result } = renderHook(() => usePainForWorkouts(health, [id('w1'), id('w2'), id('w3')]));
+    expect(result.current).toBeUndefined();
+
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({ w1: 2, w2: 5 });
+    });
+  });
+
+  it('RN-HLT-20: con otra lista de ids, undefined hasta tener la suya', async () => {
+    await record('w1', 2, '2026-11-16T19:00:00-06:00');
+    await record('w2', 5, '2026-11-18T19:00:00-06:00');
+    const { result, rerender } = renderHook(({ ids }) => usePainForWorkouts(health, ids), {
+      initialProps: { ids: [id('w1')] },
+    });
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({ w1: 2 });
+    });
+
+    rerender({ ids: [id('w2')] });
+
+    expect(result.current).toBeUndefined();
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({ w2: 5 });
+    });
+  });
+
+  it('RN-HLT-20: un arreglo nuevo con los mismos ids no repite la consulta', async () => {
+    await record('w1', 2, '2026-11-16T19:00:00-06:00');
+    const query = vi.spyOn(health, 'getPainForWorkouts');
+    const { result, rerender } = renderHook(({ ids }) => usePainForWorkouts(health, ids), {
+      initialProps: { ids: [id('w1')] },
+    });
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({ w1: 2 });
+    });
+    const calls = query.mock.calls.length;
+
+    rerender({ ids: [id('w1')] });
+    rerender({ ids: [id('w1')] });
+
+    expect(levels(result.current)).toEqual({ w1: 2 });
+    expect(query.mock.calls.length).toBe(calls);
+  });
+
+  it('RN-HLT-20: se actualiza solo al registrar el dolor de un id de la lista', async () => {
+    const { result } = renderHook(() => usePainForWorkouts(health, [id('w1')]));
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({});
+    });
+
+    await record('w1', 4, '2026-11-16T19:00:00-06:00');
+
+    await waitFor(() => {
+      expect(levels(result.current)).toEqual({ w1: 4 });
+    });
+  });
+
+  it('RN-HLT-20: con la lista vacía, un mapa vacío', async () => {
+    const { result } = renderHook(() => usePainForWorkouts(health, []));
+
+    await waitFor(() => {
+      expect(result.current).toEqual(new Map());
+    });
+  });
+});
 
 describe('errores', () => {
   it('RN-HLT-19: un error de la consulta se lanza en el render y lo captura el boundary', async () => {

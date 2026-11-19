@@ -302,6 +302,23 @@ describe('consultas sobre el repositorio', () => {
     await expect(service.getExercises([id('prensa')])).rejects.toThrow(/RN-PLN-22/);
   });
 
+  it('getBlocks → los bloques del programa ordenados por startWeek (RN-PLN-28)', async () => {
+    const [b1] = loaded().blocks;
+    if (!b1) throw new Error('fixture without blocks');
+    const b2 = { ...b1, id: id('b2'), name: 'Bloque 2', startWeek: 3, endWeek: 4 };
+    const b3 = { ...b1, id: id('b3'), name: 'Descarga', startWeek: 5, endWeek: 5 };
+    // The store reads blocks by programId, in no particular order (RN-PLN-25).
+    const { service } = setup({ initial: { ...loaded(), blocks: [b3, b1, b2] } });
+
+    expect((await service.getBlocks()).map((b) => b.id)).toEqual(['b1', 'b2', 'b3']);
+  });
+
+  it('RN-PLN-22: sin programa cargado, getBlocks lanza', async () => {
+    const { service } = setup();
+
+    await expect(service.getBlocks()).rejects.toThrow(/RN-PLN-22/);
+  });
+
   it('RN-PLN-23: sin caché, la siguiente consulta refleja un cambio en el repositorio', async () => {
     const { service, state } = setup({ initial: loaded() });
     expect(await service.getPosition(date('2026-11-18'))).toMatchObject({ status: 'active' });

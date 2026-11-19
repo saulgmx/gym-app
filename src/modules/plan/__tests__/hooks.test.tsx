@@ -7,12 +7,13 @@ import { fixedClock, type LocalDate } from '@/shared/kernel';
 import {
   createPlan,
   planStores,
+  useBlocks,
   useTodayPlan,
   useWeekPlan,
   type PlanApi,
   type TodayPlan,
 } from '..';
-import { PROGRAM, TPL_B, valid } from './fixtures/seed';
+import { BLOCK, PROGRAM, TPL_B, valid } from './fixtures/seed';
 
 // Reactive hooks over the real plan module and IndexedDB in memory (RN-PLN-26, spec 001 plan
 // §6.4). Fixture program: weeks 1-2 from Monday 2026-11-16; Monday A/B, Tuesday cardio,
@@ -108,6 +109,30 @@ describe('useTodayPlan', () => {
   });
 });
 
+describe('useBlocks', () => {
+  it('RN-PLN-26: undefined mientras carga y luego los bloques del programa', async () => {
+    const { result } = renderHook(() => useBlocks(plan));
+
+    expect(result.current).toBeUndefined();
+    await waitFor(() => {
+      expect(result.current?.map((b) => b.name)).toEqual(['Bloque 1 · Full body']);
+    });
+  });
+
+  it('RN-PLN-26: se actualiza solo al cambiar un bloque', async () => {
+    const { result } = renderHook(() => useBlocks(plan));
+    await waitFor(() => {
+      expect(result.current).toHaveLength(1);
+    });
+
+    await db.table('blocks').update(BLOCK, { name: 'Bloque 1 renombrado' });
+
+    await waitFor(() => {
+      expect(result.current?.map((b) => b.name)).toEqual(['Bloque 1 renombrado']);
+    });
+  });
+});
+
 describe('useWeekPlan', () => {
   it('devuelve los 7 días de la semana y se actualiza solo', async () => {
     const { result } = renderHook(() => useWeekPlan(plan, date('2026-11-19')));
@@ -170,6 +195,11 @@ function Today({ api }: { api: PlanApi }) {
   return <p>{label(today) ?? 'cargando'}</p>;
 }
 
+function Blocks({ api }: { api: PlanApi }) {
+  const blocks = useBlocks(api);
+  return <p>{blocks ? String(blocks.length) : 'cargando'}</p>;
+}
+
 describe('errores', () => {
   it('RN-PLN-26: sin programa, el error se lanza en el render y lo captura el boundary', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined); // React logs caught errors
@@ -180,6 +210,21 @@ describe('errores', () => {
     render(
       <TestBoundary>
         <Today api={plan} />
+      </TestBoundary>,
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/RN-PLN-22/);
+  });
+
+  it('RN-PLN-26: useBlocks sin programa lanza en el render y lo captura el boundary', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    db.close();
+    await Dexie.delete(db.name);
+    openPlan();
+
+    render(
+      <TestBoundary>
+        <Blocks api={plan} />
       </TestBoundary>,
     );
 
