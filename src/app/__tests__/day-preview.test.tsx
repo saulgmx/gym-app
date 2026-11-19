@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fixedClock, type Clock, type LocalDate } from '@/shared/kernel';
+import { err, fixedClock, type Clock, type LocalDate } from '@/shared/kernel';
 import type { AppServices } from '../context';
 import {
   closeTestDatabases,
@@ -153,5 +153,83 @@ describe('DayPreviewPage', () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
     });
+  });
+});
+
+// Spec 005 AC-35 (spec §8, decision 17; plan §6.7): the preview of a day already done.
+describe('DayPreviewPage con un día hecho (spec 005)', () => {
+  /** Starts a session for `plannedFor`, marks one set, records pain and closes it. */
+  async function closeDay(services: AppServices, on: string, plannedFor: string) {
+    const started = await services.training.startWorkout(on as LocalDate, {
+      plannedFor: plannedFor as LocalDate,
+    });
+    if (!started.ok) throw new Error(started.error.code);
+    const view = await services.training.getWorkoutView(started.value.id);
+    const set = view?.sets[0];
+    if (!set) throw new Error('no set');
+    await services.training.logSet(set.id, { weightKg: 60, reps: 10, rir: 3 });
+    await services.training.toggleSetDone(set.id);
+    await services.health.recordPain(started.value.id, {
+      level: 2,
+      redFlags: [],
+      date: started.value.date,
+    });
+    const finished = await services.training.finishWorkout(started.value.id, {});
+    if (!finished.ok) throw new Error(finished.error.code);
+  }
+
+  it('AC-35: el lunes hecho, abierto el miércoles, dice "Ya hiciste esta sesión." sin "Empezar sesión"', async () => {
+    const services = createTestServices({ clock: at('2026-11-18') });
+    await services.ready;
+    await closeDay(services, '2026-11-16', '2026-11-16');
+
+    await openDay('/dia/2026-11-16', services);
+
+    expect(await screen.findByText('Ya hiciste esta sesión.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Full body A' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem').length).toBeGreaterThan(0); // the exercises stay
+    expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
+  });
+
+  it('plan §6.7: si otra pestaña cierra ese día con la vista previa abierta, el botón pasa al texto', async () => {
+    const { services } = await openDay('/dia/2026-11-20');
+    await screen.findByRole('button', { name: 'Empezar sesión' });
+
+    await act(() => closeDay(services, '2026-11-21', '2026-11-20'));
+
+    expect(await screen.findByText('Ya hiciste esta sesión.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Empezar sesión' })).not.toBeInTheDocument();
+  });
+
+  it('RN-TRN-24: si "Empezar sesión" devuelve already-done, lo dice bajo el botón', async () => {
+    const services = createTestServices({ clock: SATURDAY });
+    const refusing: AppServices = {
+      ...services,
+      training: {
+        ...services.training,
+        startWorkout: () =>
+          Promise.resolve(
+            err({ code: 'training/already-done' as const, message: 'done (RN-TRN-24)' }),
+          ),
+      },
+    };
+    const { user } = await openDay('/dia/2026-11-20', refusing);
+
+    await user.click(await screen.findByRole('button', { name: 'Empezar sesión' }));
+
+    expect(await screen.findByText('Ya hiciste esta sesión.')).toBeInTheDocument();
+  });
+
+  it('spec §8, decisión 17: la vista previa de hoy, aunque esté hecho, sigue llevando a "Hoy"', async () => {
+    const services = createTestServices({ clock: at('2026-11-18') });
+    await services.ready;
+    await closeDay(services, '2026-11-18', '2026-11-18');
+
+    const { router } = await openDay('/dia/2026-11-18', services);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+    });
+    expect(router.state.historyAction).toBe('REPLACE');
   });
 });
