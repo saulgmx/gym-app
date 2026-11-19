@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.12 (borrador) · **Fecha:** 19-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.13 (borrador) · **Fecha:** 19-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -206,7 +206,7 @@ El seed marca ejercicios con `lumbarRisk`:
 
 ### 7.1 Navegación
 
-Barra inferior con **Hoy**, **Historial** y **Progreso** (v1.0 añade **Plan** y **Ajustes**). Historial entra en la fase 3 (spec 006). La sesión activa es un flujo a pantalla completa sin barra inferior.
+Barra inferior con **Hoy**, **Historial**, **Progreso** y **Ajustes** (v1.0 añade **Plan**). Historial y Ajustes entran en la fase 3 (specs 006 y 007). La sesión activa es un flujo a pantalla completa sin barra inferior.
 
 ### 7.2 Pantallas
 
@@ -221,13 +221,13 @@ Barra inferior con **Hoy**, **Historial** y **Progreso** (v1.0 añade **Plan** y
 | Plan (v1.0) | `/plan` | Bloques, semanas y plantillas; edición |
 | Historial | `/historial` | Sesiones guardadas, de la más reciente a la más antigua, agrupadas por semana del programa (número, bloque y fechas); cada fila con fecha, sesión, resumen y chip de dolor (spec 006) |
 | Detalle de una sesión | `/historial/:workoutId` | Solo lectura: nombre, fecha, día del plan si es otro, resumen, dolor lumbar y señales de alarma (sin consejos), ejercicios con sus series hechas ("Sin series" si no tiene) y notas. Se llega desde la lista y desde los días hechos de "Hoy" (spec 006) |
-| Ajustes (v1.0) | `/ajustes` | Unidades, incrementos, umbral de dolor, exportar/importar, borrar datos |
+| Ajustes | `/ajustes` | Respaldo ("Descargar respaldo" y "Restaurar respaldo" con vista previa y confirmación) y el aviso "la app no es un dispositivo médico" (spec 007). v1.0: unidades, incrementos, umbral de dolor, CSV, recordatorio y borrar datos |
 
 ### 7.3 Flujos principales
 
 1. **Entrenar:** Hoy → Empezar sesión → registrar series (repetir por ejercicio) → Terminar sesión → Cierre (dolor, notas) → Guardar → Hoy.
 2. **Ver progreso:** Progreso → elegir ejercicio → ver gráfica y detalle.
-3. **Respaldo:** Ajustes → Exportar JSON → guardar en iCloud, Drive o correo.
+3. **Respaldo:** Ajustes → Descargar respaldo (JSON) → guardar en iCloud, Drive o correo. Restaurar: Ajustes → Restaurar respaldo → vista previa → Reemplazar mis datos (spec 007).
 
 ### 7.4 Sistema visual (tokens del prototipo)
 

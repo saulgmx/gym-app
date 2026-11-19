@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.11 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.12 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -71,8 +71,8 @@ export const healthStores: Record<'painEntries', string>;   // painEntries: 'id,
 
 export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-flag';
 
-// Spec 005. Lo demás entra con su feature: getPainForWorkouts (spec 006), dataPort (spec 007),
-// peso corporal (fase 4) y getSettings/updateSettings (Ajustes, RF-51).
+// Specs 005 a 007. Lo demás entra con su feature: peso corporal (fase 4) y getSettings/updateSettings
+// (Ajustes, RF-51).
 interface HealthApi {
   recordPain(workoutId: ID, input: { level: number; redFlags: RedFlag[]; date: LocalDate }): Promise<Result<PainAssessment, HealthError>>; // RF-21, RF-22, RN-HLT-01, 09
   assessPain(level: number, redFlags: RedFlag[]): PainAssessment;      // puro, para la vista previa del Cierre
@@ -80,6 +80,7 @@ interface HealthApi {
   hasPainEntry(workoutId: ID): Promise<boolean>;                       // RN-HLT-18
   getPainForWorkouts(workoutIds: ID[]): Promise<Map<ID, PainEntry>>;   // RN-HLT-20, historial (spec 006)
   painGate: PainGate;                                                  // { hasPainEntry }, para training
+  dataPort: DataPort;                                                  // painEntries (spec 007, decisión 14)
 }
 // Todas las operaciones async rechazan si falla la base (RN-HLT-16).
 
@@ -96,12 +97,11 @@ export { PainSelector, RedFlagsChecklist, PainNotice } from './ui';
 // Etiquetas de las señales (spec 006 plan §6.4): las del Cierre, en ui/labels.ts, que RedFlagsChecklist también usa.
 export function formatRedFlags(flags: RedFlag[]): string;   // "Hormigueo o adormecimiento, Debilidad en el pie" (orden de RED_FLAGS)
 
-// Futuro (fuera de las specs 005 y 006)
+// Futuro (fuera de las specs 005 a 007)
 //   recordBodyWeight(date: LocalDate, weightKg: number): Promise<Result<BodyMetric>>;  // RF-34
 //   getBodyWeightSeries(range?: { from?: LocalDate; to?: LocalDate }): Promise<BodyWeightSeries>;
 //   getSettings(): Promise<HealthSettings>;
 //   updateSettings(patch: Partial<Omit<HealthSettings, 'id'>>): Promise<Result<void>>;
-//   dataPort: DataPort;
 //   useBodyWeightSeries(health): BodyWeightSeries | undefined;
 interface BodyWeightSeries { points: BodyMetric[]; weeklyAverages: { weekStart: LocalDate; avgKg: number }[] }
 ```
@@ -220,7 +220,7 @@ Componentes (spec 005 T13, contrato v1.8):
 
 ## 9. Trazabilidad
 
-RF-21, RF-22, RF-33, RF-34, RF-51, spec §6.2.
+RF-21, RF-22, RF-33, RF-34, RF-40 y RF-41 (`dataPort`, spec 007), RF-51, spec §6.2.
 
 ## 10. Decisiones y preguntas abiertas
 
@@ -240,6 +240,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 11. **Spec 006, historial (contrato v1.9, 19-nov-2026):** `getPainForWorkouts` sale de "Futuro" y entra en `HealthApi` con su hook `usePainForWorkouts` (RN-HLT-20), para el chip de la lista y el detalle. El historial muestra el nivel y las señales marcadas, sin los mensajes de banda ni de las señales: son consejos para la próxima sesión y solo salen en el Cierre y en "Hoy".
 12. **Plan de la spec 006 (contrato v1.10, 19-nov-2026):** `formatRedFlags` exporta las etiquetas del Cierre para el detalle del historial; las etiquetas salen de `RedFlagsChecklist` a `ui/labels.ts`. `getPainForWorkouts` lee por el índice único `&workoutId` (`anyOf`).
 13. **Casos de borde de RN-HLT-20, antes de T3 de la spec 006 (contrato v1.11, 19-nov-2026):** la clave de `usePainForWorkouts` es `ids.join('|')` en el orden recibido; con `[]` da un mapa vacío sin leer la base; los valores son las entradas tal cual y el orden del mapa no está garantizado.
+14. **Spec 007, respaldo (contrato v1.12, 19-nov-2026):** `dataPort` entra en `HealthApi`. Exporta `painEntries` tal cual (sin `bodyMetrics` ni ajustes, que no existen todavía). Al importar valida el esquema (nivel entero 0-10, banderas de `RED_FLAGS`), IDs únicos, como mucho una entrada por workout (RN-HLT-09) y que cada `workoutId` esté en los workouts del archivo (RN-DAT-11). Importar reemplaza la tabla. La forma de sus datos, su versión y cómo ve los workouts del archivo sin depender de `training` los fija el plan técnico de la spec 007.
 
 Preguntas abiertas:
 
