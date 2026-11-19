@@ -1,14 +1,18 @@
 import { err, ok, type Result } from '@/shared/kernel';
-import { BAND_MESSAGES, EMERGENCY_MESSAGE, RED_FLAG_MESSAGE } from './messages';
+import { BAND_MESSAGES, EMERGENCY_MESSAGE, NOTICE_MESSAGES, RED_FLAG_MESSAGE } from './messages';
 import {
   RED_FLAGS,
   type HealthError,
   type PainAssessment,
+  type PainNoticeInfo,
+  type PainReading,
   type PainStatus,
+  type PersistentAlert,
   type RedFlag,
 } from './types';
 
-// Pain input and classification (docs/modules/health.md §4 and §6, contract v1.4).
+// Pain input, classification, persistent alert and the "Hoy" notice
+// (docs/modules/health.md §4 and §6, contract v1.5).
 
 export interface PainInput {
   level: number;
@@ -71,4 +75,60 @@ export function assessPain(level: number, redFlags: readonly RedFlag[]): PainAss
       : RED_FLAG_MESSAGE;
   }
   return assessment;
+}
+
+// Contract v1.5: `latestFirst` comes ordered by the service (RN-HLT-14) and holds stored entries, which
+// were validated when recorded; the threshold is a constant until Ajustes (RF-51). Nothing is
+// re-validated and the input is never modified.
+
+// RN-HLT-08: one reason, red_flag → over_threshold_2x → rising_3x (the order of RN-HLT-13).
+export function persistentAlert(
+  latestFirst: readonly PainReading[],
+  threshold: number,
+): PersistentAlert | null {
+  const [latest, previous, oldest] = latestFirst;
+  if (!latest) return null;
+  if (latest.redFlags.length > 0) return { reason: 'red_flag' };
+  if (!previous) return null;
+  // RN-HLT-03, 04: only the 2 latest count, and "over" is strictly greater.
+  if (latest.level > threshold && previous.level > threshold) {
+    return { reason: 'over_threshold_2x' };
+  }
+  // RN-HLT-05: the 3 latest, strictly increasing in time. With integer levels ≥ 0 this already
+  // makes the latest ≥ 2, so "the latest > 0" needs no check of its own.
+  if (oldest && oldest.level < previous.level && previous.level < latest.level) {
+    return { reason: 'rising_3x' };
+  }
+  return null;
+}
+
+// RN-HLT-12, 13: null exactly when no condition holds; otherwise the highest-priority cause.
+export function noticeOf(
+  latestFirst: readonly PainReading[],
+  threshold: number,
+): PainNoticeInfo | null {
+  const [latest] = latestFirst;
+  if (!latest) return null;
+  const status = statusOf(latest.level);
+  const alert = persistentAlert(latestFirst, threshold);
+
+  if (latest.redFlags.includes('bladder_bowel')) {
+    return { cause: 'bladder_bowel', message: NOTICE_MESSAGES.bladder_bowel };
+  }
+  if (latest.redFlags.length > 0) return { cause: 'red_flag', message: NOTICE_MESSAGES.red_flag };
+  if (status === 'alert') return { cause: 'alert', message: NOTICE_MESSAGES.alert(latest.level) };
+  if (alert?.reason === 'over_threshold_2x') {
+    return { cause: 'over_threshold_2x', message: NOTICE_MESSAGES.over_threshold_2x(threshold) };
+  }
+  if (alert?.reason === 'rising_3x') {
+    const chronological = latestFirst
+      .slice(0, 3)
+      .map((entry) => entry.level)
+      .reverse();
+    return { cause: 'rising_3x', message: NOTICE_MESSAGES.rising_3x(chronological) };
+  }
+  if (status === 'attention') {
+    return { cause: 'attention', message: NOTICE_MESSAGES.attention(latest.level) };
+  }
+  return null;
 }

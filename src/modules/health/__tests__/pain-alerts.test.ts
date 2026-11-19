@@ -21,13 +21,13 @@ const BLADDER_TEXT =
 const RED_FLAG_TEXT =
   'En la última sesión marcaste una señal de alarma. Consulta a un médico antes de seguir entrenando.';
 const alertText = (n: number) =>
-  `Espalda baja ${n}/10 en la última sesión. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta.`;
+  `Espalda baja ${String(n)}/10 en la última sesión. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta.`;
 const overText = (u: number) =>
-  `Espalda baja por encima de ${u}/10 en las 2 últimas sesiones. Hoy prioriza la técnica y no añadas carga; si sigue, consulta a tu traumatólogo o fisioterapeuta.`;
+  `Espalda baja por encima de ${String(u)}/10 en las 2 últimas sesiones. Hoy prioriza la técnica y no añadas carga; si sigue, consulta a tu traumatólogo o fisioterapeuta.`;
 const risingText = (seq: string) =>
   `Tu dolor lumbar subió en las 3 últimas sesiones (${seq}). Hoy prioriza la técnica y no añadas carga.`;
 const attentionText = (n: number) =>
-  `Espalda baja ${n}/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron.`;
+  `Espalda baja ${String(n)}/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron.`;
 
 describe('persistentAlert', () => {
   it('RN-HLT-08: sin entradas no hay alerta', () => {
@@ -212,9 +212,17 @@ describe('noticeOf', () => {
     expect(noticeOf(levels(6, 3, 1), T)?.message).toBe(risingText('1 → 3 → 6'));
   });
 
+  it('RN-HLT-05: la secuencia de rising_3x solo lleva las 3 últimas', () => {
+    expect(noticeOf(levels(3, 2, 1, 0), T)?.message).toBe(risingText('1 → 2 → 3'));
+  });
+
   it('RN-HLT-12: no modifica el arreglo de entrada', () => {
-    const input = Object.freeze([Object.freeze(e(5, 'numbness')), Object.freeze(e(4))]);
-    expect(noticeOf(input, T)?.cause).toBe('red_flag');
-    expect(input.map((x) => x.level)).toEqual([5, 4]);
+    const flagged = Object.freeze([Object.freeze(e(5, 'numbness')), Object.freeze(e(4))]);
+    expect(noticeOf(flagged, T)?.cause).toBe('red_flag');
+    expect(flagged.map((x) => x.level)).toEqual([5, 4]);
+
+    const rising = Object.freeze([Object.freeze(e(3)), Object.freeze(e(2)), Object.freeze(e(1))]);
+    expect(noticeOf(rising, T)?.message).toBe(risingText('1 → 2 → 3'));
+    expect(rising.map((x) => x.level)).toEqual([3, 2, 1]);
   });
 });

@@ -1,4 +1,4 @@
-import type { DomainError } from '@/shared/kernel';
+import type { DomainError, ID, Instant, LocalDate } from '@/shared/kernel';
 
 // Domain model of `health` (docs/modules/health.md §3). Pure TypeScript.
 
@@ -12,6 +12,30 @@ export interface PainAssessment {
   message: string;
   redFlagMessage?: string; // only with red flags; emergency text with bladder_bowel (RN-HLT-06)
   blocksProgression: boolean;
+}
+
+export interface PainEntry {
+  id: ID;
+  workoutId: ID;
+  date: LocalDate;
+  recordedAt: Instant;
+  level: number; // integer 0-10 (RN-HLT-01)
+  redFlags: RedFlag[];
+}
+
+// What the alert rules read from an entry; lists of these go latest first (RN-HLT-14).
+export type PainReading = Pick<PainEntry, 'level' | 'redFlags'>;
+
+export interface PersistentAlert {
+  reason: 'over_threshold_2x' | 'rising_3x' | 'red_flag';
+}
+
+export type NoticeCause =
+  'bladder_bowel' | 'red_flag' | 'alert' | 'over_threshold_2x' | 'rising_3x' | 'attention';
+
+export interface PainNoticeInfo {
+  cause: NoticeCause;
+  message: string;
 }
 
 export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-flag';
