@@ -45,8 +45,3 @@ export function formatDoneSummary(minutes: number, sets: number): string {
 export function formatTrainedToday(name: string, plannedFor: LocalDate): string {
   return `Ya entrenaste hoy (${name} del ${formatWeekday(plannedFor)}).`;
 }
-
-/** "Espalda 5/10", the chip with the latest pain entry (spec 005 §6.3). */
-export function formatBackChip(level: number): string {
-  return `Espalda ${String(level)}/10`;
-}
