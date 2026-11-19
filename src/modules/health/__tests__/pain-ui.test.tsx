@@ -188,7 +188,7 @@ describe('RedFlagsChecklist', () => {
 
 // The visible text of the label that names a checkbox.
 function labelOf(box: HTMLElement): string | null {
-  return (box as HTMLInputElement).labels?.[0]?.textContent?.trim() ?? null;
+  return (box as HTMLInputElement).labels?.[0]?.textContent.trim() ?? null;
 }
 
 describe('PainNotice', () => {
@@ -213,6 +213,6 @@ describe('PainNotice', () => {
     expect(icons.length).toBeGreaterThan(0);
     for (const icon of icons) expect(icon).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByRole('note')).toHaveTextContent(message, { normalizeWhitespace: true });
-    expect(screen.getByRole('note').textContent?.trim()).toBe(message);
+    expect(screen.getByRole('note').textContent.trim()).toBe(message);
   });
 });

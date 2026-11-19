@@ -17,6 +17,9 @@ export function createHealth(deps: { db: Dexie; clock: Clock; ids: IdGenerator }
 
 export { healthStores } from './infrastructure/schema';
 export { usePainSummary } from './ui/hooks';
+export { PainNotice } from './ui/PainNotice';
+export { PainSelector } from './ui/PainSelector';
+export { RedFlagsChecklist } from './ui/RedFlagsChecklist';
 
 export type { HealthApi, PainSummary } from './application/service';
 export type { PainGate } from './application/ports';
