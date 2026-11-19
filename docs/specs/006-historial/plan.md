@@ -1,6 +1,6 @@
 # Plan técnico: Historial de sesiones
 
-**Spec:** `specs/006-historial/spec.md` · **Estado:** Aprobado (19-nov-2026)
+**Spec:** `specs/006-historial/spec.md` · **Estado:** Implementado (19-nov-2026)
 
 ## 1. Resumen de la solución
 
