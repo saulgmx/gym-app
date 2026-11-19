@@ -222,3 +222,23 @@ export async function closeFridayOnWednesday(page: Page): Promise<string> {
   await expect(page).toHaveURL('/');
   return id;
 }
+
+// Spec 006: the history, shared by history.spec and a11y.spec.
+
+/**
+ * Opens "Hoy" on Monday 16 at 18:00 and closes Full body A with one set, pain 5, "Hormigueo o
+ * adormecimiento" and a note. Ends on "Hoy" (Monday done) and returns the workout ID. After the
+ * first page load only clicks, so it also works offline.
+ */
+export async function closeMondayWithFlags(page: Page, offline?: () => Promise<void>) {
+  await openTodayOn(page, '2026-11-16T18:00:00-06:00');
+  await expect(page.getByRole('button', { name: 'Empezar sesión' })).toBeVisible();
+  if (offline) await offline();
+  const id = await cierreWithOneSet(page);
+  await painLevel(page, 5).click();
+  await page.getByRole('checkbox', { name: 'Hormigueo o adormecimiento' }).check();
+  await page.getByRole('textbox', { name: 'Notas de la sesión (opcional)' }).fill('Buena sesión');
+  await page.getByRole('button', { name: 'Guardar sesión' }).click();
+  await expect(page).toHaveURL('/');
+  return id;
+}
