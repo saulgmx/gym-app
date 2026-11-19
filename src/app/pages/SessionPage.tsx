@@ -123,6 +123,8 @@ function ExerciseScreen({
   if (!item || !exercise) throw new Error(`No exercise ${String(index)} in workout ${workout.id}`);
   const { exerciseId } = item;
   const path = (i: number) => `/sesion/${workout.id}/${String(i)}`;
+  // Spec 005 AC-1 to AC-6: the Cierre only once there is something to save (extras count).
+  const closeTo = workoutProgress(view).setsDone > 0 ? `/sesion/${workout.id}/cierre` : null;
 
   // A new exercise starts at the top, with focus on its name for screen readers.
   useEffect(() => {
@@ -173,7 +175,7 @@ function ExerciseScreen({
         exerciseId={item.exerciseId}
         describeError={describeTrainingError}
       />
-      <SessionFooter view={view} index={index} path={path} />
+      <SessionFooter view={view} index={index} path={path} closeTo={closeTo} />
       <ExitSheet
         open={exitSummary !== null}
         summary={exitSummary ?? ''}
@@ -182,6 +184,7 @@ function ExerciseScreen({
           setExitSummary(null);
         }}
         onDiscard={() => void discard()}
+        finishTo={closeTo === null ? null : { path: closeTo, from: index }}
       />
     </div>
   );

@@ -14,12 +14,14 @@ interface ExitSheetProps {
   onClose: () => void;
   /** "Sí, descartar": the page discards, then leaves or shows the reason. */
   onDiscard: () => void;
+  /** The Cierre with the exercise in view, or null with no set done (spec 005 AC-4 to AC-6). */
+  finishTo: { path: string; from: number } | null;
 }
 
 // The exit sheet and its discard confirmation (spec 004 §6.3, AC-12 to AC-18; plan §6.8). Two
 // modal dialogs cannot be open at once without stacking, so the sheet closes while the
 // confirmation is open, and Cancel, Escape or the backdrop of the confirmation bring it back.
-export function ExitSheet({ open, summary, counts, onClose, onDiscard }: ExitSheetProps) {
+export function ExitSheet({ open, summary, counts, onClose, onDiscard, finishTo }: ExitSheetProps) {
   const [confirming, setConfirming] = useState(false);
   const keep = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -46,7 +48,13 @@ export function ExitSheet({ open, summary, counts, onClose, onDiscard }: ExitShe
           <button ref={keep} type="button" className={styles.keep} onClick={onClose}>
             Seguir entrenando
           </button>
-          {/* Named by all its visible text, title and subtitle (WCAG 2.5.3, spec 004 §6.3). */}
+          {/* Links named by all their visible text, title and subtitle (WCAG 2.5.3). */}
+          {finishTo && (
+            <Link to={finishTo.path} state={{ from: finishTo.from }} className={styles.option}>
+              <span className={styles.optionTitle}>Terminar y guardar lo hecho</span>{' '}
+              <span className={styles.optionHint}>Irás al cierre para registrar el dolor</span>
+            </Link>
+          )}
           <Link to="/" className={styles.option}>
             <span className={styles.optionTitle}>Salir y continuar después</span>{' '}
             <span className={styles.optionHint}>Hoy mostrará &quot;Continuar sesión&quot;</span>
