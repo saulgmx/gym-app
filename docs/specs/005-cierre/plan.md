@@ -1,6 +1,6 @@
 # Plan técnico: Cierre de sesión
 
-**Spec:** `specs/005-cierre/spec.md` · **Estado:** Aprobado (18-nov-2026)
+**Spec:** `specs/005-cierre/spec.md` · **Estado:** Implementado (19-nov-2026)
 
 ## 1. Resumen de la solución
 

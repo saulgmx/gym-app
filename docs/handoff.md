@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 18-nov-2026 (spec 005, Cierre: puntos de control A a E en `main`; faltan T22 a T25) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; siguiente: proponer la pregunta 9) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -43,6 +43,13 @@
   - `app/pages/session/`: `ExerciseCard` (compacta o completa, la elección se conserva entre ejercicios), `ExitSheet` (seguir, salir y continuar después, descartar con la confirmación que vuelve al aviso) y `SessionFooter` ("Siguiente: …" o "Último ejercicio de hoy"). `Elapsed` en `app/pages/` y `formatElapsed` en `app/format-time.ts`, compartidos con "Hoy".
   - Bundle inicial **163.58 kB** de 200 kB.
   - E2E y axe de la sesión nueva, estables en 5 repeticiones (T13); verificado en el iPhone (T14).
+- **Cierre de sesión completo** (spec 005 implementada, PR #37 a #41, #44 y el de cierre; primera parte de la fase 3):
+  - `health` con sus cuatro capas: dominio puro (`checkPainInput`, `assessPain`, `persistentAlert`, `noticeOf`, textos en `domain/messages.ts`), servicio y repositorio Dexie sobre `painEntries`, `usePainSummary`, `PainSelector`, `RedFlagsChecklist` y `PainNotice`. Contrato `health` v1.8.
+  - Base Dexie `gym-app` **v3** (`painEntries`); la subida desde v2 se probó (AC-46) y se verificó en el iPhone.
+  - `training`: `finishWorkout` con `PainGate`, `workoutSummary`, `listWorkouts`, `useCompletedWorkouts` y `already-done` (RN-TRN-22 a 26). Contrato `training` v1.22.
+  - Cierre en `/sesion/:workoutId/cierre` (`app/pages/close/`), "Terminar sesión" y "Terminar y guardar lo hecho", "Hoy" con días hechos, tarjeta hecha, aviso de dolor y chip "Espalda N/10", vista previa de un día hecho.
+  - Bundle inicial **168.76 kB** de 200 kB.
+  - E2E (`close.spec.ts`) y axe, estables en 5 repeticiones (T22, PR #44); verificado en el iPhone (T23). Los textos de salud siguen `[PROPUESTO]` hasta T24.
 
 ## Decisiones tomadas
 
@@ -71,7 +78,7 @@
 
 | # | Pregunta | Propuesta | Dónde | Fase |
 |---|---|---|---|---|
-| 9 | En T23 se pudo cerrar una segunda sesión el mismo día desde "Otra sesión de esta semana" (la spec lo permite: RN-TRN-24 solo impide repetir el mismo `plannedFor`). **Decidido (18-nov): una sola sesión cerrada por fecha** (opción 2). Falta especificarla: un RN nuevo en `training` y el ajuste de "Hoy" (ocultar "Otra sesión" o no dejar empezar) y de la vista previa | Spec corta propia (005b) o dentro de la 006; proponer en el siguiente chat, después de T22 | `training.md`, spec 005 §8 | 3 |
+| 9 | En T23 se pudo cerrar una segunda sesión el mismo día desde "Otra sesión de esta semana" (la spec lo permite: RN-TRN-24 solo impide repetir el mismo `plannedFor`). **Decidido (18-nov): una sola sesión cerrada por fecha** (opción 2). Falta especificarla: un RN nuevo en `training` y el ajuste de "Hoy" (ocultar "Otra sesión" o no dejar empezar) y de la vista previa | Spec corta propia (005b) o dentro de la 006; **es lo siguiente**: proponerla en el próximo chat | `training.md`, spec 005 §8 | 3 |
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 
 ## Historia y siguiente paso
@@ -116,7 +123,7 @@
    5. ~~Punto de control B, encabezado y menú~~ (T5–T6, PR #28): `SessionHeader` en una fila con el menú flotante; `Elapsed` en `app/pages/` y `formatElapsed` en `app/format-time.ts`.
    6. ~~Punto de control C, página~~ (T7–T12, PR #29): textos, `ExerciseCard`, `ExitSheet`, `SessionFooter`; bundle 163.58 kB.
    7. ~~Punto de control D, verificación y cierre~~ (T13 en el PR #30, T14 en el iPhone, T15 en el PR de cierre): E2E y axe; axe obligó a nombrar las opciones del aviso con todo su texto visible (spec §6.3). Spec y plan 004 marcados como implementados.
-12. **Siguiente: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Pasos:
+12. **En curso: fase 3, MVP usable en el gym** (spec §13: cierre con dolor lumbar, historial, exportar/importar; módulos `health` y `data`, y `finishWorkout` en `training`). Pasos:
    1. ~~Pregunta 8~~ (18-nov, `modules/health.md` v1.1 §10, spec v0.9 §6.2): bandas fijas aunque cambie el umbral (RN-HLT-02); "sube 3 sesiones" = 3 últimas lecturas estrictamente crecientes, la última > 0 (RN-HLT-05); aviso en Hoy con la última lectura ≥ 4, banderas rojas o alerta persistente, un solo aviso con texto por causa (RN-HLT-12; reemplaza el "≥ 3/10" del diseño de Hoy).
    2. ~~Spec 005~~ aprobada (18-nov): `docs/specs/005-cierre/spec.md` (AC-1 a AC-50), desde `docs/design-cierre.md`. Solo el Cierre: la fase 3 se reparte en 005 (Cierre), 006 (historial) y 007 (exportar/importar, `data`). `health` primera parte con pruebas primero (solo `painEntries`, base v3, umbral 3 fijo sin Ajustes); `finishWorkout` exige una serie hecha (RN-TRN-22); día hecho por `plannedFor` (RN-TRN-23) y sin repetir (RN-TRN-24); resumen (RN-TRN-25); prioridad del aviso de Hoy (RN-HLT-13). Entradas: "Terminar sesión" en el pie del último ejercicio y "Terminar y guardar lo hecho" en el aviso de salida, solo con series hechas. Sin eventos hasta la fase 4. Textos de salud `[PROPUESTO]` hasta validarlos con el traumatólogo (`health.md` §6.1). Contratos `training` v1.19 y `health` v1.2, spec v0.10 (§7.2).
    3. ~~Plan técnico~~ aprobado (18-nov): `docs/specs/005-cierre/plan.md`. `health` con dominio puro (`domain/pain.ts`: `checkPainInput`, `assessPain`, `persistentAlert`, `noticeOf`; textos en `domain/messages.ts`), `painEntries` en la base v3 (`healthStores`), `usePainSummary(health)` y `PainSelector`, `RedFlagsChecklist` y `PainNotice`; sin `bus` ni Ajustes. `training`: `finishWorkout` lee `PainGate` antes de su transacción; `listWorkouts` solo `completed` (RN-TRN-26) con `useCompletedWorkouts`; `getWorkoutSummary` pasa a la función pura `workoutSummary(view, now)`; RN-TRN-24 en `createIfAllowed`. `WeekStrip` recibe `done`. Últimas entradas por `recordedAt` (RN-HLT-14). Cierre en `app/pages/close/`; "Volver a la sesión" con el `state` de la navegación. Contratos `health` v1.3, `training` v1.20 y `plan` v1.15.
@@ -126,7 +133,8 @@
    7. ~~Punto de control C, `training`~~ (T9–T12, PR #39, hecho por Claude sin paso a paso a petición del usuario): `finishWorkout` (pregunta al `PainGate` solo si se puede cerrar y vuelve a comprobar en la transacción), `workoutSummary` con `finishedAt ?? now` (como la spec), `listWorkouts`, `createIfAllowed` (RN-TRN-24), `useCompletedWorkouts`; `compose` pasa `health.painGate`. Contrato `training` v1.21 y v1.22 (decisiones 23 y 24).
    8. ~~Punto de control D, componentes~~ (T13–T15, PR #40): `PainSelector`, `RedFlagsChecklist`, `PainNotice` y `SafetyNote` (interno); `bandMessage` y `redFlagMessage`; token `--warn-tint`; `WeekStrip` con `done`. Contratos `health` v1.8 (los componentes ya no reciben `assessment`: el aviso de banderas sale sin nivel, AC-14) y `plan` v1.16.
    9. ~~Punto de control E, páginas~~ (T16–T21, PR #41): Cierre en `app/pages/close/`, "Terminar sesión" y "Terminar y guardar lo hecho", "Hoy" con días hechos, aviso y chip "Espalda", vista previa de un día hecho. Detalle en plan §6.5 a §6.8. AC-35 se lee contra la redirección de la spec 002 (spec §8, decisión 17). Bundle **168.76 kB** de 200 kB.
-   10. **Siguiente: T22**, E2E (`tests/e2e/close.spec.ts` y `a11y.spec.ts`: sesión completa y parcial hasta "Hoy", salir sin guardar, sin conexión, aviso de versión tras guardar; axe con el Cierre, "Hoy" con aviso y chip, y el aviso de salida con 4 opciones; 44 px y 320 px), estables en 5 repeticiones, en una rama `feat/005-cierre-f`. T23 ya está hecha (18-nov, en el iPhone: subida a v3, sesión completa y parcial, "Hoy" con ✓, tarjeta hecha, chip y aviso, modo avión; todo bien). Luego T24 (textos de salud con el traumatólogo, usuario, no bloquea) y T25 (este handoff y cerrar la spec).
+   10. ~~Punto de control F, verificación y cierre~~ (T22 en el PR #44, T23 en el iPhone el 18-nov, T25 en el PR de cierre): alcance del E2E aprobado antes de escribirlo (plan §7.1, spec §8 decisión 18: AC-24 sin barra de pestañas); `close.spec.ts` (sesión completa y parcial hasta "Hoy", salir sin guardar, sin conexión, pie fijo) y el bloque de `a11y.spec.ts`, 90/90 en 5 repeticiones; AC-50 como prueba de componente en `update-prompt.test.tsx` (un SW nuevo esperando necesita dos builds). Spec y plan 005 marcados como implementados. **Queda T24** (tuya, no bloquea): validar los textos de salud con el traumatólogo; si cambian, PR de docs y `domain/messages.ts`; si no, quitar `[PROPUESTO]`.
+   11. **Siguiente: pregunta 9** (una sola sesión cerrada por fecha, decidida el 18-nov): proponer la spec (RN nuevo en `training`, "Hoy" y la vista previa) y decidir si es una 005b o parte de la 006. Luego la spec 006 (historial) y la 007 (exportar e importar, `data`).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -190,8 +198,13 @@ Notas para retomar:
 - Una página que guarda y luego navega debe guardar su estado en el componente que sigue montado: si la vista en vivo cambia (`completed`) y desmonta el formulario, sus `setState` se pierden (`ClosePage`, plan §6.5).
 - `Promise.withResolvers` no está en el `lib` de TypeScript del proyecto: en pruebas, una promesa con `resolve` a mano.
 - Las comillas simples dentro de `node -e …` cortan el script de la shell: para editar código con comillas, usar la herramienta de edición.
+- E2E de la spec 005 (T22): `getByText` lee también el texto `aria-hidden` (el chip "Hecha ✓" no es `getByText('Hecha', { exact: true })`); filtrar el `listitem` por su texto visible. Los ayudantes de sesión y Cierre (`startSession`, `doSet`, `cierreWithOneSet`, `painLevel`, `storedRows`) viven en `tests/e2e/helpers.ts`; `startSession` no navega, para poder empezar sin conexión sin recargar.
+- Una prueba de "vuelve a donde estaba" debe salir de un punto distinto del valor por defecto: en el ejemplo parcial, el ejercicio actual (RN-TRN-21) también es el 2, así que volver al 2 no probaba el `state` de la navegación (se abre el Cierre desde el 3).
+- Mutantes E2E con script: comprobar que `npm run build` sale bien antes de correr Playwright; si no compila, Playwright prueba el `dist/` anterior y el mutante "sobrevive" o "muere" sin probar nada (pasó dos veces en T22). Reconstruir con el código real al terminar.
+- Playwright no emula la zona segura (`env(safe-area-inset-*)` vale 0): el pie fijo se prueba por tamaños y posición; la zona segura, en el iPhone.
+- T22: una vez falló el recorrido completo en WebKit justo tras un build, sin detalle (salida mal filtrada); no se repitió en unas 150 corridas. Si reaparece, correr con `--trace=retain-on-failure`.
 - `zod/mini` (T24): la misma API en funciones (`z.pipe`, `.check(z.minLength(1))`, `z.exactOptional(…)`); las pruebas pueden seguir importando tipos de `zod`, que no entran en el bundle.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la spec 005 (Cierre). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005-cierre/spec.md, plan.md (sobre todo §6.5 a §6.8) y tasks.md. Los puntos de control A a E ya están en main; sigue con T22 (E2E del Cierre y axe, estables en 5 repeticiones, en Chromium y WebKit) en una rama feat/005-cierre-f. Antes de escribir las pruebas, revisa qué deja sin definir la spec y proponlo. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005-cierre/spec.md (§4.3 a §4.5 y §8), docs/modules/training.md (RN-TRN-14, 23 y 24) y docs/design-hoy.md. La spec 005 (Cierre) está implementada. Sigue con la pregunta 9 del handoff (una sola sesión cerrada por fecha, ya decidida): propón la spec, con el RN nuevo de training y lo que cambia en 'Hoy' y en la vista previa, y si va como 005b o dentro de la 006. Guíame paso a paso, una tarea a la vez."

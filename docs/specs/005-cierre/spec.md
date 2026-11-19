@@ -1,6 +1,6 @@
 # Spec: Cierre de sesión
 
-**ID:** 005 · **Estado:** Aprobada · **Fecha:** 18-nov-2026
+**ID:** 005 · **Estado:** Implementada (19-nov-2026; los textos de salud siguen `[PROPUESTO]` hasta T24) · **Fecha:** 18-nov-2026
 **Requerimientos cubiertos:** RF-20, RF-21, RF-22, RF-23, RNF-01, RNF-05 · **Fase:** 3 (spec §13), primera parte
 **Fuente de diseño:** [`docs/design-cierre.md`](../../design-cierre.md), tablero "Cierre" (`Cierre.dc.html`) del lienzo de diseño; [`docs/design-hoy.md`](../../design-hoy.md) para lo que cambia en "Hoy"
 **ADRs aplicados:** 0002, 0005, 0009, 0010
