@@ -25,6 +25,7 @@ export function createTraining(deps: {
 }
 
 export { workoutProgress } from './application/progress';
+export { workoutSummary } from './domain/summary';
 export { trainingStores } from './infrastructure/schema';
 export { formatRange, formatSetCount, formatTarget } from './ui/format';
 export { useActiveWorkout, useActiveWorkoutView, useLastSession, useWorkoutView } from './ui/hooks';
@@ -40,6 +41,7 @@ export type {
   WorkoutView,
 } from './application/ports';
 export type { WorkoutProgress } from './domain/progress';
+export type { WorkoutSummary } from './domain/summary';
 export type {
   ExerciseSession,
   InvalidSetValuesDetails,

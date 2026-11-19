@@ -301,5 +301,6 @@ describe('workoutSummary', () => {
 
     expect(summary.itemsWithDoneSets).toBe(0);
     expect(summary.setsDone).toBe(1);
+    expect(summary.itemCount).toBe(7); // the items, not the exercises that have sets
   });
 });

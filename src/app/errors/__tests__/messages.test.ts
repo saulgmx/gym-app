@@ -27,6 +27,11 @@ describe('errorMessages', () => {
       'training/set-not-removable': 'No puedes quitar una serie hecha ni la única del ejercicio.',
       'training/invalid-exercise-choice': GENERIC_ERROR_MESSAGE,
       'training/item-has-done-sets': 'Para cambiar de ejercicio, desmarca las series hechas.',
+      // Spec 005 plan §6.10; pain-required repeats the help of AC-10.
+      'training/pain-required': 'Elige el nivel de dolor para poder guardar.',
+      'training/nothing-done': 'No hay series hechas para guardar.',
+      'training/notes-too-long': 'Las notas pueden tener hasta 2000 caracteres.',
+      'training/already-done': 'Ya hiciste esta sesión.',
     });
   });
 });
