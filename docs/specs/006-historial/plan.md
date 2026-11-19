@@ -163,7 +163,7 @@ Las dos páginas entran en el bundle inicial, como las demás. `React.lazy` comp
 - Sin entrada: "Sin registro" (AC-32).
 
 **Ejercicios:** por cada `HistoryItem`:
-- `h3` con `exercises[exerciseId].name`, o "Ejercicio desconocido" (spec §7);
+- `h3` con `exercises[exerciseId].name`; si faltara, `useWorkoutView` ya habría lanzado (RN-TRN-17, spec §8 decisión 10);
 - "En lugar de <nombre de `replaces`>" si lo hay;
 - una `<ol>` con `${setNumber} · ${formatDoneSet(set, metric)}`, más " · Extra" si `isExtra`;
 - sin series: `h3` en `--text-muted` y "Sin series".
