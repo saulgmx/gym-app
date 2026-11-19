@@ -1,12 +1,15 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import {
+  closeFridayOnWednesday,
   doSet,
   freezeClockAt,
   openTodayOn,
+  openWednesday,
   painLevel,
   smallTouchTargets,
   startSession,
+  TRAINED_TODAY,
   USER_TIME_ZONE,
 } from './helpers';
 import { PAGES } from './pages';
@@ -365,4 +368,39 @@ test.describe('spec 005 AC-47: el Cierre y "Hoy" con sesiones hechas', () => {
       expect(await fits(page)).toBe(true);
     });
   });
+});
+
+// Spec 005b AC-18: "Hoy" with a session closed today (AC-9) and the preview that cannot start
+// (AC-13): axe, 44 px, and nothing overflows at 320 px.
+test.describe('spec 005b AC-18: "Hoy" y la vista previa con una sesión cerrada hoy', () => {
+  test.use({ timezoneId: USER_TIME_ZONE });
+
+  async function expectAccessible(page: Page) {
+    const { violations } = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await smallTouchTargets(page)).toEqual([]);
+  }
+
+  const fits = (page: Page) =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    );
+
+  for (const viewport of [null, { width: 320, height: 640 }]) {
+    test(viewport ? 'a 320 px de ancho' : 'en el viewport por defecto', async ({ page }) => {
+      if (viewport) await page.setViewportSize(viewport);
+      await openWednesday(page);
+      await closeFridayOnWednesday(page);
+
+      await expect(page.getByText('Ya entrenaste hoy (Full body A del viernes).')).toBeVisible();
+      await expect(page.getByText(TRAINED_TODAY)).toBeVisible();
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
+
+      await page.goto('/dia/2026-11-16');
+      await expect(page.getByText(TRAINED_TODAY)).toBeVisible();
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
+    });
+  }
 });
