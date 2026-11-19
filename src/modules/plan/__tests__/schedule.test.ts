@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ID, LocalDate } from '@/shared/kernel';
-import { getDayPlan, getPosition, getWeekPlan, type PlanSnapshot } from '../domain/schedule';
+import {
+  blockOfWeek,
+  getDayPlan,
+  getPosition,
+  getWeekPlan,
+  type PlanSnapshot,
+} from '../domain/schedule';
 import type { Block, Exercise, ScheduleEntry, SessionTemplate, TodayPlan } from '../domain/types';
 
 // Small 6-week program, starting Monday 2026-11-16 (dates checked with Node):
@@ -364,5 +370,33 @@ describe('getWeekPlan', () => {
     const week = getWeekPlan(snapshot, date('2026-11-12'));
     expect(week).toHaveLength(7);
     expect(week.every((day) => day.kind === 'none')).toBe(true);
+  });
+});
+
+describe('blockOfWeek', () => {
+  const blocks = [block1, block2, deload];
+  const blockIdOf = (week: number) => blockOfWeek(blocks, week)?.id ?? null;
+
+  it('RN-PLN-28: el bloque cuyo rango contiene la semana, con los bordes incluidos', () => {
+    expect(blockIdOf(1)).toBe('block-1');
+    expect(blockIdOf(3)).toBe('block-1');
+    expect(blockIdOf(4)).toBe('block-2');
+    expect(blockIdOf(5)).toBe('block-2');
+    expect(blockIdOf(6)).toBe('block-deload');
+  });
+
+  it('RN-PLN-28: fuera del programa → null', () => {
+    expect(blockIdOf(0)).toBeNull();
+    expect(blockIdOf(-1)).toBeNull();
+    expect(blockIdOf(7)).toBeNull();
+    expect(blockOfWeek([], 1)).toBeNull();
+  });
+
+  it('RN-PLN-28: no depende del orden de la lista', () => {
+    const shuffled = [deload, block1, block2];
+
+    expect(blockOfWeek(shuffled, 2)).toBe(block1);
+    expect(blockOfWeek(shuffled, 4)).toBe(block2);
+    expect(blockOfWeek(shuffled, 6)).toBe(deload);
   });
 });
