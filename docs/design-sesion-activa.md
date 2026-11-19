@@ -1,6 +1,6 @@
 # Diseño de la sesión activa (para evaluar contra la spec)
 
-Estado: **diseño elegido e implementado** (spec 004, 18-nov-2026, PR #27 a #30 y el de cierre). Los cambios de este diseño están en la **spec 004**; el Cierre y "Terminar y guardar" pasan a la **spec 005** (fase 3). Fuente visual: lienzo "App de seguimiento de entrenamiento: diseño" (https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk), tablero **"Sesión activa A3"** (`SesionA3.dc.html`). A y A2 están descartadas.
+Estado: **implementado** (spec 002 y spec 004, 18-nov-2026). Lo que sigue pendiente: el Cierre y "Terminar y guardar" pasan a la **spec 005** (fase 3; ver `docs/design-cierre.md`). Fuente visual: lienzo "App de seguimiento de entrenamiento: diseño" (https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk), tablero **"Sesión activa A3"** (`SesionA3.dc.html`). A y A2 están descartadas.
 
 Documento hermano: `docs/design-hoy.md`. Flujo del prototipo: Hoy → "Empezar sesión" → Sesión activa → Cierre (spec 005).
 
@@ -35,7 +35,7 @@ El tablero dibuja piezas de fases futuras (descanso, sugerencia, "Última vez", 
 Una fila:
 - **Flecha de salir:** 44×44, nombre accesible "Salir de la sesión".
 - **Botón "Ejercicio N de M ▾":** abre el menú; lleva `aria-expanded`. Su nombre accesible es el texto visible, sin `aria-label` aparte (WCAG 2.5.3).
-- **Tiempo transcurrido:** mismo formato que ya existe en Hoy: `m:ss`, y `h:mm:ss` desde una hora. No es región viva. En el tablero, "Tiempo de sesión" va como texto oculto a la vista junto al valor (un `aria-label` en un elemento sin rol no se anuncia).
+- **Tiempo transcurrido:** solo en la sesión de hoy; en una sesión de otro día (`plannedFor` ≠ hoy) no se muestra y el aviso de salida dice "Llevas 1 de 7 ejercicios." (tablero: ajuste `dia`). Mismo formato que ya existe en Hoy: `m:ss`, y `h:mm:ss` desde una hora. No es región viva. En el tablero, "Tiempo de sesión" va como texto oculto a la vista junto al valor (un `aria-label` en un elemento sin rol no se anuncia).
 
 El nombre de la sesión ("Full body A") es el título del menú flotante.
 
@@ -87,7 +87,7 @@ Opciones en la spec 004:
 - En ejercicios por tiempo, el encabezado de la columna dice **"Seg"** (hoy "s").
 - Los campos vacíos muestran como **pista** el rango de reps ("6-10" o "30-45") y de RIR ("3-4"). No es un valor guardado.
 - La **serie actual** (la primera sin hacer del ejercicio que se ve) lleva el número y el borde de los campos en color de acento.
-- **Error por fila:** se queda como está en la app: mensaje ámbar bajo la fila, borde ámbar y `aria-live="polite"`. (El tablero dibuja icono y `role="alert"`; no se implementan.)
+- **Error por fila:** se queda como está en la app: mensaje ámbar bajo la fila, borde ámbar, `aria-live="polite"`, sin icono ni `role="alert"`. El tablero ya coincide con la app.
 - **"Con asistencia" y el check:** no se rediseñan. El tablero muestra su propio estilo; la app usa los controles nativos que ya existen.
 
 ## 7. Pie
@@ -113,10 +113,12 @@ Opciones en la spec 004:
 ## Decisiones abiertas
 1. ~~Pie de navegación~~ **Resuelto:** se mantiene Anterior / Siguiente (AC-25).
 2. ~~Último ejercicio sin Cierre~~ **Resuelto:** solo "Anterior" (ver sección 7).
-3. **Fuera del programa / sesión libre:** fuera de alcance; solo está definido el estado D en `design-hoy.md`.
-4. **Vista previa del día** (Otra sesión de esta semana): el tablero enlaza a A3 como marcador; falta diseñar.
+3. ~~Fuera del programa~~ **Resuelto:** vive en Hoy (`design-hoy.md`, "Fuera del programa"). La sesión libre sigue fuera de alcance.
+4. ~~Vista previa del día~~ **Resuelto:** implementada y con tablero propio ("Vista previa del día"; ver `design-hoy.md`).
 
 ## Notas de implementación (PWA)
+- Menú de ejercicios: una fila pendiente con series hechas muestra el subtítulo "N de M series" (implementado; el tablero no lo dibuja). El menú es un `<dialog>` con nombre accesible "Full body A".
+- Piezas de la fase 4 marcadas en el tablero con la etiqueta "Fase 4": sugerencia, "Última vez" y la tarjeta de descanso.
 - Cada serie se guarda en Dexie al marcarla (RN-TRN-03).
 - Ciclo de vida (`training.md`): `getActiveWorkout()` (RF-19), `discardWorkout`, un solo `in_progress` (RN-TRN-01). `finishWorkout` es de la spec 005. El evento `WorkoutDiscarded` es diseño del contrato, aún no implementado: `training` no publica eventos hasta la fase 4 (spec 002 §5).
 - Temporizador (fase 4): guardar `endsAt` (ADR-0006), no depender de `setInterval`; aviso visual y sonoro dentro de la app; Wake Lock con alternativa.
