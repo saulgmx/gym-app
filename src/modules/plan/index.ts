@@ -24,9 +24,10 @@ export {
   plannedSessionSeconds,
   setSeconds,
 } from './domain/duration';
+export { blockOfWeek } from './domain/schedule';
 export { formatRir } from './ui/format';
 export { planStores } from './infrastructure/schema';
-export { useTodayPlan, useWeekPlan } from './ui/hooks';
+export { useBlocks, useTodayPlan, useWeekPlan } from './ui/hooks';
 export { PlanExerciseList } from './ui/PlanExerciseList';
 export { WeekStrip } from './ui/WeekStrip';
 

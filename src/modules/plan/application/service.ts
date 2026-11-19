@@ -8,7 +8,7 @@ import {
 } from '@/shared/kernel';
 import { getDayPlan, getPosition, getWeekPlan, type PlanSnapshot } from '../domain/schedule';
 import { validateSeed } from '../domain/seed-rules';
-import type { Exercise, PlanError, ProgramPosition, TodayPlan } from '../domain/types';
+import type { Block, Exercise, PlanError, ProgramPosition, TodayPlan } from '../domain/types';
 import type { PlanRepository, SeedParser } from './ports';
 
 // Use cases of the plan module (docs/modules/plan.md §4, phase 1 and 2 operations).
@@ -22,6 +22,8 @@ export interface PlanApi {
   getExercise(id: ID): Promise<Exercise | undefined>;
   // One entry per requested ID, in order, skipping missing ones.
   getExercises(ids: ID[]): Promise<Exercise[]>;
+  // RN-PLN-28 (spec 006): by startWeek, since the store reads them by programId in no order.
+  getBlocks(): Promise<Block[]>;
 }
 
 export function createPlanService(deps: {
@@ -59,5 +61,6 @@ export function createPlanService(deps: {
       const byId = new Map((await load()).exercises.map((e) => [e.id, e]));
       return ids.flatMap((id) => byId.get(id) ?? []);
     },
+    getBlocks: async () => [...(await load()).blocks].sort((a, b) => a.startWeek - b.startWeek),
   };
 }

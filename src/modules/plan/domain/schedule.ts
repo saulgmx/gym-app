@@ -49,6 +49,12 @@ function outside(program: Program, status: 'not_started' | 'finished'): Located 
   };
 }
 
+// RN-PLN-28: the block whose range holds the week, or null outside the program. RN-PLN-15 (b)
+// rules out overlaps, so the order of the list does not matter.
+export function blockOfWeek(blocks: Block[], week: number): Block | null {
+  return blocks.find((b) => b.startWeek <= week && week <= b.endWeek) ?? null;
+}
+
 // RN-PLN-01, 02, 04
 function locate({ program, blocks }: PlanSnapshot, date: LocalDate): Located {
   const days = daysBetween(program.startDate, date);
@@ -57,7 +63,7 @@ function locate({ program, blocks }: PlanSnapshot, date: LocalDate): Located {
   const week = Math.floor(days / 7) + 1;
   if (week > program.totalWeeks) return outside(program, 'finished');
 
-  const block = blocks.find((b) => b.startWeek <= week && week <= b.endWeek);
+  const block = blockOfWeek(blocks, week);
   if (!block) throw new Error(`No block covers week ${String(week)} (RN-PLN-02)`);
 
   const volumeFactor = block.isDeload ? DELOAD_FACTOR : (block.weekFactors[week] ?? 1);
