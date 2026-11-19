@@ -10,10 +10,14 @@ const dayAndMonth = new Intl.DateTimeFormat('es', {
   timeZone: 'UTC',
 });
 
+/** "viernes": the weekday alone, in lower case (spec 005b, "Full body A del viernes"). */
+export function formatWeekday(date: LocalDate): string {
+  return weekday.format(new Date(`${date}T00:00:00Z`));
+}
+
 /** "lunes 16 de noviembre": built in two parts, since Intl puts a comma after the weekday. */
 export function formatLongDate(date: LocalDate): string {
-  const instant = new Date(`${date}T00:00:00Z`);
-  return `${weekday.format(instant)} ${dayAndMonth.format(instant)}`;
+  return `${formatWeekday(date)} ${dayAndMonth.format(new Date(`${date}T00:00:00Z`))}`;
 }
 
 /** "Lunes 16 de noviembre", for the start of a line. */

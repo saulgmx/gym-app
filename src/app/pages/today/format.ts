@@ -1,4 +1,6 @@
 import { displayMinutes } from '@/modules/plan';
+import type { LocalDate } from '@/shared/kernel';
+import { formatWeekday } from '../../format-date';
 
 // Texts of "Hoy" (spec 003 plan §6.7). Durations come in seconds and are rounded here with
 // plan's displayMinutes (RN-PLN-27), so a page cannot show an unrounded value. Every count
@@ -35,6 +37,13 @@ export function formatWeekSessions(done: number, total: number): string {
 /** "52 min · 10 series", the card of a day already done (spec 005 AC-34). */
 export function formatDoneSummary(minutes: number, sets: number): string {
   return `${String(minutes)} min · ${String(sets)} ${plural(sets, 'serie', 'series')}`;
+}
+
+/** "Ya entrenaste hoy (Full body A del viernes).": a workout day still pending when another
+ *  session was already closed today (spec 005b §6.1, RN-TRN-27). plannedFor is in the same week
+ *  (RN-TRN-14), so the weekday alone is enough. */
+export function formatTrainedToday(name: string, plannedFor: LocalDate): string {
+  return `Ya entrenaste hoy (${name} del ${formatWeekday(plannedFor)}).`;
 }
 
 /** "Espalda 5/10", the chip with the latest pain entry (spec 005 §6.3). */
