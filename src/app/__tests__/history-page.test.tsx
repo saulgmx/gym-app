@@ -199,6 +199,29 @@ describe('lista del historial', () => {
     expect(rows(region).map((r) => r.getAttribute('href'))).toEqual(['/historial/fuera']);
   });
 
+  it('spec 006 AC-32: una sesión cerrada sin entrada de dolor no tiene chip en la lista', async () => {
+    const { services, l16 } = await examples();
+    const broken: Workout = {
+      ...l16,
+      id: 'sin-dolor' as ID,
+      programWeek: 2,
+      date: date('2026-11-24'),
+      plannedFor: date('2026-11-24'),
+      startedAt: '2026-11-24T18:00:00-06:00' as Instant,
+      finishedAt: '2026-11-24T18:40:00-06:00' as Instant,
+    };
+    await lastTestDatabase().table('workouts').add(broken);
+    await openHistory(services);
+
+    const row = rowOf(
+      await screen.findByRole('region', { name: 'Semana 2' }),
+      'Mar 24 · Full body A',
+    );
+    expect(within(row).queryByText(/Espalda/)).not.toBeInTheDocument();
+    // The copy has no sets of its own, so its summary is empty; what matters is no chip.
+    expect(row).toHaveAccessibleName('Mar 24 · Full body A 40 min · 0 series · 0 de 7 ejercicios');
+  });
+
   it('spec 006 AC-13: una sesión cerrada con la lista abierta aparece sin recargar', async () => {
     const ctx = await setup(WEDNESDAY_25);
     await closeSession(ctx, { on: '2026-11-16', allSets: true, level: 2 });

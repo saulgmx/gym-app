@@ -1,0 +1,104 @@
+/* The detail of one session (spec 006 §6.2). */
+
+.header {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  margin-left: -0.75rem;
+}
+
+.header h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* "Volver": a link of 44 × 44 px with the arrow alone (aria-label). */
+.back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  border-radius: var(--radius-button);
+  color: var(--text);
+}
+
+.arrow {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.subtitle {
+  margin: 0.25rem 0 1rem;
+  color: var(--text-muted);
+}
+
+.section {
+  margin-top: 1.5rem;
+}
+
+.section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.section p {
+  margin: 0 0 0.25rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* From 4 the level turns amber, as the back chip (spec 005 §6.3). */
+.level {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.level[data-warn] {
+  color: var(--warn);
+}
+
+.exercises {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercise {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-input);
+  background: var(--surface);
+}
+
+.exercise h3 {
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.exercise h3[data-empty] {
+  color: var(--text-muted);
+}
+
+.sets {
+  margin: 0.375rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.notes {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
