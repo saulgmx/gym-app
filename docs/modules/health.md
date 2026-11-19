@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.6 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.7 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -82,7 +82,7 @@ interface HealthApi {
 }
 // Todas las operaciones async rechazan si falla la base (RN-HLT-16).
 
-export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando
+export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando (RN-HLT-19)
 
 // Componentes (spec 005 plan §6.9). Más adelante: PainHistoryChart (RF-33), BodyWeightChart (RF-34).
 function PainSelector(props: { value: number | null; onChange: (level: number) => void; assessment: PainAssessment | null }): JSX.Element;
@@ -143,6 +143,7 @@ No escucha eventos.
 | RN-HLT-16 | Un fallo del almacenamiento (la base lanza) es un error inesperado: la promesa rechaza, no se devuelve un `Result`, y lo muestra el aviso genérico (ADR-0010), como RN-TRN-18. Vale para todas las operaciones del servicio; un fallo a mitad del reemplazo de RN-HLT-09 no deja nada a medias (transacción). | ADR-0010, spec 005 |
 | RN-HLT-17 | `getPainSummary` arma el resumen con el dominio sobre las entradas de RN-HLT-14: `latest` es la `PainEntry` completa más reciente, `latestAssessment = assessPain(latest)`, `persistentAlert` y `notice` con `threshold`, que es la constante 3 del servicio hasta Ajustes (RF-51). Sin entradas: `{ latest: null, latestAssessment: null, persistentAlert: null, notice: null, threshold: 3 }`. | Spec 005 |
 | RN-HLT-18 | `hasPainEntry(workoutId)` es `true` si existe una entrada con ese `workoutId` y `false` si no (también con uno desconocido). `painGate` es `{ hasPainEntry }`, la misma función. | RN-TRN-06, spec 005 |
+| RN-HLT-19 | `usePainSummary(health)` (en `ui/hooks.ts`, con `useLiveQuery`) devuelve `undefined` solo mientras carga y nunca `null`: sin entradas devuelve el resumen vacío de RN-HLT-17. No lleva clave, porque no recibe parámetros y `health` es una sola instancia por `compose` (sus dependencias son `[health]`). Se actualiza solo al cambiar `painEntries`: `getPainSummary` solo espera promesas de Dexie y el resto es síncrono. Un error de la consulta se lanza en el render y lo captura el *error boundary* de la ruta, como RN-TRN-19. | RN-TRN-19, spec 005 |
 
 ### 6.1 Textos [PROPUESTO]
 
@@ -189,6 +190,10 @@ Servicio (integración con `fake-indexeddb`, spec 005 T5):
 - RN-HLT-18: `hasPainEntry` y `painGate.hasPainEntry` → `true` tras registrar, `false` con un workout desconocido.
 - RN-HLT-16: si la base lanza, `recordPain`, `getPainSummary` y `hasPainEntry` rechazan; un fallo a mitad del reemplazo deja la entrada anterior intacta.
 
+Hook (spec 005 T8):
+
+- RN-HLT-19: `undefined` en el primer render y luego el resumen vacío (nunca `null`); registrar dolor, nuevo o reemplazado, actualiza el resultado sin volver a renderizar desde fuera; con la base cerrada, el error (`DatabaseClosedError`) llega al *error boundary*. Que otra pestaña escriba no se prueba con `fake-indexeddb`, como en `training`.
+
 ## 9. Trazabilidad
 
 RF-21, RF-22, RF-33, RF-34, RF-51, spec §6.2.
@@ -206,6 +211,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 6. **Entrada y clasificación del dolor (contrato v1.4, 18-nov-2026, antes de T1 de la spec 005):** se revisa primero el nivel y se devuelve solo el primer error; no finitos rechazados y `-0` como 0; `checkPainInput` válido devuelve el nivel normalizado y un arreglo nuevo de banderas en su orden; `assessPain` lanza con una entrada inválida (error de programación); `status` y `message` solo dependen del nivel y `redFlagMessage` solo existe con banderas; `blocksProgression` = `alert` o alguna bandera; RN-HLT-15 para las banderas; los mensajes técnicos citan su regla (RN-HLT-01, 02, 06, 07, 15).
 7. **Alertas y aviso de "Hoy" (contrato v1.5, 18-nov-2026, antes de T3 de la spec 005):** `persistentAlert` y `noticeOf` reciben `Pick<PainEntry, 'level' | 'redFlags'>` de la más reciente a la más antigua y confían en su entrada (orden del servicio, entradas validadas al guardarse, umbral constante); solo cuentan las 2 o 3 primeras y con menos no se cumple la condición; `persistentAlert` da una sola razón (`red_flag` → `over_threshold_2x` → `rising_3x`) y `red_flag` solo con banderas en la última; RN-HLT-08 deja de ser `[PROPUESTO]` (AC-45); `noticeOf` es `null` exactamente cuando no se cumple RN-HLT-12; N y U como enteros y "a → b → c" en orden cronológico; los textos con valores son funciones en `messages.ts` (RN-HLT-04, 05, 08, 12, 13).
 8. **Servicio y almacenamiento (contrato v1.6, 18-nov-2026, antes de T5 de la spec 005):** `painEntries` pierde el índice `recordedAt` (ADR-0009: un `Instant` no se ordena como string; corrige el plan §4) y las últimas se ordenan en memoria con `compareInstants`, con empate por `id` mayor (RN-HLT-14); `recordPain` valida sin tocar la base, normaliza, reemplaza en una transacción conservando solo el `id` y llama a `ids.next()` solo al crear; `health` no comprueba que el workout exista ni valida `date` (RN-HLT-09); un fallo de la base rechaza (RN-HLT-16); resumen vacío y `threshold: 3` constante (RN-HLT-17); `hasPainEntry` y `painGate` (RN-HLT-18).
+9. **Hook (contrato v1.7, 18-nov-2026, antes de T8 de la spec 005):** `usePainSummary` devuelve `undefined` solo al cargar y nunca `null`, sin clave porque no tiene parámetros, se actualiza con `painEntries` y lanza sus errores en el render (RN-HLT-19).
 
 Preguntas abiertas:
 
