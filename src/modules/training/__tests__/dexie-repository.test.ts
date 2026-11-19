@@ -333,7 +333,9 @@ describe('días hechos con Dexie (RN-TRN-23, 24)', () => {
     return ok(await service.finishWorkout(workoutId, {}));
   }
 
-  it('RN-TRN-23: el viernes hecho el miércoles bloquea el viernes, no el miércoles (AC-33)', async () => {
+  // Since spec 005b the Wednesday is blocked too, but as a day already trained (RN-TRN-27), not
+  // as a plan day already done: the error code tells the two rules apart.
+  it('RN-TRN-23: el viernes hecho el miércoles marca el viernes, no el miércoles (AC-33)', async () => {
     const db = openDb();
     const service = training(db);
     const friday = ok(
@@ -344,7 +346,10 @@ describe('días hechos con Dexie (RN-TRN-23, 24)', () => {
     expect(
       await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
     ).toMatchObject({ ok: false, error: { code: 'training/already-done' } });
-    expect((await service.startWorkout(date('2026-11-18'))).ok).toBe(true);
+    expect(await service.startWorkout(date('2026-11-18'))).toMatchObject({
+      ok: false,
+      error: { code: 'training/day-already-trained' },
+    });
   });
 
   it('RN-TRN-24: con un día hecho y una sesión activa, gana workout-already-active', async () => {
@@ -358,5 +363,113 @@ describe('días hechos con Dexie (RN-TRN-23, 24)', () => {
       ok: false,
       error: { code: 'training/workout-already-active' },
     });
+  });
+});
+
+// Spec 005b: a real day (the workout's date) has at most one completed session. Checked in
+// createIfAllowed after RN-TRN-01 and RN-TRN-24, in the same transaction.
+describe('un día ya entrenado con Dexie (RN-TRN-27)', () => {
+  async function closeStarted(service: ReturnType<typeof training>, db: Dexie, workoutId: ID) {
+    const setId = (await setsOf(db, 'prensa')).find(
+      (s) => s.workoutId === workoutId && s.setNumber === 1,
+    )?.id;
+    if (!setId) throw new Error('no Prensa set');
+    ok(await service.logSet(setId, { weightKg: 60, reps: 10 }));
+    ok(await service.toggleSetDone(setId));
+    return ok(await service.finishWorkout(workoutId, {}));
+  }
+
+  it('RN-TRN-27: con una sesión cerrada el sábado, otro día del plan ese sábado → day-already-trained, sin crear nada (AC-1)', async () => {
+    const db = openDb();
+    const service = training(db);
+    const closed = ok(await service.startWorkout(date('2026-11-21')));
+    await closeStarted(service, db, closed.id);
+
+    const result = await service.startWorkout(date('2026-11-21'), {
+      plannedFor: date('2026-11-20'),
+    });
+
+    expect(result).toMatchObject({ ok: false, error: { code: 'training/day-already-trained' } });
+    expect((await dump(db)).workouts).toHaveLength(1);
+  });
+
+  it('RN-TRN-27: cuenta el date, no el plannedFor: el viernes hecho el miércoles bloquea el miércoles y no el sábado', async () => {
+    const db = openDb();
+    const service = training(db);
+    const friday = ok(
+      await service.startWorkout(date('2026-11-18'), { plannedFor: date('2026-11-20') }),
+    );
+    await closeStarted(service, db, friday.id);
+
+    expect(
+      await service.startWorkout(date('2026-11-18'), { plannedFor: date('2026-11-16') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/day-already-trained' } });
+    expect(
+      (await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-16') })).ok,
+    ).toBe(true);
+  });
+
+  it('RN-TRN-27: el mismo día del plan sigue dando already-done (RN-TRN-24 va antes) (AC-2)', async () => {
+    const db = openDb();
+    const service = training(db);
+    const closed = ok(await service.startWorkout(date('2026-11-21')));
+    await closeStarted(service, db, closed.id);
+
+    expect(await service.startWorkout(date('2026-11-21'))).toMatchObject({
+      ok: false,
+      error: { code: 'training/already-done' },
+    });
+  });
+
+  it('RN-TRN-27: con una sesión activa gana workout-already-active (AC-3)', async () => {
+    const db = openDb();
+    const service = training(db);
+    const closed = ok(await service.startWorkout(date('2026-11-21')));
+    await closeStarted(service, db, closed.id);
+    // Broken data: a session in progress although the day is trained (RN-TRN-27 forbids it).
+    const active = { ...closed, id: 'activo' as ID, status: 'in_progress' as const };
+    delete active.finishedAt;
+    await db.table<Workout>('workouts').add(active);
+
+    expect(
+      await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+    ).toMatchObject({ ok: false, error: { code: 'training/workout-already-active' } });
+  });
+
+  it('RN-TRN-27: una sesión descartada ese día no lo impide (AC-4)', async () => {
+    const db = openDb();
+    const service = training(db);
+    const discarded = ok(await service.startWorkout(date('2026-11-21')));
+    ok(await service.discardWorkout(discarded.id));
+
+    expect(
+      (await service.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') })).ok,
+    ).toBe(true);
+  });
+
+  it('RN-TRN-27: dos startWorkout a la vez en un día ya entrenado, desde dos conexiones, no crean nada (AC-7)', async () => {
+    const name = crypto.randomUUID();
+    const db = openDb(name);
+    const service = training(db, 'x');
+    const closed = ok(await service.startWorkout(date('2026-11-21')));
+    await closeStarted(service, db, closed.id);
+    const [a, b] = [training(openDb(name), 'a'), training(openDb(name), 'b')];
+
+    const results = await Promise.all([
+      a.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+      b.startWorkout(date('2026-11-21'), { plannedFor: date('2026-11-20') }),
+    ]);
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: 'training/day-already-trained' }) as unknown,
+      }),
+      expect.objectContaining({
+        ok: false,
+        error: expect.objectContaining({ code: 'training/day-already-trained' }) as unknown,
+      }),
+    ]);
+    expect((await dump(openDb(name))).workouts).toHaveLength(1);
   });
 });
