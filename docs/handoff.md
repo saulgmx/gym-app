@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 19-nov-2026 (spec 005, Cierre, implementada; falta T24, tuya; spec 005b con plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
+**Fecha:** 19-nov-2026 (specs 005, Cierre, y 005b, una sesión cerrada por día, implementadas; falta T24 de la 005, tuya; siguiente: proponer la spec 006, historial) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo.
 
 ## Qué existe
 
@@ -50,6 +50,12 @@
   - Cierre en `/sesion/:workoutId/cierre` (`app/pages/close/`), "Terminar sesión" y "Terminar y guardar lo hecho", "Hoy" con días hechos, tarjeta hecha, aviso de dolor y chip "Espalda N/10", vista previa de un día hecho.
   - Bundle inicial **168.76 kB** de 200 kB.
   - E2E (`close.spec.ts`) y axe, estables en 5 repeticiones (T22, PR #44); verificado en el iPhone (T23). Los textos de salud siguen `[PROPUESTO]` hasta T24.
+- **Una sola sesión cerrada por día completo** (spec 005b implementada, PR #48 a #50; pregunta 9):
+  - `training`: RN-TRN-27 y `training/day-already-trained`, en `createIfAllowed` por el índice `date`, después de `active` y `done`. Contrato `training` v1.23.
+  - `app`: "Hoy" y la vista previa calculan `closedToday` (por `date`) con `useCompletedWorkouts`; `DayCard` cambia "Empezar sesión" por "Ya entrenaste hoy (Full body A del viernes)." y `OtherDays` muestra "Ya entrenaste hoy. Podrás empezar otra sesión mañana."; la vista previa, hecho → entrenado → botón. `formatWeekday` y `formatTrainedToday`.
+  - Sin base ni migración nuevas; las dos sesiones cerradas del 18-nov en el iPhone se toleran (AC-17, verificado en el iPhone, también en modo avión).
+  - Bundle inicial **169.00 kB** de 200 kB.
+  - E2E en `close.spec.ts` y `a11y.spec.ts` (`spec 005b`), 40/40 en 5 repeticiones; 124 E2E en total.
 
 ## Decisiones tomadas
 
@@ -136,7 +142,8 @@
    11. ~~Pregunta 9~~ (decidida el 18-nov): **spec 005b aprobada** (19-nov): `docs/specs/005b-una-sesion-por-dia/spec.md` (AC-1 a AC-19). Un día real (`date`) admite una sola sesión cerrada: RN-TRN-27 y `training/day-already-trained`, comprobado en `createIfAllowed` después de `active` y `done` (contrato `training` v1.23); solo al iniciar, no al cerrar. Si hoy ya hay una sesión cerrada, "Otra sesión de esta semana" sigue visible con el aviso "Ya entrenaste hoy. Podrás empezar otra sesión mañana." y enlaces a la vista previa, que no tiene "Empezar sesión"; la tarjeta de un día de pesas pendiente cambia el botón por "Ya entrenaste hoy (Full body A del viernes)."; cardio y descanso no cambian. Sin API ni índice nuevos (`useCompletedWorkouts`). Las dos sesiones cerradas del 18-nov en el iPhone se toleran (AC-17). Spec v0.11 (§7.2) y `design-hoy.md`.
    12. ~~Plan técnico de la 005b~~ aprobado (19-nov): `docs/specs/005b-una-sesion-por-dia/plan.md`. RN-TRN-27 en `createIfAllowed` (índice `date`, después de `active` y `done`), como RN-TRN-24; "ya entrenaste hoy" en `app` con `completed.find((w) => w.date === today)` (`closedToday`, para no confundirlo con `doneToday` por `plannedFor`); `DayCard` con `trained`, `OtherDays` con `trainedToday`, `DayPreview` con el orden hecho → entrenado → botón; `formatWeekday` y `formatTrainedToday`. Sin API, índice ni migración.
    13. ~~Tareas de la 005b~~ (19-nov): `docs/specs/005b-una-sesion-por-dia/tasks.md`, T1 a T10 en 3 puntos de control (A `training`, B "Hoy" y la vista previa, C verificación y cierre).
-   14. **Siguiente: T1** (pruebas de RN-TRN-27 en el servicio y el repositorio, en rojo y sin push). Después, la spec 006 (historial) y la 007 (exportar e importar, `data`).
+   14. ~~Implementación de la 005b~~ (19-nov): punto A, `training` (T1–T2, PR #48); punto B, "Hoy" y la vista previa (T3–T7, PR #49); punto C, E2E, iPhone y cierre (T8–T10, PR #50). Cambiaron dos pruebas de la spec 005 que la regla nueva contradecía: AC-33 en `today-done.test.tsx` (ahora espera el texto, no "Empezar sesión") y RN-TRN-23 en `dexie-repository.test.ts` (el miércoles da `day-already-trained`). Mutante equivalente aceptado: el `!isDone` de `TodayPage` al pasar `trained` (`DayCard` ya lo ignora en un día hecho). Spec y plan 005b marcados como implementados.
+   15. **Siguiente: spec 006, historial** (RF-32, `/historial`, spec §7.2 "Historial (v1.0)": lista de sesiones y detalle por serie; módulo `training`, `listWorkouts` ya existe con RN-TRN-26). Proponerla desde la plantilla. Después, la 007 (exportar e importar, `data`).
 13. Planeado por el usuario (17-nov), sin fecha: migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`. Se verifica igual que T26.
 
 Notas para retomar:
@@ -169,7 +176,7 @@ Notas para retomar:
 - `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
 - Al fusionar PR: "Create a merge commit".
 - `main` protegida: ni un push directo ni un PR con `ci` en rojo entran, tampoco como admin. Para una emergencia, desactivar temporalmente en Settings → Branches.
-- zsh no divide variables sin comillas: opciones de `curl` en una variable van como array, `R=(--resolve a)` y `curl "${R[@]}"`.
+- zsh no divide variables sin comillas: opciones de `curl` en una variable van como array, `R=(--resolve a)` y `curl "${R[@]}"`. Lo mismo con varios archivos de prueba en un script de mutantes: `T=(a.test.ts b.test.ts)` y `npx vitest run "${T[@]}"`; con `$T`, Vitest recibe una sola ruta, no encuentra nada y todos los mutantes "sobreviven" (spec 005b T4).
 - DNS: si el Mac preguntó por un nombre antes de que existiera, guarda el "no existe" (~30 min). Verificar con `dig +short nombre @1.1.1.1` y `curl --resolve nombre:443:IP`, o limpiar con `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
 - En la fase 0 solo hay 2 pestañas (Hoy y Progreso); Sesión y Cierre se abren por URL.
 - `Suspense` en pruebas (fase 1, C): en el entorno de `act`, React solo reintenta un componente suspendido en `use(promesa)` dentro de un `act` esperado con `await`. `src/app/__tests__/test-app.tsx` renderiza así; para probar el orden real de arranque (promesa que se resuelve después), montar con `createRoot` y `IS_REACT_ACT_ENVIRONMENT = false` durante la prueba (`today-page.test.tsx`).
@@ -205,8 +212,10 @@ Notas para retomar:
 - Mutantes E2E con script: comprobar que `npm run build` sale bien antes de correr Playwright; si no compila, Playwright prueba el `dist/` anterior y el mutante "sobrevive" o "muere" sin probar nada (pasó dos veces en T22). Reconstruir con el código real al terminar.
 - Playwright no emula la zona segura (`env(safe-area-inset-*)` vale 0): el pie fijo se prueba por tamaños y posición; la zona segura, en el iPhone.
 - T22: una vez falló el recorrido completo en WebKit justo tras un build, sin detalle (salida mal filtrada); no se repitió en unas 150 corridas. Si reaparece, correr con `--trace=retain-on-failure`.
+- Mutantes que no compilan (spec 005b): `cond ? a : b` → `false ? a : b` deja variables sin usar y `tsc -b` falla (`noUnusedLocals`); `x && false ? …` estrecha `x` a `never` y su rama no compila. Una condición que nunca se cumple y conserva el tipo sirve: `x?.name === '' ? …`. En Vitest, un archivo que no carga da "Test Files N failed" sin "Tests N failed": el script debe tratarlo como error del mutante, no como muerto ni como vivo.
+- Datos rotos en pruebas de `app` que la API ya impide (dos `completed` con el mismo `date`): `lastTestDatabase()` de `test-app.tsx` devuelve la base de los últimos servicios de prueba para escribir directo (`today-done.test.tsx`, AC-17).
 - `zod/mini` (T24): la misma API en funciones (`z.pipe`, `.check(z.minLength(1))`, `z.exactOptional(…)`); las pruebas pueden seguir importando tipos de `zod`, que no entran en el bundle.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/005b-una-sesion-por-dia/ (spec, plan y tareas) y docs/modules/training.md (RN-TRN-24, 26 y 27). Empieza el punto de control A con T1: las pruebas de RN-TRN-27, en rojo y sin push. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/spec.md (RF-32 y la fila 'Historial' de §7.2), docs/modules/training.md (RN-TRN-08, 25 y 26) y docs/specs/005-cierre/spec.md como referencia de formato. Las specs 005 (Cierre) y 005b (una sesión cerrada por día) están implementadas. Propón la spec 006 (historial de sesiones con detalle por serie) desde docs/templates/feature-spec.md: qué entra y qué no, preguntas abiertas antes de escribirla. Guíame paso a paso, una tarea a la vez."

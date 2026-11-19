@@ -1,6 +1,6 @@
 # Spec: Una sola sesión cerrada por día
 
-**ID:** 005b · **Estado:** Aprobada (19-nov-2026) · **Fecha:** 19-nov-2026
+**ID:** 005b · **Estado:** Implementada (19-nov-2026) · **Fecha:** 19-nov-2026
 **Requerimientos cubiertos:** RF-10, RF-19, RNF-01, RNF-05 · **Fase:** 3 (spec §13), complemento de la spec 005
 **Origen:** pregunta 9 del handoff (decidida el 18-nov-2026: una sola sesión cerrada por fecha)
 **Fuente de diseño:** [`docs/design-hoy.md`](../../design-hoy.md) ("Otra sesión de esta semana" y la vista previa del día); no hay tablero nuevo

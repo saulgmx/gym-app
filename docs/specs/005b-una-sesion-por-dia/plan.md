@@ -1,6 +1,6 @@
 # Plan técnico: Una sola sesión cerrada por día
 
-**Spec:** `specs/005b-una-sesion-por-dia/spec.md` · **Estado:** Aprobado (19-nov-2026)
+**Spec:** `specs/005b-una-sesion-por-dia/spec.md` · **Estado:** Implementado (19-nov-2026)
 
 ## 1. Resumen de la solución
 
