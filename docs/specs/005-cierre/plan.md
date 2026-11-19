@@ -50,8 +50,8 @@ interface HealthApi {   // spec 005; el resto de §4 entra con su feature
 
 export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery
 
-function PainSelector(props: { value: number | null; onChange: (level: number) => void; assessment: PainAssessment | null }): JSX.Element;
-function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void; assessment: PainAssessment | null }): JSX.Element;
+function PainSelector(props: { value: number | null; onChange: (level: number) => void }): JSX.Element;      // sin assessment (contrato health v1.8)
+function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void }): JSX.Element;
 function PainNotice(props: { notice: NonNullable<PainSummary['notice']> }): JSX.Element;  // aviso ámbar de "Hoy"
 ```
 
@@ -133,7 +133,7 @@ Los textos de salud viven en `health/domain/messages.ts` (son reglas de spec §6
 ### 6.5 La pantalla de Cierre
 `app/pages/close/`:
 - `ClosePage.tsx` reemplaza la página vacía: `useWorkoutView`, y decide el estado: cargando, no disponible (AC-29), ya guardada (AC-28), sin series hechas (AC-30) o formulario.
-- `CloseForm.tsx`: el estado de la pantalla (`level`, `redFlags`, `notes`, `saving`, `error`) en `useState`, sin Zustand ni guardado (spec §6.1). `assessPain` en cada render (es pura).
+- `CloseForm.tsx`: el estado de la pantalla (`level`, `redFlags`, `notes`, `saving`, `error`) en `useState`, sin Zustand ni guardado (spec §6.1). Los componentes de `health` derivan sus textos de `level` y `redFlags` (contrato `health` v1.8), así que el formulario no llama a `assessPain`.
 - `CloseSummary.tsx`: `workoutSummary(view, now)` con `now` fijado al montar (`useState(() => clock.now())`), y `isToday` igual (spec 004 plan §6.4).
 - `CloseFooter.tsx`: "Guardar sesión", la ayuda y "Volver a la sesión".
 - Guardar: `recordPain` con `date = workout.date` y luego `finishWorkout`; si los dos van bien, `navigate('/', { replace: true })`. `saving` deshabilita el botón (AC-27).
@@ -154,8 +154,9 @@ Los enlaces al Cierre llevan `state: { from: index }` (React Router). `ClosePage
 - `ExitSheet` recibe `onFinish?: () => void`: con al menos una serie hecha añade "Terminar y guardar lo hecho" con su subtítulo, en segundo lugar (AC-4 a AC-6). Es un enlace, como "Salir y continuar después".
 
 ### 6.9 Componentes de `health/ui`
-- `PainSelector`: `role="group"` con nombre "Dolor lumbar", 11 botones `aria-pressed`, el mensaje en `aria-live="polite"`; `data-band` para el color (`--warn` desde 4) y la barra en 7-10 (las pruebas no dependen de clases).
-- `RedFlagsChecklist`: `<fieldset>` con `<legend>` "Señales de alarma (opcional)", cuatro casillas nativas y el aviso (`redFlagMessage`) en `aria-live="polite"`.
+- `PainSelector`: `role="group"` con nombre "Dolor lumbar", 11 botones `aria-pressed`, el mensaje (`bandMessage(value)`) en `aria-live="polite"`; `data-band` para el color (`--warn` desde 4) y la barra en 7-10 (las pruebas no dependen de clases).
+- `RedFlagsChecklist`: `<fieldset>` con `<legend>` (con el `h2`) "Señales de alarma (opcional)", cuatro casillas nativas y el aviso (`redFlagMessage(value)`) en `aria-live="polite"`, también sin nivel elegido.
+- Detalle completo en el contrato `health` v1.8, §4 "Componentes".
 - `PainNotice` y el aviso de las banderas comparten un `SafetyNote` interno de `health/ui` (ámbar, icono decorativo). No va a `shared` hasta que otro módulo lo use (P-7).
 
 ### 6.10 Textos de error

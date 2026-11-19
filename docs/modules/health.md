@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.7 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.8 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -85,8 +85,10 @@ interface HealthApi {
 export function usePainSummary(health: HealthApi): PainSummary | undefined;   // useLiveQuery; undefined = cargando (RN-HLT-19)
 
 // Componentes (spec 005 plan §6.9). Más adelante: PainHistoryChart (RF-33), BodyWeightChart (RF-34).
-function PainSelector(props: { value: number | null; onChange: (level: number) => void; assessment: PainAssessment | null }): JSX.Element;
-function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void; assessment: PainAssessment | null }): JSX.Element;
+// Sin `assessment` (contrato v1.8): cada uno deriva su texto de su propio value, para que el aviso
+// de las banderas salga aunque no haya nivel elegido (AC-14 parte de AC-7).
+function PainSelector(props: { value: number | null; onChange: (level: number) => void }): JSX.Element;
+function RedFlagsChecklist(props: { value: RedFlag[]; onChange: (flags: RedFlag[]) => void }): JSX.Element;
 function PainNotice(props: { notice: NonNullable<PainSummary['notice']> }): JSX.Element;   // aviso ámbar de Hoy
 export { PainSelector, RedFlagsChecklist, PainNotice } from './ui';
 
@@ -107,10 +109,21 @@ interface BodyWeightSeries { points: BodyMetric[]; weeklyAverages: { weekStart: 
 - `assessPain(level, redFlags)` → `PainAssessment` (RN-HLT-02, 06, 07); lanza si la entrada no pasa `checkPainInput` (RN-HLT-01).
 - `persistentAlert(latestFirst, threshold)` → `PainSummary['persistentAlert']` (RN-HLT-03, 04, 05, 08).
 - `noticeOf(latestFirst, threshold)` → `PainSummary['notice']` (RN-HLT-12, 13).
+- `bandMessage(level)` → `string`: el mensaje de la banda (RN-HLT-02), el mismo `message` de `assessPain`. Confía en su entrada (0-10 desde el selector).
+- `redFlagMessage(flags)` → `string | undefined`: el aviso de las banderas (RN-HLT-06), urgencias con `bladder_bowel`, `undefined` sin banderas. `assessPain` lo usa, así que el texto sale de un solo sitio. Confía en su entrada (las casillas solo dan valores de `RedFlag`).
 
 `latestFirst: readonly Pick<PainEntry, 'level' | 'redFlags'>[]`, de la más reciente a la más antigua. El dominio confía en su entrada: el orden lo da el servicio (RN-HLT-14), las entradas se validaron al guardarse (RN-HLT-01, 15; la importación las valida con Zod en la spec 007) y `threshold` es la constante 3 hasta que Ajustes la valide (RF-51). No se revalida nada ni se modifica el arreglo.
 
 Los textos de §6.1 viven en `domain/messages.ts`: son reglas de spec §6.2, no errores, así que no pasan por el mapa de ADR-0010. Los que llevan N, U o la secuencia son funciones.
+
+### Componentes (`ui/`, spec 005 §6.1 y plan §6.9, contrato v1.8)
+
+Los textos de los componentes viven con ellos; la página solo los coloca. Las pruebas leen roles, nombres y atributos `data-*`, no clases.
+
+- **`PainSelector`:** pinta el `h2` "Dolor lumbar", la ayuda "0 = nada, 10 = el peor dolor" y un `role="group"` nombrado por el `h2` (`aria-labelledby`) y descrito por la ayuda (`aria-describedby`). Dentro, 11 `<button type="button">` del 0 al 10, con el número como texto y nombre, y `aria-pressed` (`true` solo en `value`). Cada botón lleva `data-band` con la banda de su nivel (`normal`, `attention` o `alert`); el CSS pinta en `--warn` el elegido desde 4. Tocar un botón llama a `onChange(nivel)`, también el ya elegido: no hay forma de volver a "sin elegir". Debajo, una región `aria-live="polite"` **siempre presente**: vacía con `value = null`; si no, `bandMessage(value)` y `data-band` de esa banda (barra ámbar en `alert`).
+- **`RedFlagsChecklist`:** `<fieldset>` cuya `<legend>` contiene el `h2` "Señales de alarma (opcional)". Cuatro casillas nativas, en el orden de `RED_FLAGS`: "Dolor que baja por la pierna" (`radiating`), "Hormigueo o adormecimiento" (`numbness`), "Debilidad en el pie" (`weakness`) y "Problemas de control de vejiga o intestino" (`bladder_bowel`), marcadas según `value`. Marcar o desmarcar llama a `onChange` con las banderas **en el orden de `RED_FLAGS`**, no en el de los toques. Debajo, una región `aria-live="polite"` siempre presente: con banderas, el `SafetyNote` con `redFlagMessage(value)`; sin banderas, vacía (AC-15).
+- **`PainNotice`:** un `SafetyNote` con `role="note"`, `data-cause={notice.cause}` y `notice.message`. Sin `aria-live`: aparece al cargar "Hoy", no por una acción.
+- **`SafetyNote`** (interno, no se exporta, P-7): recuadro ámbar con un icono SVG decorativo (`aria-hidden`) y el texto.
 
 ## 5. Eventos
 
@@ -194,6 +207,13 @@ Hook (spec 005 T8):
 
 - RN-HLT-19: `undefined` en el primer render y luego el resumen vacío (nunca `null`); registrar dolor, nuevo o reemplazado, actualiza el resultado sin volver a renderizar desde fuera; con otra instancia de `health` consulta la nueva; una lectura que lanza (un *hook* `reading` de Dexie) hace llegar su error al *error boundary*. No sirve una base cerrada: `liveQuery` espera en silencio a que se abra y el hook se queda en `undefined`. Que otra pestaña escriba no se prueba con `fake-indexeddb`, como en `training`.
 
+Componentes (spec 005 T13, contrato v1.8):
+
+- Dominio: `bandMessage` de 0, 3, 4, 6, 7 y 10 es el `message` de `assessPain`; `redFlagMessage([])` es `undefined`, con una bandera el texto de consultar a un médico y con `bladder_bowel`, en cualquier posición, el de urgencias; `assessPain` da el mismo `redFlagMessage`.
+- `PainSelector` (AC-10 a AC-12): grupo "Dolor lumbar" descrito por la ayuda, con 11 botones del 0 al 10; sin `value`, todos con `aria-pressed="false"` y la región `aria-live="polite"` presente y vacía; con `value` 2, solo el "2" pulsado y el mensaje de su banda; con 5 y 8, sus mensajes y `data-band`; tocar un botón, también el elegido, llama a `onChange` con su número; el `data-band` de cada botón es el de su nivel.
+- `RedFlagsChecklist` (AC-13 a AC-15): grupo "Señales de alarma (opcional)" con cuatro casillas en orden, sin marcar con `[]`; marcar "Hormigueo" llama a `onChange(['numbness'])`; con `['weakness']`, marcar "Dolor que baja por la pierna" da `['radiating', 'weakness']`; desmarcar quita la bandera; con `['numbness']` el aviso de consultar a un médico, con `['numbness', 'bladder_bowel']` el de urgencias, y con `[]` la región `aria-live` presente y vacía.
+- `PainNotice` (AC-39 y AC-43): `role="note"` con el texto y `data-cause`; el icono no tiene nombre accesible.
+
 ## 9. Trazabilidad
 
 RF-21, RF-22, RF-33, RF-34, RF-51, spec §6.2.
@@ -212,6 +232,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 7. **Alertas y aviso de "Hoy" (contrato v1.5, 18-nov-2026, antes de T3 de la spec 005):** `persistentAlert` y `noticeOf` reciben `Pick<PainEntry, 'level' | 'redFlags'>` de la más reciente a la más antigua y confían en su entrada (orden del servicio, entradas validadas al guardarse, umbral constante); solo cuentan las 2 o 3 primeras y con menos no se cumple la condición; `persistentAlert` da una sola razón (`red_flag` → `over_threshold_2x` → `rising_3x`) y `red_flag` solo con banderas en la última; RN-HLT-08 deja de ser `[PROPUESTO]` (AC-45); `noticeOf` es `null` exactamente cuando no se cumple RN-HLT-12; N y U como enteros y "a → b → c" en orden cronológico; los textos con valores son funciones en `messages.ts` (RN-HLT-04, 05, 08, 12, 13).
 8. **Servicio y almacenamiento (contrato v1.6, 18-nov-2026, antes de T5 de la spec 005):** `painEntries` pierde el índice `recordedAt` (ADR-0009: un `Instant` no se ordena como string; corrige el plan §4) y las últimas se ordenan en memoria con `compareInstants`, con empate por `id` mayor (RN-HLT-14); `recordPain` valida sin tocar la base, normaliza, reemplaza en una transacción conservando solo el `id` y llama a `ids.next()` solo al crear; `health` no comprueba que el workout exista ni valida `date` (RN-HLT-09); un fallo de la base rechaza (RN-HLT-16); resumen vacío y `threshold: 3` constante (RN-HLT-17); `hasPainEntry` y `painGate` (RN-HLT-18).
 9. **Hook (contrato v1.7, 18-nov-2026, antes de T8 de la spec 005):** `usePainSummary` devuelve `undefined` solo al cargar y nunca `null`, sin clave porque no tiene parámetros, se actualiza con `painEntries` y lanza sus errores en el render (RN-HLT-19).
+10. **Componentes (contrato v1.8, 18-nov-2026, antes de T13 de la spec 005):** `PainSelector` y `RedFlagsChecklist` pierden `assessment` y derivan su texto de su propio `value` con `bandMessage` y `redFlagMessage`, porque el aviso de las banderas debe salir sin nivel elegido (AC-14 parte de AC-7); los textos viven con los componentes; no se puede quitar la elección del dolor; las regiones `aria-live` están siempre en el DOM; las banderas vuelven en el orden de `RED_FLAGS`; `legend` con `h2`; `PainNotice` con `role="note"` y sin `aria-live`; `SafetyNote` interno (§4, "Componentes").
 
 Preguntas abiertas:
 
