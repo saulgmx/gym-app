@@ -52,9 +52,9 @@ const countedIds = (prefix = 'pain') => {
   return { next: vi.fn(() => inner.next()) } satisfies IdGenerator;
 };
 
-function setup(db: Dexie = openDb(), start = '2026-11-16T19:00:00-06:00') {
+function setup(db: Dexie = openDb(), start = '2026-11-16T19:00:00-06:00', prefix = 'pain') {
   const time = movableClock(start);
-  const ids = countedIds();
+  const ids = countedIds(prefix);
   const health = createHealth({ db, clock: time.clock, ids });
   return { db, health, ids, time };
 }
@@ -202,8 +202,8 @@ describe('recordPain', () => {
 
   it('RN-HLT-09: dos registros a la vez del mismo workout, desde dos conexiones, dejan una sola entrada', async () => {
     const name = crypto.randomUUID();
-    const a = setup(openDb(name));
-    const b = setup(openDb(name));
+    // Each connection has its own ID prefix, as two tabs would: unserialized writes would collide.
+    const [a, b] = [setup(openDb(name), undefined, 'a'), setup(openDb(name), undefined, 'b')];
 
     const results = await Promise.all([
       a.health.recordPain(id('w1'), { level: 3, redFlags: [], date: date('2026-11-16') }),
@@ -359,8 +359,9 @@ describe('getPainSummary', () => {
 
   it('RN-HLT-14: con el mismo instante, primero el id mayor', async () => {
     const db = openDb();
-    // IDs in the opposite order of creation, so the tie is broken by id and not by insertion.
-    const queue = [id('pain-b'), id('pain-a')];
+    // IDs not in the order of creation (c, a, b), so the tie is broken by id and not by insertion.
+    // By id, latest first is c (3), b (2), a (1): chronologically 1 → 2 → 3, so rising_3x.
+    const queue = [id('pain-c'), id('pain-a'), id('pain-b')];
     const ids: IdGenerator = {
       next: () => {
         const next = queue.shift();
@@ -371,13 +372,18 @@ describe('getPainSummary', () => {
     const { clock } = movableClock('2026-11-16T19:00:00-06:00');
     const health = createHealth({ db, clock, ids });
     okValue(
-      await health.recordPain(id('w1'), { level: 5, redFlags: [], date: date('2026-11-16') }),
+      await health.recordPain(id('w1'), { level: 3, redFlags: [], date: date('2026-11-16') }),
     );
     okValue(
-      await health.recordPain(id('w2'), { level: 2, redFlags: [], date: date('2026-11-16') }),
+      await health.recordPain(id('w2'), { level: 1, redFlags: [], date: date('2026-11-16') }),
+    );
+    okValue(
+      await health.recordPain(id('w3'), { level: 2, redFlags: [], date: date('2026-11-16') }),
     );
 
-    expect((await health.getPainSummary()).latest?.id).toBe('pain-b');
+    const summary = await health.getPainSummary();
+    expect(summary.latest?.id).toBe('pain-c');
+    expect(summary.persistentAlert).toEqual({ reason: 'rising_3x' });
   });
 });
 

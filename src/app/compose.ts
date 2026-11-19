@@ -35,7 +35,9 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
       suggestions: nullSuggestions,
     }),
     progression: createProgression(),
-    health: createHealth(),
+    // Spec 005 T6: only so it compiles. T7 adds painEntries (base v3), shares one IdGenerator and
+    // passes health.painGate to training.
+    health: createHealth({ db, clock, ids: createUuidV7Generator() }),
     data: createData(),
   };
 }
