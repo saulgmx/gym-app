@@ -1,6 +1,6 @@
 # Constitución del proyecto
 
-**Versión:** 1.0 · **Fecha:** 16-nov-2026
+**Versión:** 1.1 · **Fecha:** 20-nov-2026
 
 Principios no negociables. Cada spec, plan, ADR y PR se revisa contra esta lista. Una excepción requiere enmendar este documento (ver al final), no un comentario en el código.
 
@@ -20,7 +20,7 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 - Offline-first: toda la funcionalidad del MVP funciona sin red (RNF-01).
 - Cada serie se guarda en cuanto se completa; cerrar la app no pierde datos (RF-13, RF-19).
 - Sin cuentas, analítica ni terceros en v1. Los datos de salud no salen del dispositivo salvo por una exportación que hace el usuario (RNF-04).
-- Toda exportación incluye `schemaVersion`; todo cambio de esquema tiene migración y prueba de ida y vuelta (RNF-09).
+- Toda exportación lleva la versión de su formato: el respaldo JSON, `schemaVersion` y la versión de cada módulo; los formatos para otras apps (CSV), en el nombre del archivo ([ADR-0013](adr/0013-version-de-formato-en-exportaciones.md)). Todo cambio de esquema tiene migración y prueba de ida y vuelta (RNF-09).
 - Borrar o sobrescribir datos siempre pide confirmación y muestra una vista previa.
 
 ## P-3. La spec manda
@@ -65,7 +65,7 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 ## Checklist de revisión (copiar en cada plan y PR)
 
 - [ ] P-1: ¿alguna salida del sistema puede incluir un ejercicio `high`? ¿Banderas rojas bloquean la progresión?
-- [ ] P-2: ¿se guarda cada cambio al instante? ¿Hay migración y prueba de ida y vuelta si cambió el esquema?
+- [ ] P-2: ¿se guarda cada cambio al instante? ¿Hay migración y prueba de ida y vuelta si cambió el esquema? ¿Cada exportación lleva la versión de su formato?
 - [ ] P-3: ¿cada cambio tiene spec o contrato? ¿Quedan `[POR DEFINIR]`?
 - [ ] P-4: ¿solo se importan `index.ts` de otros módulos? ¿Sin ciclos? ¿Nadie toca tablas ajenas?
 - [ ] P-5: ¿el dominio es puro? ¿Las pruebas de progression/health se escribieron antes?
@@ -82,3 +82,4 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 | Versión | Fecha | Cambio |
 |---|---|---|
 | 1.0 | 16-nov-2026 | Versión inicial |
+| 1.1 | 20-nov-2026 | P-2: toda exportación lleva la versión de su formato; el CSV, en el nombre del archivo (ADR-0013, spec 008) |

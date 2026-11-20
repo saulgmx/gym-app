@@ -23,3 +23,4 @@ Reglas:
 | [0010](0010-manejo-de-errores-result.md) | Errores esperados con `Result<T, E>` | Aceptado |
 | [0011](0011-hosting-vercel-origen-estable.md) | Hosting en Vercel con origen estable en dominio propio | Aceptado |
 | [0012](0012-validacion-del-seed-zod-y-dominio.md) | Validación en las fronteras con Zod (forma) y el dominio (reglas) | Aceptado |
+| [0013](0013-version-de-formato-en-exportaciones.md) | Versión de formato en todas las exportaciones | Aceptado |
