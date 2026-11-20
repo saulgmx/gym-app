@@ -53,7 +53,13 @@ interface DataPort<T = unknown> {
   describe(data: T): DataDescription;                        // pura
   current(): Promise<LocalFacts>;                            // solo lecturas Dexie (corre dentro de la transacción)
   importData(data: T): Promise<void>;                        // vacía sus tablas y escribe (dentro de la transacción)
-  csv?(): Promise<{ filename: string; content: string }>;
+  seriesRows?(): Promise<SeriesRow[]>;                       // solo training, en el orden de RN-DAT-14 (spec 008 plan §3)
+}
+interface SeriesRow {              // una serie hecha de un workout completed, como la muestra el CSV (RN-DAT-14, RN-TRN-31)
+  date: LocalDate; week: number | null; session: string; exercise: string;
+  metric: 'weight' | 'reps' | 'time'; setNumber: number;
+  weightKg: number | null; reps: number | null; rir: number | null;   // negativo = asistencia; segundos si metric = 'time'
+  isExtra: boolean; completedAt: Instant | null;                       // null solo en datos rotos tolerados (RN-DAT-12)
 }
 // `wipe` entra con RF-43 (borrar todo).
 
