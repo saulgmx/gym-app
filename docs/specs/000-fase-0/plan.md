@@ -67,7 +67,7 @@ Ninguna es estructural, así que no requieren un ADR. Las de versiones de herram
 
 | Paquete | Versión | Nota |
 |---|---|---|
-| Node / npm | `24.22.3` / `11.19.1` (Node 24 LTS "Krypton") | Fijados con **Volta** en `package.json` (`"volta": { "node": "24.22.3", "npm": "11.19.1" }`): única fuente de la versión. CI la lee con `actions/setup-node` (`node-version-file: package.json`, que prioriza `volta.node`). Vercel usa `engines.node: "24.x"`, porque solo respeta la versión mayor. Sin `.nvmrc`. |
+| Node / npm | `24.22.3` / `11.19.1` (Node 24 LTS "Krypton") | Fijados con **Volta** en `package.json` (`"volta": { "node": "24.22.3", "npm": "11.19.1" }`): única fuente de la versión. CI la lee con `actions/setup-node` (`node-version-file: package.json`, que prioriza `volta.node`). Vercel usa `engines.node: "24.x"`, porque solo respeta la versión mayor. Sin `.nvmrc`. **Desde el 20-nov-2026:** Volta dejó de mantenerse y lo reemplaza **mise**; la única fuente es `.tool-versions` (`nodejs 24.22.3`), que leen mise en local y `setup-node` en CI (`node-version-file: .tool-versions`). npm ya no se fija aparte: Node 24.22.3 trae 11.19.1. |
 | `typescript` | `~6.0.3` | **No 7.0.** `typescript-eslint` exige `<6.1.0`. Pasar a 7 cuando `typescript-eslint` lo soporte. |
 | `vite` / `@vitejs/plugin-react` | `^8.3.8` / `^6.3.0` | |
 | `react` / `react-dom` / `@types/*` | `^19.3.1` / `^19.3.0` | |
@@ -244,9 +244,9 @@ Errores asíncronos, en `src/app/errors/`:
 | WebKit en CI con service workers | Si WebKit en Linux no soporta algún caso de SW, AC-31 corre solo en chromium y se verifica a mano en un iPhone; se documenta en `tasks.md` |
 | La CSP rompe algo que solo aparece en el build | AC-35 corre contra `vite preview` con los mismos headers |
 | El dominio aún no está comprado | AC-37 a AC-39 son las últimas tareas; el resto de la fase no depende de ellas |
-| Vercel no ofrece Node 24 o cambia su política | `engines.node: "24.x"` lo fija; si cambia, se ajustan juntos `volta` y `engines` en `package.json` |
+| Vercel no ofrece Node 24 o cambia su política | `engines.node: "24.x"` lo fija; si cambia, se ajustan juntos `.tool-versions` y `engines` en `package.json` (antes `volta`; mise desde el 20-nov-2026) |
 | Vulnerabilidades moderadas en `glob` 11 y `minimatch` 10 vía `workbox-build` (npm audit, 17-nov-2026); no existe una 11.x corregida | Solo se usan en el build, con patrones propios; no llegan al bundle. Revisar en cada versión de `vite-plugin-pwa`/`workbox-build`; no forzar `glob` 14 con `overrides` (otra API) |
-| Otra instalación de Node en el `PATH` antes que Volta: se ignora la versión fijada | Verificar con `which node` que resuelve a `~/.volta/bin/node`; T1 comprueba `node -v` = `v24.22.3` dentro del proyecto |
+| Otra instalación de Node en el `PATH` antes que Volta: se ignora la versión fijada | Verificar con `which node` que resuelve a `~/.volta/bin/node`; T1 comprueba `node -v` = `v24.22.3` dentro del proyecto. **Pasó (nov-2026):** un `node` de Homebrew, instalado como dependencia de otra herramienta, ganó a Volta, porque `path_helper` (`/etc/zprofile`) corre después de `~/.zshenv` y pone `/opt/homebrew/bin` primero. Con mise (20-nov-2026): shims en `~/.zshenv` y otra vez en `~/.zprofile` (después de `path_helper`), y `mise activate zsh` en `~/.zshrc`; verificar que `which node` resuelve a `~/.local/share/mise/` |
 
 ## 9. Checklist de la constitución
 

@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, con plan y tareas aprobados; siguiente: punto de control A, T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, en el punto de control A; siguiente: T5; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
@@ -43,6 +43,7 @@
   - `main` protegida (protección de rama clásica, `gh api`): solo por PR, 0 aprobaciones (GitHub no deja aprobar tus propios PR), check `ci` obligatorio y solo si lo publica GitHub Actions (`app_id 15368`), rama al día con `main` (`strict`), `enforce_admins` (la regla también aplica al admin), sin force push ni borrado.
   - Vercel: la app de GitHub tiene acceso solo a `gym-app`; framework Vite, Node 24.x por `engines`. `installCommand` vive en `vercel.json` y una prueba exige que sea el mismo `npm ci` de CI (plan §6.3).
   - Dominio `saulgmx.com` en Cloudflare Registrar. `gym` es un CNAME al valor propio del proyecto (`….vercel-dns-017.com`) en modo **DNS only** (nube gris): con proxy, Cloudflare se pondría en medio del TLS y podría inyectar scripts que la CSP bloquea. Certificado de Let's Encrypt emitido y renovado por Vercel.
+- Node con **mise** en lugar de Volta (20-nov, Volta dejó de mantenerse): `.tool-versions` es la única fuente de la versión, para mise en local y `setup-node` en CI; npm va con Node (24.22.3 trae 11.19.1). Sin ADR: es del entorno de desarrollo, no de la app (detalle en spec 000 plan §6 y §8).
 - Forma de trabajo: el usuario quiere ser guiado paso a paso; ejecuta con Claude Code o su terminal.
 
 ## Pendiente de confirmar (bloquea las fases indicadas)
@@ -55,7 +56,7 @@
 
 Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
-1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`), empezando por T1: `SeriesRow` y `DataPort.seriesRows?()` en el kernel. Detalle en `docs/specs/008-csv/tasks.md`. Resumen de lo aprobado:
+1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T4 hechas (T4, pruebas de `data/domain/csv.ts` en rojo, con commit **local sin push**); sigue **T5** (implementar `csv.ts`), luego push y PR listo. Antes de seguir, traer `main` a la rama (cambio a mise, PR `chore/mise`). Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
    - Spec (AC-1 a AC-31): "Exportar series (CSV)" en la sección "Respaldo" de Ajustes; una fila por serie hecha de cada sesión `completed` (RN-DAT-14); `gym-series-v1-AAAA-MM-DD.csv` con la versión del formato en el nombre (ADR-0013); sin base ni migración.
    - Plan: `training` da filas tipadas (`seriesRows`, RN-TRN-31) y `data` escribe el archivo (`domain/csv.ts`, `exportSeriesCsv`).
    - Tareas: T1 a T15 en 4 puntos de control (A kernel y dominio, B puerto, servicio y composición, C Ajustes, D verificación y cierre). T1 cambia `data-port.test-d.ts` de la 007 (`csv` → `seriesRows`). T14 (iPhone, Numbers y Sheets) es tuya.
@@ -67,7 +68,7 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
 ## Notas para retomar
 
-- Entorno: Node `24.22.3` con Volta (el de Homebrew ya se desinstaló). `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` en local; en CI vienen en la imagen `mcr.microsoft.com/playwright` del job `ci`, con la misma versión que `@playwright/test` (al actualizar Playwright, cambiar la etiqueta y el digest de la imagen en `ci.yml`).
+- Entorno: Node `24.22.3` con mise (`.tool-versions`; `mise install` en un equipo nuevo) y un Node 24 global (`~/.config/mise/config.toml`). Shims de mise en `~/.zshenv` y otra vez en `~/.zprofile`, y `mise activate zsh` en `~/.zshrc`: `path_helper` (`/etc/zprofile`) corre después de `~/.zshenv` y pone `/opt/homebrew/bin` primero, así que sin la línea de `~/.zprofile` un `node` que Homebrew instale como dependencia (pasó con Qwen Code y Volta) gana al fijado. Comprobar con `zsh -lic 'which -a node'`. `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` en local; en CI vienen en la imagen `mcr.microsoft.com/playwright` del job `ci`, con la misma versión que `@playwright/test` (al actualizar Playwright, cambiar la etiqueta y el digest de la imagen en `ci.yml`).
 - Comandos: `npm run test:e2e` (construye y prueba contra `vite preview`), `npm run size`, `npm run icons` (regenera los PNG si cambia `public/icon.svg`).
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
