@@ -227,6 +227,7 @@ Propuestas al escribir la spec, aprobadas con ella (19-nov):
 Decisiones durante la implementación (19-nov):
 
 13. **AC-26 compara el contenido, no el texto** (T13): al importar, cada fila se guarda con las claves en el orden del esquema, así que el segundo archivo puede ordenar las claves de otra forma (por ejemplo, `finishedAt` junto a `startedAt`). Los datos son los mismos; RN-DAT-08 se reformuló en el contrato `data` v1.5 (decisión 5).
+14. **Formatos de la vista previa** (T14): (a) la fecha y hora del respaldo se arman en dos partes (la fecha con `Intl`, la hora a mano) para que salga "19 de noviembre de 2026, 22:30" en todos los navegadores (`Intl` escribe "a las 22:30" en Node, y otros motores difieren), con la hora en 24 h sin cero inicial ("8:05"); (b) `exportedAt` se muestra en la hora del dispositivo y las `LocalDate` a medianoche UTC, como el resto de la app; (c) un rango de un solo día es "El 16 de noviembre de 2026"; (d) el año va solo al final si es el mismo ("Del 30 de noviembre al 6 de diciembre de 2026") y en las dos partes si cambia ("Del 28 de diciembre de 2026 al 3 de enero de 2027"); (e) cifras en singular con 1 y en plural con 0, y con 0 sesiones guardadas solo "Sin sesiones guardadas" (AC-16); (f) el aviso de reemplazo con "1 sesión guardada" en singular, y el texto de AC-18 con 0.
 
 ## 9. Checklist de la constitución
 

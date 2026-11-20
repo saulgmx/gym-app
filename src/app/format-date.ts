@@ -1,4 +1,4 @@
-import { addDays, type LocalDate } from '@/shared/kernel';
+import { addDays, type Instant, type LocalDate } from '@/shared/kernel';
 
 // Visible dates in Spanish (spec 001 plan §6.7, §6.11). A LocalDate is formatted at UTC midnight,
 // as the kernel computes it (ADR-0009), so the device's time zone never shifts the day.
@@ -57,4 +57,45 @@ export function formatWeekRange(weekStart: LocalDate): string {
   return month(from) === month(to)
     ? `${day(from)}-${day(to)} ${month(to)}`
     : `${day(from)} ${month(from)}-${day(to)} ${month(to)}`;
+}
+
+// Spec 007 §8 decision 14: the long dates of the restore preview.
+
+const day = (d: LocalDate) => String(new Date(`${d}T00:00:00Z`).getUTCDate());
+const longDate = new Intl.DateTimeFormat('es', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const dayAndLongMonth = (d: LocalDate) => dayAndMonth.format(new Date(`${d}T00:00:00Z`));
+const fullDate = (d: LocalDate) => longDate.format(new Date(`${d}T00:00:00Z`));
+
+/** "lunes 16 de noviembre de 2026": the program's start in the preview (AC-14). */
+export function formatWeekdayDateLong(date: LocalDate): string {
+  return `${formatWeekday(date)} ${fullDate(date)}`;
+}
+
+/** "Del 16 al 18 de noviembre de 2026"; the year only at the end when it is the same, in both
+ *  parts when it changes; "El 16 de noviembre de 2026" for a single day (decision 14 (c), (d)). */
+export function formatDateRangeLong(from: LocalDate, to: LocalDate): string {
+  if (from === to) return `El ${fullDate(from)}`;
+  const sameYear = from.slice(0, 4) === to.slice(0, 4);
+  if (sameYear && from.slice(0, 7) === to.slice(0, 7)) return `Del ${day(from)} al ${fullDate(to)}`;
+  if (sameYear) return `Del ${dayAndLongMonth(from)} al ${fullDate(to)}`;
+  return `Del ${fullDate(from)} al ${fullDate(to)}`;
+}
+
+/** "19 de noviembre de 2026, 22:30" in the device's time. The time is built by hand: Intl writes
+ *  "a las 22:30" in Node and engines differ (decision 14 (a), (b)). Created per call, so the
+ *  device's current time zone applies. */
+export function formatInstantLong(instant: Instant): string {
+  const when = new Date(instant);
+  const date = new Intl.DateTimeFormat('es', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(when);
+  const minutes = String(when.getMinutes()).padStart(2, '0');
+  return `${date}, ${String(when.getHours())}:${minutes}`;
 }

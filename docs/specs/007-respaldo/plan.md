@@ -169,7 +169,7 @@ Mismo estilo que el seed (`strictObject`, `exactOptional`, `jitless`). Los primi
   - `ImportDialog.tsx`: `Dialog` de `shared` (`data-placement="bottom"`, `dismissOnBackdrop`), las líneas de la vista previa y los botones; foco inicial en "Cancelar".
   - `texts.ts` y `format.ts` (`formatPreviewCounts`, con singulares).
 - `app/errors/messages.ts`: `DataErrorCode → texto`, cubierto por `tsc` como los demás; `describeImportError(error)` devuelve el texto de P-1 si `details.cause === 'plan/high-risk-exercise'`.
-- `app/format-date.ts`: `formatInstantLong` ("19 de noviembre de 2026, 22:30", hora local), `formatDateRangeLong` ("Del 16 al 18 de noviembre de 2026"; "Del 30 de noviembre al 6 de diciembre de 2026"; "Del 28 de diciembre de 2026 al 3 de enero de 2027") y `formatWeekdayDateLong` ("lunes 16 de noviembre de 2026").
+- `app/format-date.ts`: `formatInstantLong` ("19 de noviembre de 2026, 22:30", hora local), `formatDateRangeLong` ("Del 16 al 18 de noviembre de 2026"; "Del 30 de noviembre al 6 de diciembre de 2026"; "Del 28 de diciembre de 2026 al 3 de enero de 2027") y `formatWeekdayDateLong` ("lunes 16 de noviembre de 2026"). Detalle aprobado antes de T14 en la spec §8, decisión 14: hora armada a mano en 24 h sin cero inicial, rango de un día ("El 16 de noviembre de 2026"), singulares y el aviso de reemplazo (`formatReplaceWarning`, en `settings/format.ts` junto a `formatPreviewCounts`).
 - Mientras dura `restoring`, "Reemplazar mis datos" dice "Restaurando…" y el diálogo no se cierra con Escape ni con el fondo.
 
 ### 6.9 Orden de la revisión (`previewImport`)
