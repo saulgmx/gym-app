@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fixedClock, type LocalDate } from '@/shared/kernel';
@@ -45,12 +45,20 @@ async function openSettings(app: AppServices = services()) {
   return { app, user: userEvent.setup() };
 }
 
-const downloadButton = () => screen.getByRole('button', { name: /respaldo…?$/ });
+const downloadButton = () =>
+  screen.getByRole('button', { name: /^(Descargar|Preparando) respaldo…?$/ });
 
 /** Taps "Descargar respaldo" and returns the file handed to deliverFile. */
 async function download(user: ReturnType<typeof userEvent.setup>): Promise<File> {
   await act(() => user.click(screen.getByRole('button', { name: 'Descargar respaldo' })));
-  expect(deliverFile).toHaveBeenCalledTimes(1);
+  // exportAll reads IndexedDB, which can outlast the click's act under load.
+  await waitFor(() => {
+    expect(deliverFile).toHaveBeenCalledTimes(1);
+  });
+  // And the button settles once deliverFile resolves.
+  await waitFor(() => {
+    expect(downloadButton()).toBeEnabled();
+  });
   const file = deliverFile.mock.calls[0]?.[0];
   if (!file) throw new Error('deliverFile got no file');
   return file;
@@ -129,17 +137,17 @@ describe('Descargar respaldo', () => {
     expect(training?.data.workouts).toEqual([
       expect.objectContaining({ id: started.value.id, status: 'in_progress' }),
     ]);
-    expect(training?.data.sets).not.toHaveLength(0);
-    expect(training?.data.sets).toEqual(
-      training?.data.sets?.map(() => expect.objectContaining({ workoutId: started.value.id })),
-    );
+    const sets = training?.data.sets ?? [];
+    expect(sets).not.toHaveLength(0);
+    for (const set of sets) expect(set).toMatchObject({ workoutId: started.value.id });
   });
 
   it('AC-12: JSON con sangría de 2 espacios', async () => {
     const { user } = await openSettings();
     const text = await (await download(user)).text();
 
-    expect(text).toBe(JSON.stringify(JSON.parse(text), null, 2));
+    // With a final newline, as text files end (data service, T12).
+    expect(text).toBe(`${JSON.stringify(JSON.parse(text), null, 2)}\n`);
     expect(text.split('\n')[1]).toBe('  "app": "gym-app",');
   });
 
@@ -156,12 +164,19 @@ describe('Descargar respaldo', () => {
     await act(() => user.click(screen.getByRole('button', { name: 'Descargar respaldo' })));
     expect(downloadButton()).toHaveTextContent('Preparando respaldo…');
     expect(downloadButton()).toBeDisabled();
-
-    await act(async () => {
-      finish('downloaded');
-      await Promise.resolve();
+    // Still preparing while the sheet is open, not only while exportAll runs.
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
     });
-    expect(downloadButton()).toHaveTextContent('Descargar respaldo');
+    expect(downloadButton()).toHaveTextContent('Preparando respaldo…');
+    expect(downloadButton()).toBeDisabled();
+
+    act(() => {
+      finish('downloaded');
+    });
+    await waitFor(() => {
+      expect(downloadButton()).toHaveTextContent('Descargar respaldo');
+    });
     expect(downloadButton()).toBeEnabled();
   });
 
@@ -198,7 +213,10 @@ describe('Descargar respaldo', () => {
 
     await act(() => user.click(screen.getByRole('button', { name: 'Descargar respaldo' })));
 
-    expect(deliverFile).toHaveBeenCalledTimes(1);
+    // The message goes as soon as the tap lands, before the new export finishes.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
   });
 });

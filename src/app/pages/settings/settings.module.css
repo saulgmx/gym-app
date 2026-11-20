@@ -1,0 +1,59 @@
+/* Ajustes (spec 007 §6.1). Buttons as "Empezar sesión" and the exit sheet's options. */
+.section {
+  margin-top: 1.25rem;
+}
+
+.section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.text {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+}
+
+.actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.primary,
+.secondary {
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 0 1rem;
+  font: inherit;
+  font-weight: 600;
+}
+
+.primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+}
+
+.status,
+.problem {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+}
+
+/* Not display: none, which would drop the live region before it is filled. */
+.status:empty {
+  margin: 0;
+}
+
+.problem {
+  color: var(--warn);
+}
