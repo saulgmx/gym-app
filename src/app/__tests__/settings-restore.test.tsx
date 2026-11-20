@@ -60,11 +60,11 @@ afterEach(async () => {
   await closeTestDatabases();
 });
 
-type Backup = {
+interface Backup {
   app: string;
   schemaVersion: number;
   modules: Record<string, { version: number; data: Record<string, Record<string, unknown>[]> }>;
-};
+}
 
 /** The sample file with a change. */
 function edited(change: (backup: Backup) => void): string {
@@ -105,6 +105,12 @@ const downloadButton = () =>
   screen.getByRole('button', { name: /^(Descargar|Preparando) respaldo…?$/ });
 const previewDialog = () => screen.queryByRole('dialog', { name: '¿Restaurar este respaldo?' });
 const section = () => screen.getByRole('region', { name: 'Respaldo' });
+
+/** The status region is always mounted (to be announced), so wait for its text. */
+const restoredShown = () =>
+  waitFor(() => {
+    expect(within(section()).getByRole('status')).toHaveTextContent(TEXTS.restored);
+  });
 
 /** Taps "Restaurar respaldo" and picks a file, as the system picker would. */
 async function choose(user: ReturnType<typeof userEvent.setup>, file: File) {
@@ -176,10 +182,13 @@ describe('Restaurar respaldo: elegir el archivo', () => {
 
   it('decisión 17 (b): cerrar el selector sin elegir archivo no hace nada', async () => {
     const app = emptyDevice();
-    const user = await openSettings(app);
+    await openSettings(app);
     const review = vi.spyOn(app.data, 'previewImport');
 
-    await act(() => user.upload(fileInput(), []));
+    // A `change` with no file, as some browsers send on cancel (user.upload([]) sends nothing).
+    act(() => {
+      fireEvent.change(fileInput(), { target: { files: [] } });
+    });
 
     expect(review).not.toHaveBeenCalled();
     expect(restoreButton()).toHaveTextContent('Restaurar respaldo');
@@ -273,9 +282,13 @@ describe('Restaurar respaldo: vista previa', () => {
 
     const dialog = await preview(user, text);
 
-    expect(within(dialog).getByText('Sin sesiones guardadas')).toBeInTheDocument();
-    expect(within(dialog).queryByText(/^Del |^El \d/)).not.toBeInTheDocument();
-    expect(within(dialog).queryByText(/sesiones? ·/)).not.toBeInTheDocument();
+    // Every line of the dialog: no figures and no range at all.
+    expect([...dialog.querySelectorAll('p')].map((p) => p.textContent)).toEqual([
+      'Respaldo del 19 de noviembre de 2026, 22:30',
+      'Sin sesiones guardadas',
+      'Plan: empieza el lunes 16 de noviembre de 2026',
+      'Se reemplazarán el plan y los datos de este dispositivo. No se puede deshacer.',
+    ]);
   });
 
   it('AC-17: un archivo con una sesión en curso lo dice', async () => {
@@ -368,7 +381,7 @@ describe('Restaurar respaldo: confirmar', () => {
 
     release();
 
-    expect(await within(section()).findByRole('status')).toHaveTextContent(TEXTS.restored);
+    await restoredShown();
     expect(previewDialog()).not.toBeInTheDocument();
     expect(restoreButton()).toHaveFocus();
     expect(downloadButton()).toBeEnabled();
@@ -390,7 +403,7 @@ describe('Restaurar respaldo: confirmar', () => {
 
     expect(previewDialog()).toBeInTheDocument();
     release();
-    expect(await within(section()).findByRole('status')).toHaveTextContent(TEXTS.restored);
+    await restoredShown();
   });
 
   it('AC-23: tras restaurar, "Historial" muestra las sesiones del archivo sin recargar', async () => {
@@ -399,10 +412,7 @@ describe('Restaurar respaldo: confirmar', () => {
     await act(() =>
       user.click(within(dialog).getByRole('button', { name: 'Reemplazar mis datos' })),
     );
-    await within(section()).findByRole('status');
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(TEXTS.restored);
-    });
+    await restoredShown();
 
     await tapToNavigate(user, screen.getByRole('link', { name: 'Historial' }));
 

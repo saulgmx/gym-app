@@ -144,6 +144,16 @@ describe('describeImportError (spec 007 §6.3, decisión 17 (e))', () => {
     },
   );
 
+  it('el texto de P-1 solo con data/invalid-module-data', () => {
+    const other = {
+      ...invalid('plan/high-risk-exercise'),
+      code: 'data/unsupported-version' as const,
+    };
+    expect(describeImportError(other)).toBe(
+      'Este respaldo es de una versión más nueva de la app. Actualízala e inténtalo de nuevo.',
+    );
+  });
+
   it('sin detalles, el texto de su código', () => {
     expect(describeImportError({ code: 'data/invalid-module-data', message: 'invalid' })).toBe(
       'El respaldo está dañado o incompleto. No se cambió nada.',
