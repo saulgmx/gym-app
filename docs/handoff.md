@@ -1,11 +1,11 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, punto de control A terminado en local; siguiente: push, PR #70 listo y T6; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, puntos de control A y B hechos (PR #70 fusionado, PR #73); siguiente: T11 del punto de control C; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.33, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 176.66 kB de 200 kB. **E2E:** 146, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -21,7 +21,7 @@
 | 3 | `005b-una-sesion-por-dia` | Una sola sesión cerrada por día (RN-TRN-27) | #46 a #50 |
 | 3 | `006-historial` | Pestaña "Historial", lista y detalle | #51 a #57 |
 | 3 | `007-respaldo` | Módulo `data`, pestaña "Ajustes", respaldo JSON | #58 a #65 |
-| 3 | `008-csv` | Spec, plan y tareas aprobados; implementación en curso (A en el PR #70) | #66 a #68, #70 |
+| 3 | `008-csv` | Spec, plan y tareas aprobados; implementación en curso (A en el PR #70, B en el #73) | #66 a #68, #70, #73 |
 
 ## Decisiones tomadas
 
@@ -56,6 +56,7 @@
 ## Piloto Opus → Qwen
 
 - **Calibración T5 (spec 008):** 1 intento (~3 min), 1 ronda de revisión (~2 min), 0 violaciones, 19/19 pruebas, 7/7 mutaciones.
+- **T9 (spec 008), sin supervisión:** Claude lanza `qwen` en modo no interactivo (prompt posicional; `-p` está obsoleto en la 0.28.0) con `--approval-mode auto-edit --exclude-tools run_shell_command --max-wall-time 20m --max-session-turns 40`; brief y logs en `/tmp/qwen-T9/`. Intento 1 (119 s) falló en lint (`unbound-method`) por una línea de ejemplo del brief; intento 2 (962 s, con un `ETIMEDOUT` de LM Studio y reintento) pasó. 0 archivos fuera de lo permitido, 8/8 mutaciones; Claude solo retocó el orden de un import y un comentario. **Lecciones:** el código de ejemplo del brief tiene que pasar lint; en jsdom, comparar bytes como arrays (`Uint8Array` de jsdom y de Node no son `toEqual`).
 - **Entorno:** LM Studio con JIT y un solo modelo en memoria (no cargar modelos a mano). El 35B con contexto 131072 y `samplingParams` en `~/.qwen/settings.json` (temperature 0.6, top_p 0.95, top_k 20), porque Qwen Code manda su propia temperatura.
 - **Pendientes:** el 27B falla al formatear llamadas a herramientas; apagar la memoria automática de Qwen Code; quitar el MCP de AWS.
 - La sección "Ejecución delegada" de `docs/README.md`, `QWEN.md` y la columna `Q` de `templates/tasks.md` se agregan cuando ADR-0014 pase a `Aceptado`.
@@ -64,11 +65,10 @@
 
 Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
-1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T5 hechas; T4 (pruebas de `data/domain/csv.ts` en rojo) y T5 (`csv.ts`, implementado por Qwen y verificado con 7/7 mutaciones) tienen commit **local sin push**, igual que la fusión de `main` (con mise, PR #71). Sigue: push, PR #70 listo para revisión, CI en verde y fusionar; después, el punto de control B con **T6** (rama `feat/008-csv-b`). Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
-   - Spec (AC-1 a AC-31): "Exportar series (CSV)" en la sección "Respaldo" de Ajustes; una fila por serie hecha de cada sesión `completed` (RN-DAT-14); `gym-series-v1-AAAA-MM-DD.csv` con la versión del formato en el nombre (ADR-0013); sin base ni migración.
-   - Plan: `training` da filas tipadas (`seriesRows`, RN-TRN-31) y `data` escribe el archivo (`domain/csv.ts`, `exportSeriesCsv`).
-   - Tareas: T1 a T15 en 4 puntos de control (A kernel y dominio, B puerto, servicio y composición, C Ajustes, D verificación y cierre). T1 cambia `data-port.test-d.ts` de la 007 (`csv` → `seriesRows`). T14 (iPhone, Numbers y Sheets) es tuya.
-   - Punto de control B: calibrar a Qwen con T9 (`exportSeriesCsv`) cuando T8 esté en rojo. Las reglas y el formato del brief están en ADR-0014.
+1. **Spec 008, punto de control C** (rama `feat/008-csv-c`, desde `main` cuando el PR #73 esté fusionado): **T11** (`BackupSection`: párrafo, botón "Exportar series (CSV)", estado `exporting` con "Preparando CSV…", los tres botones bloqueados entre sí, `deliverFile` con `File` `text/csv`, error en la sección; plan §6.6) y **T12** (medir el bundle). Después, D: T13 (E2E), T14 (tuya: iPhone, Numbers y Sheets) y T15 (cierre de la fase 3). Estado:
+   - A (PR #70, fusionado): `SeriesRow` en el kernel, `seriesRows` puro en `training/domain`, `data/domain/csv.ts`.
+   - B (PR #73): `dataPort.seriesRows()` de `training` (`application/series.ts`; casos (i) y (j) en `training.md` v1.34), `data.exportSeriesCsv()` (T9 por Qwen, ver "Piloto Opus → Qwen") y la prueba con los módulos reales (`app/__tests__/series-csv.test.ts`). El CSV ya funciona desde las pruebas; falta el botón.
+   - Spec (AC-1 a AC-31), plan y tareas aprobados; detalle y notas "Hecho" en `docs/specs/008-csv/tasks.md`.
 2. **Pendientes tuyos que no bloquean:**
    - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
    - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
@@ -166,4 +166,4 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md, plan.md y tasks.md, docs/modules/data.md (RN-DAT-14 y el detalle del CSV), docs/modules/training.md (RN-TRN-31) y docs/modules/shared.md §2. La spec 008, su plan y sus tareas están aprobados; el punto de control A (T1 a T5) está hecho en la rama feat/008-csv-a (PR #70). Si el PR #70 ya está fusionado, sigue con T6 del punto de control B; si no, ciérralo primero. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md (§4.1 y §6), plan.md (§6.6) y tasks.md, y la página de Ajustes en src/app/pages/settings (BackupSection y sus pruebas). La spec 008, su plan y sus tareas están aprobados; los puntos de control A y B están hechos (PR #70 y #73). Si el PR #73 ya está fusionado, sigue con T11 del punto de control C en la rama feat/008-csv-c; si no, ciérralo primero. Guíame paso a paso, una tarea a la vez."
