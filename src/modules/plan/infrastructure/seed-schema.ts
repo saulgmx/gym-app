@@ -1,5 +1,5 @@
 import * as z from 'zod/mini';
-import { err, ok, type ID } from '@/shared/kernel';
+import { err, idSchema as id, ok } from '@/shared/kernel';
 import type { SeedParser } from '../application/ports';
 
 // Shape of the plan seed (RN-PLN-24, ADR-0012). Cross-record rules, high risk included,
@@ -7,13 +7,11 @@ import type { SeedParser } from '../application/ports';
 // under budget (spec 002 plan §6.9): the same checks, written as functions.
 
 // No eval: the CSP forbids it (architecture §7.10), and Zod's `new Function` probe is reported as
-// a violation even when caught. Read when each object schema is built, so it goes first.
+// a violation even when caught. The kernel sets it too; repeated here so this file never depends
+// on import order.
 z.config({ jitless: true });
 
-const id = z.pipe(
-  z.uuidv7().check(z.refine((v) => v === v.toLowerCase(), 'UUID must be lowercase')), // (b)
-  z.transform((v) => v as ID),
-);
+// (b) UUIDv7 in lowercase: idSchema from the kernel (spec 007 plan §6.6).
 
 const text = z.string().check(z.regex(/\S/, 'Text must not be blank')); // (h)
 const positiveInt = z.int().check(z.minimum(1)); // (c)

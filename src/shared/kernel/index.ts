@@ -4,5 +4,6 @@ export { err, ok, type DomainError, type Result } from './result';
 export { addDays, compareInstants, daysBetween, startOfIsoWeek, weekdayOf } from './time';
 export { floorToStep, kgToLb, lbToKg, roundToStep } from './numbers';
 export type { DataPort } from './data-port';
+export { idSchema, instantSchema, localDateSchema } from './schemas';
 export { fixedClock, systemClock } from './clock';
 export { createUuidV7Generator, sequentialIds } from './ids';
