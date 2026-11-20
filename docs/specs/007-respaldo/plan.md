@@ -224,7 +224,7 @@ Tras cada prueba en verde se rompe el código a propósito, para ver que falla l
 
 ## 8. Riesgos
 
-- **`Blob.text()` en jsdom:** si el entorno de pruebas no lo tiene, el servicio lee con `new Response(file).text()`. Se comprueba en la primera prueba del servicio.
+- **`Blob.text()` en jsdom:** comprobado antes de T11 (19-nov): jsdom lo tiene, y `new Response(file).text()` devuelve `"[object File]"`, así que no sirve de respaldo. El servicio lee solo con `file.text()` (Safari lo tiene desde iOS 14; contrato `data` v1.4).
 - **Zona de Dexie:** si un puerto espera una promesa ajena a Dexie dentro de la transacción, la transacción se cierra antes de tiempo. `current` e `importData` solo usan la base; la prueba de AC-27 lo cubre.
 - **Ida y vuelta con `undefined`:** ver §4. Si una fila tiene una clave opcional con `undefined`, la base restaurada no la tendrá; la comparación debe tratarlo igual, o el esquema/repositorio debe no escribir `undefined` desde el origen.
 - **CSP:** la descarga con `blob:` no debería tocar `connect-src` ni `default-src`; lo confirma AC-44 en `vite preview` con los headers de `vercel.json`.

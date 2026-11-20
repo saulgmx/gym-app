@@ -42,7 +42,7 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
     }),
     progression: createProgression(),
     health,
-    data: createData(),
+    data: createData({ db, clock }),
   };
 }
 
