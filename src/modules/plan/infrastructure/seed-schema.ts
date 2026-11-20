@@ -1,5 +1,5 @@
 import * as z from 'zod/mini';
-import { err, idSchema as id, ok } from '@/shared/kernel';
+import { err, idSchema as id, localDateSchema, ok } from '@/shared/kernel';
 import type { SeedParser } from '../application/ports';
 
 // Shape of the plan seed (RN-PLN-24, ADR-0012). Cross-record rules, high risk included,
@@ -99,27 +99,39 @@ const template = z.strictObject({
   items: z.array(templateItem).check(z.minLength(1)),
 });
 
+const programFields = {
+  id,
+  name: text,
+  totalWeeks: positiveInt,
+  blockIds: z.array(id).check(z.minLength(1)),
+};
+
 // (i) every collection has at least one element.
-export const planSeedSchema = z.strictObject({
-  exercises: z.array(exercise).check(z.minLength(1)),
-  program: z.strictObject({
-    id,
-    name: text,
-    totalWeeks: positiveInt,
-    blockIds: z.array(id).check(z.minLength(1)),
-  }),
-  blocks: z.array(block).check(z.minLength(1)),
-  templates: z.array(template).check(z.minLength(1)),
-});
+const planShape = <P extends z.ZodMiniType>(program: P) =>
+  z.strictObject({
+    exercises: z.array(exercise).check(z.minLength(1)),
+    program,
+    blocks: z.array(block).check(z.minLength(1)),
+    templates: z.array(template).check(z.minLength(1)),
+  });
+
+export const planSeedSchema = planShape(z.strictObject(programFields));
+
+// RN-PLN-29: a backup is the seed with the program's start date (spec 007 plan §6.1).
+export const planBackupSchema = planShape(
+  z.strictObject({ ...programFields, startDate: localDateSchema }),
+);
+
+/** (k) Zod issues as { path, code }, the details of plan/invalid-seed. */
+export function issuesOf(error: z.core.$ZodError): { path: string; code: string }[] {
+  return error.issues.map((i) => ({ path: i.path.map(String).join('.'), code: i.code }));
+}
 
 // (k)
 export const parseSeed: SeedParser = (raw) => {
   const result = planSeedSchema.safeParse(raw);
   if (result.success) return ok(result.data);
-  const issues = result.error.issues.map((i) => ({
-    path: i.path.map(String).join('.'),
-    code: i.code,
-  }));
+  const issues = issuesOf(result.error);
   return err({
     code: 'plan/invalid-seed',
     message: `Seed does not match the schema (${String(issues.length)} issues)`,

@@ -106,7 +106,21 @@ export type TrainingErrorCode =
   | 'training/nothing-done'
   | 'training/notes-too-long'
   | 'training/already-done' // RN-TRN-24
-  | 'training/day-already-trained'; // RN-TRN-27 (spec 005b)
+  | 'training/day-already-trained' // RN-TRN-27 (spec 005b)
+  | 'training/invalid-backup'; // RN-TRN-30 (spec 007)
+
+/** details of training/invalid-backup (RN-TRN-30, contract v1.31 decision 33 (f)). */
+export type InvalidBackupDetails =
+  | { rule: 'schema'; issues: { path: string; code: string }[] }
+  | { rule: 'unique-workout-id' | 'unique-set-id'; id: ID }
+  | { rule: 'set-without-workout'; setId: ID; workoutId: ID }
+  | { rule: 'one-active'; workoutIds: ID[] };
+
+/** A backup of the module's two tables (RN-TRN-30, spec 007). */
+export interface TrainingBackup {
+  workouts: Workout[];
+  sets: SetLog[];
+}
 
 export type SetField = 'weightKg' | 'reps' | 'rir';
 export type SetValueProblem = 'missing' | 'not-a-number' | 'out-of-range' | 'step' | 'not-allowed';

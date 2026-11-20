@@ -43,9 +43,13 @@ export const errorMessages: Record<ErrorCode, string> = {
   'training/already-done': 'Ya hiciste esta sesión.',
   // Spec 005b (plan §6.5): also the notice of "Otra sesión" and the text of the day preview.
   'training/day-already-trained': 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.',
+  // Spec 007 §6.3: data wraps it in data/invalid-module-data; this is the same text.
+  'training/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
   // health (spec 005 plan §6.10): they guard the API; the selector and checkboxes cannot send them.
   'health/pain-out-of-range': 'El dolor va de 0 a 10.',
   'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
+  // Spec 007 §6.3 (RN-HLT-21): data wraps it; the same text as data/invalid-module-data.
+  'health/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
 };
 
 // The detail of invalid-set-values, by field and reason (RN-TRN-04). Decimal comma, as typed.
