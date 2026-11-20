@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Download, type Page } from '@playwright/test';
 
 // Helpers shared by the e2e specs.
 
@@ -242,3 +242,46 @@ export async function closeMondayWithFlags(page: Page, offline?: () => Promise<v
   await expect(page).toHaveURL('/');
   return id;
 }
+
+// Spec 007: the backup, shared by backup.spec and a11y.spec.
+
+/**
+ * Removes the Web Share API before any page script, so "Descargar respaldo" always downloads
+ * (spec 007 §8, decision 18 (a)): whether the emulated device has `share` varies by browser.
+ */
+export async function withoutShare(page: Page) {
+  await page.addInitScript(() => {
+    for (const name of ['share', 'canShare'] as const) {
+      Object.defineProperty(Navigator.prototype, name, { value: undefined, configurable: true });
+    }
+  });
+}
+
+/** Taps "Descargar respaldo" on Ajustes and returns the download, saved to disk. */
+export async function downloadBackup(page: Page): Promise<Download> {
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Descargar respaldo' }).click(),
+  ]);
+  await download.path(); // waits until the file is complete
+  return download;
+}
+
+/** Taps "Restaurar respaldo" and picks a file in the system picker that the tap opens. */
+export async function chooseBackup(
+  page: Page,
+  file: string | { name: string; mimeType: string; buffer: Buffer },
+) {
+  const [chooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    page.getByRole('button', { name: 'Restaurar respaldo' }).click(),
+  ]);
+  await chooser.setFiles(file);
+}
+
+/** A file that is not JSON (spec 007 AC-30). */
+export const NOT_A_BACKUP = {
+  name: 'notas.json',
+  mimeType: 'application/json',
+  buffer: Buffer.from('esto no es json'),
+};
