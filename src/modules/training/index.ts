@@ -67,6 +67,7 @@ export type { HistoryItem } from './domain/history';
 export type { WorkoutSummary } from './domain/summary';
 export type {
   ExerciseSession,
+  InvalidBackupDetails,
   InvalidSetValuesDetails,
   SetErrorContext,
   SetLog,

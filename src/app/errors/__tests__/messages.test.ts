@@ -34,6 +34,8 @@ describe('errorMessages', () => {
       'training/already-done': 'Ya hiciste esta sesión.',
       // Spec 005b plan §6.5 (RN-TRN-27).
       'training/day-already-trained': 'Ya entrenaste hoy. Podrás empezar otra sesión mañana.',
+      // Spec 007 §6.3 (RN-TRN-30): data wraps it; the same text as data/invalid-module-data.
+      'training/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
       // health (spec 005 plan §6.10): they guard the API, the selector cannot send them.
       'health/pain-out-of-range': 'El dolor va de 0 a 10.',
       'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
