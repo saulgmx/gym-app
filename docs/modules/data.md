@@ -1,6 +1,6 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.2 · **Depende de:** `shared` · **Lo usan:** `app`
+**Versión del contrato:** 1.3 · **Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
@@ -63,7 +63,7 @@ export type DataErrorCode =
 
 interface InvalidModuleDataDetails {
   module: string | null;                 // null: el sobre (módulos que faltan o sobran)
-  cause: string;                         // código del puerto ('plan/high-risk-exercise'…) o 'data/missing-reference'
+  cause: string;                         // código del puerto ('plan/high-risk-exercise'…), 'data/module-mismatch' o 'data/missing-reference'
   details?: unknown;                     // los details del puerto, o { kind, id } de la referencia rota
 }
 
@@ -109,6 +109,15 @@ interface ImportPreview {                // RN-DAT-13
 | RN-DAT-12 | **Datos tolerados:** al validar no se comprueban RN-TRN-27 ni RN-TRN-06: dos `completed` con el mismo `date` y un `completed` sin entrada de dolor se aceptan, como ya los muestra el historial. Lo que la app nunca tolera (dos `in_progress`, dos entradas de dolor por workout, ejercicios `high`) se rechaza. | spec 007 |
 | RN-DAT-13 | **Vista previa** (`ImportPreview`): `exportedAt`, `schemaVersion`, sesiones `completed` y sus series hechas, entradas de dolor, rango de `date` de las `completed` (`null` sin ninguna), si trae un workout `in_progress`, `startDate` del programa y las sesiones `completed` que hay hoy en el dispositivo. | RF-41, P-2, spec 007 |
 
+**Detalle de la revisión** (casos de borde, antes de T3 de la spec 007, decisión 3):
+
+- Las funciones de la revisión son puras y reciben el texto del archivo y los puertos como `{ name, version }` ordenados por `order`, no los puertos enteros.
+- **Paso 2, sobre** (forma con Zod, `infrastructure`, ADR-0012): es `data/not-gym-app-file` si el texto no es JSON, si no es un objeto, si `app ≠ 'gym-app'`, si tiene una clave de más, si `schemaVersion` no es entero ≥ 1, si `exportedAt` no es un `Instant` (`instantSchema`), si `modules` no es un objeto o si un módulo no es `{ version: entero ≥ 1, data }`.
+- **Paso 3, versiones:** `schemaVersion > 1`, o la versión de un módulo **registrado** mayor que la de su puerto → `data/unsupported-version` con `details: { module: string | null, version, supported }` (`module: null` para `schemaVersion`). Un módulo no registrado no se mira aquí: lo atrapa el paso 4.
+- **Paso 4, módulos:** si las claves de `modules` no son exactamente los puertos registrados → `data/invalid-module-data` con `module: null`, `cause: 'data/module-mismatch'` y `details: { missing, unexpected }` (nombres, en orden de puertos y del archivo).
+- **Paso 6, referencias:** se devuelve la primera rota: en orden de puertos, luego por tipo en el orden de su `requires` y luego por ID en el orden del arreglo. Un puerto puede ofrecer lo que él mismo requiere. Un tipo que nadie ofrece está roto.
+- **Vista previa:** cada cifra la aporta un solo puerto (una clave con valor distinto de `undefined`). Si dos la aportan, o si falta `programStartDate`, `buildPreview` lanza: es un error de composición. `currentCompletedWorkouts` sale de `LocalFacts` (0 si nadie la da). `hasActiveWorkout` de la vista previa es el del archivo; el local solo decide el paso 7.
+
 RN-DAT-06 (recordatorio de respaldo, RF-42) y RN-DAT-07 (`wipeAll`, RF-43) salen del contrato hasta su spec; sus IDs no se reutilizan.
 
 ## 7. Errores
@@ -134,3 +143,4 @@ RF-40 (parte JSON), RF-41, RNF-09, RNF-10, CA-6. Más adelante: RF-40 (CSV), RF-
 
 1. **Spec 007, respaldo (contrato v1.1):** el contrato se recorta a lo que entra en la spec 007: sin `dataMeta`, `exportCsv`, `wipeAll` ni `getBackupStatus`; tres puertos (`plan`, `training`, `health`); RN-DAT-02 y 05 sin `[PROPUESTO]` (10 MB; restaurar bloqueado con una sesión en curso, exportar siempre); restaurar reemplaza todo (RN-DAT-10); referencias entre módulos validadas sobre el archivo (RN-DAT-11); datos tolerados (RN-DAT-12); vista previa (RN-DAT-13). Las firmas exactas las fija el plan técnico.
 2. **Plan de la spec 007 (contrato v1.2):** `DataPort` gana `describe` y `current` y pierde `wipe`; `createData({ db, clock })` sin `TransactionRunner`, `DataDb` ni `onImported`; `previewImport` devuelve un `PendingImport` con `commit()` en lugar de `commitImport(preview)`; `registerDataPort` lanza con un nombre u orden repetido; el plan va como `program` (RN-PLN-29); `InvalidModuleDataDetails`. Orden de la revisión: spec 007 plan §6.9.
+3. **Casos de borde de la revisión, antes de T3 de la spec 007 (contrato v1.3, 19-nov-2026):** entradas de las funciones puras, qué es un sobre inválido, `details` de versiones y de módulos que faltan o sobran (`data/module-mismatch`), orden de la primera referencia rota, y que `buildPreview` lance si dos puertos aportan la misma cifra (§6, "Detalle de la revisión"). El sobre se valida con Zod en `infrastructure` (ADR-0012), como el esquema del seed; versiones, módulos, referencias y vista previa son dominio.

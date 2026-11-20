@@ -59,8 +59,9 @@ interface DataPort<T = unknown> {
 
 // Esquemas primitivos para validar entradas externas (kernel/schemas.ts, zod/mini con jitless; spec 007 plan §6.6)
 const idSchema;          // UUIDv7 en minúsculas → ID
-const localDateSchema;   // 'AAAA-MM-DD' de una fecha real → LocalDate
-const instantSchema;     // ISO 8601 con offset → Instant
+const localDateSchema;   // 'AAAA-MM-DD' de una fecha real (z.iso.date: 2026-02-30 no; 2024-02-29 sí), sin rango de años → LocalDate
+const instantSchema;     // z.iso.datetime({ offset: true }): fecha real, segundos obligatorios, fracción opcional,
+                         // 'Z' o '±HH:MM' (systemClock escribe '-06:00'); sin offset, '+0600' o con espacio, no → Instant
 
 // Implementaciones de producción
 const systemClock: Clock;  // now(): Instant con el offset local; today(): LocalDate local

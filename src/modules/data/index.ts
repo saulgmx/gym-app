@@ -6,3 +6,11 @@ export type DataApi = Record<string, never>;
 export function createData(): DataApi {
   return {};
 }
+
+export type {
+  DataError,
+  DataErrorCode,
+  ImportPreview,
+  InvalidModuleDataDetails,
+  UnsupportedVersionDetails,
+} from './domain/types';
