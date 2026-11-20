@@ -1,13 +1,14 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, en el punto de control A; siguiente: T5; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, punto de control A terminado en local; siguiente: push, PR #70 listo y T6; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0013 (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.32, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.33, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 176.66 kB de 200 kB. **E2E:** 146, en Chromium y WebKit.
+- **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
 - **Fases hechas** (detalle en `handoff-history.md` y en cada spec):
 
 | Fase | Spec | Qué entregó | PR |
@@ -20,7 +21,7 @@
 | 3 | `005b-una-sesion-por-dia` | Una sola sesión cerrada por día (RN-TRN-27) | #46 a #50 |
 | 3 | `006-historial` | Pestaña "Historial", lista y detalle | #51 a #57 |
 | 3 | `007-respaldo` | Módulo `data`, pestaña "Ajustes", respaldo JSON | #58 a #65 |
-| 3 | `008-csv` | Spec, plan y tareas aprobados; implementación pendiente | #66 a #68 |
+| 3 | `008-csv` | Spec, plan y tareas aprobados; implementación en curso (A en el PR #70) | #66 a #68, #70 |
 
 ## Decisiones tomadas
 
@@ -52,19 +53,28 @@
 |---|---|---|---|---|
 | 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
 
+## Piloto Opus → Qwen
+
+- **Calibración T5 (spec 008):** 1 intento (~3 min), 1 ronda de revisión (~2 min), 0 violaciones, 19/19 pruebas, 7/7 mutaciones.
+- **Entorno:** LM Studio con JIT y un solo modelo en memoria (no cargar modelos a mano). El 35B con contexto 131072 y `samplingParams` en `~/.qwen/settings.json` (temperature 0.6, top_p 0.95, top_k 20), porque Qwen Code manda su propia temperatura.
+- **Pendientes:** el 27B falla al formatear llamadas a herramientas; apagar la memoria automática de Qwen Code; quitar el MCP de AWS.
+- La sección "Ejecución delegada" de `docs/README.md`, `QWEN.md` y la columna `Q` de `templates/tasks.md` se agregan cuando ADR-0014 pase a `Aceptado`.
+
 ## Siguiente paso
 
 Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
-1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T4 hechas (T4, pruebas de `data/domain/csv.ts` en rojo, con commit **local sin push**); sigue **T5** (implementar `csv.ts`), luego push y PR listo. Antes de seguir, traer `main` a la rama (cambio a mise, PR `chore/mise`). Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
+1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T5 hechas; T4 (pruebas de `data/domain/csv.ts` en rojo) y T5 (`csv.ts`, implementado por Qwen y verificado con 7/7 mutaciones) tienen commit **local sin push**, igual que la fusión de `main` (con mise, PR #71). Sigue: push, PR #70 listo para revisión, CI en verde y fusionar; después, el punto de control B con **T6** (rama `feat/008-csv-b`). Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
    - Spec (AC-1 a AC-31): "Exportar series (CSV)" en la sección "Respaldo" de Ajustes; una fila por serie hecha de cada sesión `completed` (RN-DAT-14); `gym-series-v1-AAAA-MM-DD.csv` con la versión del formato en el nombre (ADR-0013); sin base ni migración.
    - Plan: `training` da filas tipadas (`seriesRows`, RN-TRN-31) y `data` escribe el archivo (`domain/csv.ts`, `exportSeriesCsv`).
    - Tareas: T1 a T15 en 4 puntos de control (A kernel y dominio, B puerto, servicio y composición, C Ajustes, D verificación y cierre). T1 cambia `data-port.test-d.ts` de la 007 (`csv` → `seriesRows`). T14 (iPhone, Numbers y Sheets) es tuya.
+   - Punto de control B: calibrar a Qwen con T9 (`exportSeriesCsv`) cuando T8 esté en rojo. Las reglas y el formato del brief están en ADR-0014.
 2. **Pendientes tuyos que no bloquean:**
    - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
    - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
-3. **Después:** fase 4 (progresión, alertas, temporizador, peso corporal, gráficas; pregunta 7 pendiente).
-4. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
+3. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
+4. **Después:** fase 4 (progresión, alertas, temporizador, peso corporal, gráficas; pregunta 7 pendiente).
+5. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
 ## Notas para retomar
 
@@ -73,6 +83,8 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
 - Mutaciones: tras cada prueba en verde, romper el código a propósito y ver que falla la prueba correcta. En el bloque C encontraron tres pruebas que pasaban sin probar nada: el `replace` de la redirección (T15), `showNotice` que reemplazaba el aviso (T16) y el rechazo de `persist()` sin capturar (T17: Vitest **no** marcó ese rechazo; la prueba espía `then`). Un mutante que no compila no prueba nada (el build falla antes de las pruebas).
+- Un mutante con reemplazo global (`replace_all`, `sed …/g`) puede tocar más de lo que dice: en la spec 008 T5, "LF en vez de CRLF" también cambió la regex que decide las comillas (`/[,"\r\n]/`). Mirar el diff del mutante antes de contar el resultado.
+- Código implementado por otro modelo (spec 008 T5, Qwen): se verifica con las mutaciones de la tarea y el commit lleva el trailer `Implemented-by: <modelo> (attempt N/3)` además del `Co-Authored-By`.
 - Mutantes mal escritos (fase 1, B): uno que no hace el cambio que dice, uno que no compila (variable inexistente) o uno que solo cubre la mitad del cambio sobreviven o "mueren" sin probar nada. Revisar el mutante antes de concluir. El script de mutación debe correr también los `*.test-d.ts` (`--typecheck`) cuando el mutante es de tipos.
 - `rejects.toThrow()` sin patrón acepta cualquier error, también un `TypeError` accidental: exigir el de la regla (`/RN-PLN-22/`). Los mensajes de error del dominio y de la infraestructura citan su regla.
 - `vi.spyOn(Promise.prototype, 'then')` entra en recursión (Vitest usa promesas): reemplazar `then` a mano solo durante la llamada y restaurarlo en `finally` (`src/app/__tests__/compose.test.ts`).
@@ -154,4 +166,4 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md, plan.md y tasks.md, docs/modules/data.md (RN-DAT-14 y el detalle del CSV), docs/modules/training.md (RN-TRN-31) y docs/modules/shared.md §2. La spec 008, su plan y sus tareas están aprobados. Empieza el punto de control A con T1. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md, plan.md y tasks.md, docs/modules/data.md (RN-DAT-14 y el detalle del CSV), docs/modules/training.md (RN-TRN-31) y docs/modules/shared.md §2. La spec 008, su plan y sus tareas están aprobados; el punto de control A (T1 a T5) está hecho en la rama feat/008-csv-a (PR #70). Si el PR #70 ya está fusionado, sigue con T6 del punto de control B; si no, ciérralo primero. Guíame paso a paso, una tarea a la vez."

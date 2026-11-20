@@ -5,11 +5,14 @@ import {
   type DataPort,
   type ID,
   type ImportFacts,
+  type Instant,
   type LocalDate,
   type LocalFacts,
+  type SeriesRow,
 } from '@/shared/kernel';
 
-// DataPort after spec 007 plan §3 (shared.md §2): describe and current, no wipe.
+// DataPort after spec 007 plan §3 and spec 008 plan §3 (shared.md §2): describe and current,
+// seriesRows instead of csv, no wipe.
 interface Rows {
   rows: { id: ID; date: LocalDate }[];
 }
@@ -31,11 +34,36 @@ const example: DataPort<Rows> = {
 };
 
 describe('DataPort', () => {
-  it('un puerto con describe y current compila; csv es opcional', () => {
+  it('un puerto con describe y current compila sin seriesRows', () => {
     expectTypeOf(example).toExtend<DataPort<Rows>>();
-    expectTypeOf<DataPort['csv']>().toEqualTypeOf<
-      (() => Promise<{ filename: string; content: string }>) | undefined
+  });
+
+  it('RN-TRN-31: seriesRows es opcional y devuelve Promise<SeriesRow[]>', () => {
+    expectTypeOf<DataPort['seriesRows']>().toEqualTypeOf<
+      (() => Promise<SeriesRow[]>) | undefined
     >();
+    const withRows: DataPort<Rows> = { ...example, seriesRows: () => Promise.resolve([]) };
+    expectTypeOf(withRows).toExtend<DataPort<Rows>>();
+  });
+
+  it('spec 008: ya no tiene csv (lo reemplaza seriesRows)', () => {
+    expectTypeOf<DataPort>().not.toHaveProperty('csv');
+  });
+
+  it('RN-DAT-14: SeriesRow tiene exactamente las columnas del CSV, con sus tipos', () => {
+    expectTypeOf<SeriesRow>().toEqualTypeOf<{
+      date: LocalDate;
+      week: number | null;
+      session: string;
+      exercise: string;
+      metric: 'weight' | 'reps' | 'time';
+      setNumber: number;
+      weightKg: number | null;
+      reps: number | null;
+      rir: number | null;
+      isExtra: boolean;
+      completedAt: Instant | null;
+    }>();
   });
 
   it('describe es pura sobre los datos validados y current es asíncrona', () => {

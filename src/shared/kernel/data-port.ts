@@ -1,5 +1,5 @@
 import type { Result } from './result';
-import type { ID, LocalDate } from './types';
+import type { ID, Instant, LocalDate } from './types';
 
 // Export/import contract each module with data implements (docs/modules/data.md §3, shared.md §2).
 // It lives in the kernel because no module may import `data`. `wipe` arrives with RF-43.
@@ -37,5 +37,20 @@ export interface DataPort<T = unknown> {
   describe(data: T): DataDescription; // pure
   current(): Promise<LocalFacts>; // Dexie reads only: it also runs inside the import transaction
   importData(data: T): Promise<void>; // clears its tables and writes; runs inside the transaction
-  csv?(): Promise<{ filename: string; content: string }>;
+  seriesRows?(): Promise<SeriesRow[]>; // training only, already in RN-DAT-14 order (spec 008 plan §3)
+}
+
+/** One done set of a completed workout, as the series CSV shows it (RN-DAT-14, RN-TRN-31). */
+export interface SeriesRow {
+  date: LocalDate;
+  week: number | null; // programWeek
+  session: string; // Workout.name
+  exercise: string; // current name of the set's exercise in the plan
+  metric: 'weight' | 'reps' | 'time';
+  setNumber: number;
+  weightKg: number | null; // negative = assistance
+  reps: number | null; // seconds when metric = 'time'
+  rir: number | null;
+  isExtra: boolean;
+  completedAt: Instant | null; // null only for tolerated broken data (RN-DAT-12)
 }
