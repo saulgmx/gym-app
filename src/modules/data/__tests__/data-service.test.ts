@@ -8,11 +8,15 @@ import {
   type DataDescription,
   type DataPort,
   type ID,
+  type Instant,
+  type LocalDate,
   type LocalFacts,
+  type SeriesRow,
 } from '@/shared/kernel';
 import { createData } from '..';
+import { csvFilename, seriesCsv } from '../domain/csv';
 
-// RN-DAT-01 to 05, 09, 10 (contract v1.4, §6 "Detalle del servicio"): data's service over fake
+// RN-DAT-01 to 05, 09, 10, 14 (contract v1.7, §6 "Detalle del servicio"): data's service over fake
 // ports, each with its own table in IndexedDB in memory. The real ports are tested in their
 // modules; the round trip with them lives in app (T13).
 
@@ -431,5 +435,128 @@ describe('commit', () => {
     expect((await commit()).ok).toBe(false);
     await db.table('active').clear();
     await expect(commit()).rejects.toThrow(/once/);
+  });
+});
+
+// RN-DAT-14 (spec 008, contract v1.7, §6 "exportSeriesCsv"): data writes the file from the rows of
+// the only port with seriesRows (training's in the app). The text itself is csv.test.ts's.
+describe('exportSeriesCsv', () => {
+  const rows: SeriesRow[] = [
+    {
+      date: '2026-11-16' as LocalDate,
+      week: 1,
+      session: 'Full body A',
+      exercise: 'Prensa de piernas',
+      metric: 'weight',
+      setNumber: 2,
+      weightKg: 100,
+      reps: 9,
+      rir: 2,
+      isExtra: false,
+      completedAt: '2026-11-16T18:06:00-06:00' as Instant,
+    },
+    {
+      date: '2026-11-16' as LocalDate,
+      week: 1,
+      session: 'Full body A',
+      exercise: 'Jalón al pecho',
+      metric: 'weight',
+      setNumber: 1,
+      weightKg: -20,
+      reps: 8,
+      rir: null,
+      isExtra: false,
+      completedAt: null,
+    },
+  ];
+
+  /** Gives `port` the seriesRows of training, recording the transaction it runs in. */
+  function withSeriesRows<T>(
+    port: DataPort<T>,
+    seriesRows: () => Promise<SeriesRow[]> = () => Promise.resolve(rows),
+  ) {
+    const seen: { mode: string | undefined; stores: string[] }[] = [];
+    port.seriesRows = () => {
+      seen.push(transactionSeen());
+      return seriesRows();
+    };
+    return seen;
+  }
+
+  // As plain arrays: blob.arrayBuffer() comes from jsdom's realm and TextEncoder from Node's, so two
+  // Uint8Array with the same bytes are not toEqual. blob.text() would drop the BOM.
+  const bytes = async (blob: Blob) => [...new Uint8Array(await blob.arrayBuffer())];
+  const utf8 = (text: string) => [...new TextEncoder().encode(text)];
+
+  it('sin puertos lanza (error de composición)', async () => {
+    const data = createData({ db: openDb(), clock });
+    await expect(data.exportSeriesCsv()).rejects.toThrow(/seriesRows/);
+  });
+
+  it('ningún puerto con seriesRows lanza (error de composición)', async () => {
+    const { data } = setup();
+    await expect(data.exportSeriesCsv()).rejects.toThrow(/seriesRows/);
+  });
+
+  it('dos puertos con seriesRows lanza, sin leer ninguno', async () => {
+    const { data, ports } = setup();
+    const first = withSeriesRows(ports.plan);
+    const second = withSeriesRows(ports.training);
+    await expect(data.exportSeriesCsv()).rejects.toThrow(/seriesRows/);
+    expect([...first, ...second]).toEqual([]);
+  });
+
+  it('usa el único puerto con seriesRows, aunque no sea el primero por order', async () => {
+    const { data, ports } = setup();
+    const seen = withSeriesRows(ports.health);
+    await data.exportSeriesCsv();
+    expect(seen).toHaveLength(1);
+  });
+
+  it('ADR-0010: si el puerto rechaza, rechaza con el mismo error', async () => {
+    const { data, ports } = setup();
+    const boom = new Error('training read failed');
+    withSeriesRows(ports.training, () => Promise.reject(boom));
+    await expect(data.exportSeriesCsv()).rejects.toBe(boom);
+  });
+
+  it('AC-2: nombre gym-series-v1-<hoy>.csv con la fecha local de hoy y tipo text/csv', async () => {
+    const { data, ports } = setup();
+    withSeriesRows(ports.training);
+    const { filename, blob } = await data.exportSeriesCsv();
+    expect(filename).toBe(`gym-series-v1-2026-11-19.csv`);
+    expect(filename).toBe(csvFilename(clock.today()));
+    expect(blob.type).toBe('text/csv');
+  });
+
+  it('AC-8: los bytes son el texto de seriesCsv en UTF-8, empezando por el BOM (EF BB BF)', async () => {
+    const { data, ports } = setup();
+    withSeriesRows(ports.training);
+    const actual = await bytes((await data.exportSeriesCsv()).blob);
+    expect(actual.slice(0, 3)).toEqual([0xef, 0xbb, 0xbf]);
+    expect(actual).toEqual(utf8(seriesCsv(rows)));
+  });
+
+  it('AC-23: sin filas, el archivo trae el BOM y solo los encabezados', async () => {
+    const { data, ports } = setup();
+    withSeriesRows(ports.training, () => Promise.resolve([]));
+    const actual = await bytes((await data.exportSeriesCsv()).blob);
+    expect(actual).toEqual(utf8(seriesCsv([])));
+  });
+
+  it('no abre transacción: el puerto lee lo suyo (plan §6.3)', async () => {
+    const { data, ports } = setup();
+    const seen = withSeriesRows(ports.training);
+    await data.exportSeriesCsv();
+    expect(seen).toEqual([{ mode: undefined, stores: [] }]);
+  });
+
+  it('AC-26: no cambia ninguna tabla', async () => {
+    const { db, data, ports } = setup();
+    await seedDevice(db);
+    withSeriesRows(ports.training);
+    const before = await dump(db);
+    await data.exportSeriesCsv();
+    expect(await dump(db)).toEqual(before);
   });
 });
