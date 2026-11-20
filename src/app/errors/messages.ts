@@ -1,3 +1,4 @@
+import type { DataError, DataErrorCode, InvalidModuleDataDetails } from '@/modules/data';
 import type { HealthErrorCode } from '@/modules/health';
 import type { PlanErrorCode } from '@/modules/plan';
 import type {
@@ -14,7 +15,7 @@ export const GENERIC_ERROR_MESSAGE =
   'Algo salió mal. Tus datos guardados no se han perdido. Recarga la app para continuar.';
 
 /** Union of every module's error codes. */
-export type ErrorCode = PlanErrorCode | TrainingErrorCode | HealthErrorCode;
+export type ErrorCode = PlanErrorCode | TrainingErrorCode | HealthErrorCode | DataErrorCode;
 
 /** Adding a code to ErrorCode without its message here breaks tsc. */
 export const errorMessages: Record<ErrorCode, string> = {
@@ -50,6 +51,14 @@ export const errorMessages: Record<ErrorCode, string> = {
   'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
   // Spec 007 §6.3 (RN-HLT-21): data wraps it; the same text as data/invalid-module-data.
   'health/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
+  // Spec 007 §6.3: reviewing or restoring a backup.
+  'data/file-too-large': 'El archivo es demasiado grande para ser un respaldo de Gym.',
+  'data/not-gym-app-file': 'Este archivo no es un respaldo de Gym.',
+  'data/unsupported-version':
+    'Este respaldo es de una versión más nueva de la app. Actualízala e inténtalo de nuevo.',
+  'data/invalid-module-data': 'El respaldo está dañado o incompleto. No se cambió nada.',
+  'data/workout-in-progress':
+    'Tienes una sesión en curso. Termínala o descártala antes de restaurar un respaldo.',
 };
 
 // The detail of invalid-set-values, by field and reason (RN-TRN-04). Decimal comma, as typed.
@@ -87,5 +96,17 @@ export function setValueMessage(
 export function describeTrainingError(error: TrainingError, context: SetErrorContext): string {
   return error.code === 'training/invalid-set-values'
     ? setValueMessage(error.details, context)
+    : errorMessages[error.code];
+}
+
+/** P-1: a backup with an exercise the app forbids says why, not only that it is damaged. */
+const HIGH_RISK_BACKUP_MESSAGE =
+  'Este respaldo incluye un ejercicio que la app no permite por tu espalda. No se cambió nada.';
+
+/** Text for a backup error (spec 007 §6.3, decision 17 (e)). */
+export function describeImportError(error: DataError): string {
+  const cause = (error.details as Partial<InvalidModuleDataDetails> | undefined)?.cause;
+  return error.code === 'data/invalid-module-data' && cause === 'plan/high-risk-exercise'
+    ? HIGH_RISK_BACKUP_MESSAGE
     : errorMessages[error.code];
 }

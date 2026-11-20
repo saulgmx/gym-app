@@ -7,6 +7,7 @@ import { HistoryDetailPage } from './pages/history/HistoryDetailPage';
 import { HistoryPage } from './pages/history/HistoryPage';
 import { ProgressPage } from './pages/ProgressPage';
 import { SessionPage } from './pages/SessionPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
 import { TodayPage } from './pages/TodayPage';
 
 // Route table (spec §7.2, spec 000 §6). Exported so tests run it in a memory router.
@@ -24,6 +25,7 @@ export const routes: RouteObject[] = [
           { path: 'historial', element: <HistoryPage /> },
           { path: 'historial/:workoutId', element: <HistoryDetailPage /> },
           { path: 'progreso', element: <ProgressPage /> },
+          { path: 'ajustes', element: <SettingsPage /> },
         ],
       },
       // Without an index, SessionPage picks the first exercise with pending sets (spec 002 plan §6.7).

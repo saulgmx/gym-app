@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { closeTestDatabases, renderRoute, tapToNavigate } from './test-app';
 
 // Spec 000 AC-22, AC-24, AC-25 and §6 (empty pages, document titles), on the real route table.
+// Spec 006 AC-1 to AC-3 (Historial) and spec 007 AC-1 and AC-2 (Ajustes).
 
 // Pages read AppContext, so routes render with real test services (spec 001 plan §6.11).
 const renderAt = (path: string) => renderRoute(path);
@@ -41,16 +42,28 @@ describe('app router', () => {
     expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
   });
 
-  it('spec 006 AC-1: three tabs in order, Hoy, Historial and Progreso', async () => {
+  it('spec 007 AC-1: four tabs in order, Hoy, Historial, Progreso and Ajustes, with decorative icons', async () => {
     await renderAt('/');
     const bar = tabBar();
     if (!bar) throw new Error('no TabBar');
 
-    expect(
-      within(bar)
-        .getAllByRole('link')
-        .map((l) => l.textContent),
-    ).toEqual(['Hoy', 'Historial', 'Progreso']);
+    const links = within(bar).getAllByRole('link');
+    expect(links.map((l) => l.textContent)).toEqual(['Hoy', 'Historial', 'Progreso', 'Ajustes']);
+    for (const link of links) {
+      expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    }
+  });
+
+  it('spec 007 AC-2: tapping Ajustes navigates to /ajustes and marks only that tab', async () => {
+    const router = await renderAt('/');
+    await screen.findByRole('list', { name: 'Semana' });
+    await tapToNavigate(userEvent.setup(), screen.getByRole('link', { name: 'Ajustes' }));
+
+    expect(router.state.location.pathname).toBe('/ajustes');
+    expect(screen.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ajustes' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Hoy' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'Progreso' })).not.toHaveAttribute('aria-current');
   });
 
   it('spec 006 AC-2: tapping Historial navigates to /historial and marks only that tab', async () => {
@@ -102,6 +115,7 @@ describe('app router', () => {
     ['/', 'Hoy · Gym'],
     ['/progreso', 'Progreso · Gym'],
     ['/historial', 'Historial · Gym'],
+    ['/ajustes', 'Ajustes · Gym'], // spec 007 AC-2
     ['/sesion/w1/0', 'Sesión · Gym'],
     ['/sesion/w1', 'Sesión · Gym'], // "Continuar sesión" (spec 002 plan §6.7)
     ['/sesion/w1/cierre', 'Cierre de sesión · Gym'],

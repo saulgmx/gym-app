@@ -1,78 +1,20 @@
 import 'fake-indexeddb/auto';
-import type { Dexie } from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fixedClock, type ID, type LocalDate } from '@/shared/kernel';
 import { compose } from '../compose';
 import type { AppServices } from '../context';
 import { openDatabase } from '../db';
 import planSeed from '../seed/plan-seed.json';
-import { closeTestDatabases, createTestServices, lastTestDatabase } from './test-app';
-import { closeSession, markSets, setup } from './test-sessions';
+import { closeTestDatabases } from './test-app';
+import { deviceWithSpecData, dump, exportText, freshDevice } from './test-backup';
 
 // Spec 007 T13 (RN-DAT-08, QS-04, CA-6): the backup with the real ports that compose registers,
 // between two databases in memory, with the spec §4 data written through the API and the real
 // seed (36 exercises). data cannot import modules, so this round trip lives in app.
 
-const TABLES = [
-  'exercises',
-  'programs',
-  'blocks',
-  'templates',
-  'workouts',
-  'sets',
-  'painEntries',
-] as const;
-
 const date = (s: string) => s as LocalDate;
 
 afterEach(closeTestDatabases);
-
-async function dump(db: Dexie) {
-  const rows = await Promise.all(
-    TABLES.map(async (t) => {
-      const all = (await db.table(t).toArray()) as { id: string }[];
-      return all.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    }),
-  );
-  return Object.fromEntries(TABLES.map((t, i) => [t, rows[i]]));
-}
-
-/** Spec 007 §4: L16 complete, a session discarded on the 17th, M18 partial for the Friday. */
-async function deviceWithSpecData() {
-  const env = await setup();
-  await closeSession(env, { on: '2026-11-16', allSets: true, level: 2, end: '18:52' });
-
-  env.time.set('2026-11-17T18:00:00-06:00');
-  const tuesday = await env.services.training.startWorkout(date('2026-11-17'), {
-    plannedFor: date('2026-11-18'), // Tuesday is cardio: another session of the week (RN-TRN-14)
-  });
-  if (!tuesday.ok) throw new Error(tuesday.error.code);
-  await markSets(env.services, tuesday.value, 2);
-  const discarded = await env.services.training.discardWorkout(tuesday.value.id);
-  if (!discarded.ok) throw new Error(discarded.error.code);
-
-  await closeSession(env, {
-    on: '2026-11-18',
-    plannedFor: '2026-11-20',
-    sets: 5,
-    level: 5,
-    redFlags: ['numbness'],
-    end: '18:30',
-  });
-  return { services: env.services, db: lastTestDatabase() };
-}
-
-/** A device seeded on another week, as a new phone would be. */
-async function freshDevice(seedOn = '2026-12-02T09:00:00-06:00') {
-  const services = createTestServices({ seedClock: fixedClock(seedOn) });
-  await services.ready;
-  return { services, db: lastTestDatabase() };
-}
-
-async function exportText(services: AppServices) {
-  const { blob } = await services.data.exportAll();
-  return blob.text();
-}
 
 async function restore(services: AppServices, text: string) {
   const preview = await services.data.previewImport(new File([text], 'gym-respaldo.json'));

@@ -156,7 +156,9 @@ Mismo estilo que el seed (`strictObject`, `exactOptional`, `jitless`). Los primi
 ### 6.7 Entrega del archivo (decisión 7, aprobada)
 `app/pages/settings/deliver.ts`, `deliverFile(file, env)` con `navigator` y `document` inyectables:
 1. Si `navigator.canShare?.({ files: [file] })`, `await navigator.share({ files: [file], title: file.name })`. `AbortError` → fin, sin mensaje (AC-6). Otro error → paso 2.
-2. `URL.createObjectURL(file)`, un `<a download={file.name}>` temporal, `click()`, y `revokeObjectURL` en un `setTimeout(…, 0)`.
+2. `URL.createObjectURL(file)`, un `<a download={file.name}>` temporal añadido al documento, `click()`, quitarlo, y `revokeObjectURL` en un `setTimeout(…, 60_000)` (spec §8, decisión 15: con 0 Safari puede cortar la descarga).
+
+Sin `canShare` (aunque exista `share`) se descarga. Devuelve `'shared'`, `'cancelled'` o `'downloaded'`.
 
 `exportAll` devuelve `{ filename, blob }`; `app` crea el `File` con `type: 'application/json'`.
 
@@ -169,7 +171,7 @@ Mismo estilo que el seed (`strictObject`, `exactOptional`, `jitless`). Los primi
   - `ImportDialog.tsx`: `Dialog` de `shared` (`data-placement="bottom"`, `dismissOnBackdrop`), las líneas de la vista previa y los botones; foco inicial en "Cancelar".
   - `texts.ts` y `format.ts` (`formatPreviewCounts`, con singulares).
 - `app/errors/messages.ts`: `DataErrorCode → texto`, cubierto por `tsc` como los demás; `describeImportError(error)` devuelve el texto de P-1 si `details.cause === 'plan/high-risk-exercise'`.
-- `app/format-date.ts`: `formatInstantLong` ("19 de noviembre de 2026, 22:30", hora local), `formatDateRangeLong` ("Del 16 al 18 de noviembre de 2026"; "Del 30 de noviembre al 6 de diciembre de 2026"; "Del 28 de diciembre de 2026 al 3 de enero de 2027") y `formatWeekdayDateLong` ("lunes 16 de noviembre de 2026").
+- `app/format-date.ts`: `formatInstantLong` ("19 de noviembre de 2026, 22:30", hora local), `formatDateRangeLong` ("Del 16 al 18 de noviembre de 2026"; "Del 30 de noviembre al 6 de diciembre de 2026"; "Del 28 de diciembre de 2026 al 3 de enero de 2027") y `formatWeekdayDateLong` ("lunes 16 de noviembre de 2026"). Detalle aprobado antes de T14 en la spec §8, decisión 14: hora armada a mano en 24 h sin cero inicial, rango de un día ("El 16 de noviembre de 2026"), singulares y el aviso de reemplazo (`formatReplaceWarning`, en `settings/format.ts` junto a `formatPreviewCounts`).
 - Mientras dura `restoring`, "Reemplazar mis datos" dice "Restaurando…" y el diálogo no se cierra con Escape ni con el fondo.
 
 ### 6.9 Orden de la revisión (`previewImport`)
@@ -189,6 +191,8 @@ Los pasos 2 a 6 son funciones puras en `data/domain/` y el servicio solo las enc
 
 ### 6.11 Presupuesto del bundle
 Actual: 171.09 kB de 200 kB. Entran `data`, tres puertos con sus esquemas, la página y el diálogo; se estiman 5 a 8 kB. Se mide en la tarea de cierre del punto de la interfaz.
+
+**Medido en T18 (19-nov):** 176.66 kB gzip de 200 kB (+5.57 kB, dentro de lo estimado). Por debajo del umbral de 190 kB, así que Ajustes se queda en el bundle inicial, sin carga diferida (§6.6).
 
 ## 7. Estrategia de pruebas
 
