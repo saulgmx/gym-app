@@ -8,10 +8,12 @@ import {
   type TrainingApi as TrainingServiceApi,
 } from './application/service';
 import type { TrainingBackup } from './domain/types';
+import { createSeriesReader } from './application/series';
 import { createTrainingDataPort } from './infrastructure/data-port';
 import { createDexieTrainingRepository } from './infrastructure/dexie-repository';
 
-// The service plus the backup port (RN-TRN-30, spec 007), which lives in infrastructure.
+// The service plus the backup port (RN-TRN-30, spec 007), which lives in infrastructure, with the
+// rows of the series CSV (RN-TRN-31, spec 008).
 export interface TrainingApi extends TrainingServiceApi {
   dataPort: DataPort<TrainingBackup>;
 }
@@ -26,15 +28,17 @@ export function createTraining(deps: {
   suggestions: SuggestionProvider;
   painGate: PainGate; // RN-TRN-06; health.painGate (spec 005)
 }): TrainingApi {
+  const repository = createDexieTrainingRepository(deps.db);
   const service = createTrainingService({
-    repository: createDexieTrainingRepository(deps.db),
+    repository,
     plan: deps.plan,
     suggestions: deps.suggestions,
     painGate: deps.painGate,
     clock: deps.clock,
     ids: deps.ids,
   });
-  return { ...service, dataPort: createTrainingDataPort(deps.db) };
+  const seriesRows = createSeriesReader({ repository, plan: deps.plan });
+  return { ...service, dataPort: createTrainingDataPort(deps.db, seriesRows) };
 }
 
 export { workoutProgress } from './application/progress';
