@@ -59,8 +59,12 @@ async function session(
   const workout = started.value;
   if (opts.choose) {
     const view = await viewOf(env.services, workout.id);
-    const [from, to] = opts.choose.map((name) => idByName(view, name));
-    const chosen = await env.services.training.chooseExercise(workout.id, from, to);
+    const [from, to] = opts.choose;
+    const chosen = await env.services.training.chooseExercise(
+      workout.id,
+      idByName(view, from),
+      idByName(view, to),
+    );
     if (!chosen.ok) throw new Error(chosen.error.code);
   }
   const view = await viewOf(env.services, workout.id);
