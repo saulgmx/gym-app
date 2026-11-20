@@ -12,6 +12,13 @@ export function installGlobalErrorHandlers(): () => void {
     useNoticeStore.getState().showNotice({ message: GENERIC_ERROR_MESSAGE });
   };
   const onError = (event: ErrorEvent) => {
+    // Without an error object it is not the app's code, which is same-origin and only throws
+    // Error: Safari's own scripts (its share sheet), extensions or other origins (spec 007 §8,
+    // decision 19). Logged so the inspector still shows it.
+    if (event.error === null || event.error === undefined) {
+      console.warn('Ignored error from outside the app', event.message);
+      return;
+    }
     report(event.error);
   };
   const onRejection = (event: PromiseRejectionEvent) => {

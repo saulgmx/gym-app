@@ -130,6 +130,28 @@ describe('async errors', () => {
     warn.mockRestore();
   });
 
+  it('spec 007 decisión 19: a plain error Event (error undefined) only warns too', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    render(<AppNotice />);
+    act(() => {
+      window.dispatchEvent(new Event('error'));
+    });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('spec 007 decisión 19: only a missing error object is ignored; any other value shows the notice', () => {
+    render(<AppNotice />);
+    act(() => {
+      window.dispatchEvent(new ErrorEvent('error', { error: 'thrown string' }));
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(GENERIC_ERROR_MESSAGE);
+    expect(consoleError).toHaveBeenCalledWith(expect.any(String), 'thrown string');
+  });
+
   it('keeps a single notice when several errors arrive', () => {
     render(<AppNotice />);
     act(() => {
