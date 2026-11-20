@@ -8,6 +8,7 @@ import {
   type LocalFacts,
   type Result,
 } from '@/shared/kernel';
+import { csvFilename, seriesCsv } from '../domain/csv';
 import { SCHEMA_VERSION, checkModules, checkVersions } from '../domain/envelope';
 import { buildPreview } from '../domain/preview';
 import { missingReference } from '../domain/references';
@@ -27,6 +28,7 @@ export interface PendingImport {
 export interface DataApi {
   registerDataPort<T>(port: DataPort<T>): void;
   exportAll(): Promise<{ filename: string; blob: Blob }>;
+  exportSeriesCsv(): Promise<{ filename: string; blob: Blob }>; // RF-40, RN-DAT-14 (spec 008)
   previewImport(file: Blob): Promise<Result<PendingImport, DataError>>;
 }
 
@@ -93,6 +95,23 @@ export function createDataService({
       return {
         filename: `gym-respaldo-${clock.today()}.json`,
         blob: new Blob([`${JSON.stringify(envelope, null, 2)}\n`], { type: 'application/json' }),
+      };
+    },
+
+    // RN-DAT-14: the rows of the only port with seriesRows; it reads its own data (no transaction).
+    async exportSeriesCsv() {
+      const withRows = ports.filter((p) => p.seriesRows != null);
+      const [port, ...rest] = withRows;
+      if (!port?.seriesRows) {
+        throw new Error(`No DataPort with seriesRows (RN-DAT-14)`);
+      }
+      if (rest.length > 0) {
+        throw new Error(`More than one DataPort with seriesRows (RN-DAT-14)`);
+      }
+      const rows = await port.seriesRows();
+      return {
+        filename: csvFilename(clock.today()),
+        blob: new Blob([seriesCsv(rows)], { type: 'text/csv' }),
       };
     },
 
