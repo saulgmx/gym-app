@@ -1,12 +1,16 @@
 // Public API of the `data` module (docs/modules/data.md). The only file other modules may import.
-// Phase 0 skeleton: dependencies and operations arrive with their features.
 
-export type DataApi = Record<string, never>;
+import type { Dexie } from 'dexie';
+import type { Clock } from '@/shared/kernel';
+import { createDataService, type DataApi } from './application/service';
+import { parseEnvelope } from './infrastructure/envelope-schema';
 
-export function createData(): DataApi {
-  return {};
+// Exports and imports everything through the DataPorts that compose registers (architecture §7.4).
+export function createData(deps: { db: Dexie; clock: Clock }): DataApi {
+  return createDataService({ ...deps, parseEnvelope });
 }
 
+export type { DataApi, PendingImport } from './application/service';
 export type {
   DataError,
   DataErrorCode,

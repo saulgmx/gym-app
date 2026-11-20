@@ -96,7 +96,7 @@ Más una sesión `discarded` del martes 17-nov con 2 series hechas, que no se cu
 | AC-23 | AC-22 | Voy a "Hoy" e "Historial" | "Hoy" muestra la semana 1 con L16 y la del viernes hechas; "Historial" lista M18 y L16, sin recargar (vistas en vivo) |
 | AC-24 | AC-22 | Recargo la app | Los datos restaurados siguen; el seed no se vuelve a cargar (RN-PLN-14) |
 | AC-25 | Un dispositivo recién instalado (solo el seed) | Restauro el archivo de ejemplo | "Hoy" queda en la semana del programa del archivo (`startDate` del archivo, decisión 5) |
-| AC-26 | Base A con los datos de ejemplo | Exporto, restauro el archivo en una base B vacía y exporto B | Las dos bases son iguales tabla por tabla (comparación profunda), y los dos archivos son iguales salvo `exportedAt` (RN-DAT-08, QS-04, CA-6) |
+| AC-26 | Base A con los datos de ejemplo | Exporto, restauro el archivo en una base B vacía y exporto B | Las dos bases son iguales tabla por tabla (comparación profunda), y los dos archivos tienen el mismo contenido salvo `exportedAt`; el orden de las claves de una fila puede cambiar (§8, decisión 13; RN-DAT-08, QS-04, CA-6) |
 | AC-27 | AC-14, con la base que falla a mitad de la escritura (un puerto lanza) | Toco "Reemplazar mis datos" | No cambia nada en ninguna tabla, tampoco las del plan (RN-DAT-03); sale el aviso genérico (ADR-0010) |
 | AC-28 | AC-14 | Entre la vista previa y la confirmación empiezo una sesión en otra pestaña, y confirmo | No se importa nada; sale el error de AC-33 (se comprueba otra vez dentro de la transacción) |
 
@@ -223,6 +223,10 @@ Propuestas al escribir la spec, aprobadas con ella (19-nov):
 10. **Las `discarded` viajan en el archivo** (AC-9), para que la ida y vuelta sea exacta (RN-DAT-08), aunque no se cuenten en la vista previa.
 11. **Texto del aviso médico** de §6.1, `[PROPUESTO]` hasta T24 de la spec 005.
 12. **Después de restaurar no se navega:** se queda en Ajustes con "Respaldo restaurado.".
+
+Decisiones durante la implementación (19-nov):
+
+13. **AC-26 compara el contenido, no el texto** (T13): al importar, cada fila se guarda con las claves en el orden del esquema, así que el segundo archivo puede ordenar las claves de otra forma (por ejemplo, `finishedAt` junto a `startedAt`). Los datos son los mismos; RN-DAT-08 se reformuló en el contrato `data` v1.5 (decisión 5).
 
 ## 9. Checklist de la constitución
 

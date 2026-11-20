@@ -1,6 +1,6 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.3 · **Depende de:** `shared` · **Lo usan:** `app`
+**Versión del contrato:** 1.5 · **Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
@@ -75,7 +75,7 @@ interface DataApi {
 
 interface PendingImport {
   preview: ImportPreview;
-  commit(): Promise<Result<void, DataError>>;   // RN-DAT-03, 04, 05, 10; una segunda llamada lanza
+  commit: () => Promise<Result<void, DataError>>;   // RN-DAT-03, 04, 05, 10; una segunda llamada rechaza. Propiedad, no método (se pasa a la UI)
 }
 
 interface ImportPreview {                // RN-DAT-13
@@ -102,7 +102,7 @@ interface ImportPreview {                // RN-DAT-13
 | RN-DAT-03 | `commitImport` es todo o nada: una transacción; si un puerto falla, no cambia nada. | P-2 |
 | RN-DAT-04 | El orden de importación sigue `order` ascendente. | spec §8.9 |
 | RN-DAT-05 | Restaurar no se permite si en el dispositivo hay un workout `in_progress`: se comprueba al revisar y otra vez dentro de la transacción de `commitImport`. Exportar siempre se permite, también con una sesión en curso. | P-2, spec 007 |
-| RN-DAT-08 | Exportar e importar es ida y vuelta exacta: `import(export(db))` produce una base equivalente, y exportarla otra vez da el mismo archivo salvo `exportedAt`. | CA-6, QS-04 |
+| RN-DAT-08 | Exportar e importar es ida y vuelta exacta: `import(export(db))` produce una base equivalente, y exportarla otra vez da el mismo contenido salvo `exportedAt`: los dos archivos son el mismo valor JSON, aunque el orden de las claves de una fila puede cambiar (al importar, cada fila sale con las claves en el orden del esquema; decisión 5). | CA-6, QS-04 |
 | RN-DAT-09 | **Exportar** escribe todas las filas de cada tabla de cada puerto, tal como están guardadas, en un JSON con sangría de 2 espacios. `exportedAt` es `clock.now()`; el nombre es `gym-respaldo-<LocalDate de hoy>.json`. | RF-40, spec 007 |
 | RN-DAT-10 | **Restaurar reemplaza todo:** dentro de una transacción `rw` sobre las tablas de todos los puertos, cada puerto vacía sus tablas y escribe las del archivo, en orden de `order`. Las tablas quedan exactamente con el contenido del archivo. | RF-41, spec 007 |
 | RN-DAT-11 | **Referencias entre módulos:** un respaldo se rechaza si una serie apunta a un workout que no está, si un ítem de un workout o una serie usa un ejercicio que no está en el plan del archivo, o si una entrada de dolor apunta a un workout que no está. Se valida contra el contenido del archivo, no contra la base local. | P-2, spec 007 |
@@ -117,6 +117,14 @@ interface ImportPreview {                // RN-DAT-13
 - **Paso 4, módulos:** si las claves de `modules` no son exactamente los puertos registrados → `data/invalid-module-data` con `module: null`, `cause: 'data/module-mismatch'` y `details: { missing, unexpected }` (nombres, en orden de puertos y del archivo).
 - **Paso 6, referencias:** se devuelve la primera rota: en orden de puertos, luego por tipo en el orden de su `requires` y luego por ID en el orden del arreglo. Un puerto puede ofrecer lo que él mismo requiere. Un tipo que nadie ofrece está roto.
 - **Vista previa:** cada cifra la aporta un solo puerto (una clave con valor distinto de `undefined`). Si dos la aportan, o si falta `programStartDate`, `buildPreview` lanza: es un error de composición. `currentCompletedWorkouts` sale de `LocalFacts` (0 si nadie la da). `hasActiveWorkout` de la vista previa es el del archivo; el local solo decide el paso 7.
+
+**Detalle del servicio** (casos de borde, antes de T11 de la spec 007, decisión 4):
+
+- **Puertos:** `registerDataPort` lanza con un `name` o un `order` repetido; se pueden registrar en cualquier orden y se usan ordenados por `order`. Sin puertos, `exportAll` y `previewImport` lanzan (error de composición).
+- **Exportar:** una transacción `r` sobre la unión de las tablas de todos los puertos; JSON con sangría de 2 y un salto de línea al final; `Blob` de tipo `application/json`; `exportedAt = clock.now()` y el nombre con `clock.today()`.
+- **Leer el archivo:** `size ≤ 10 × 1024 × 1024` bytes pasa (un byte más no) y se lee con `file.text()`. Si la lectura falla, la promesa rechaza (ADR-0010).
+- **Fallos que son bugs:** si un `validate` o un `importData` lanza, la promesa rechaza; no es un `Result`. En `commit()`, eso aborta la transacción y no cambia nada.
+- **`commit()`:** una transacción `rw` sobre la unión de las tablas; dentro, `current()` de cada puerto (solo RN-DAT-05: cualquier otro cambio desde la vista previa da igual, porque se reemplaza todo) e `importData` en orden. Se puede llamar una sola vez: la segunda llamada rechaza, también si la primera no ha terminado.
 
 RN-DAT-06 (recordatorio de respaldo, RF-42) y RN-DAT-07 (`wipeAll`, RF-43) salen del contrato hasta su spec; sus IDs no se reutilizan.
 
@@ -144,3 +152,5 @@ RF-40 (parte JSON), RF-41, RNF-09, RNF-10, CA-6. Más adelante: RF-40 (CSV), RF-
 1. **Spec 007, respaldo (contrato v1.1):** el contrato se recorta a lo que entra en la spec 007: sin `dataMeta`, `exportCsv`, `wipeAll` ni `getBackupStatus`; tres puertos (`plan`, `training`, `health`); RN-DAT-02 y 05 sin `[PROPUESTO]` (10 MB; restaurar bloqueado con una sesión en curso, exportar siempre); restaurar reemplaza todo (RN-DAT-10); referencias entre módulos validadas sobre el archivo (RN-DAT-11); datos tolerados (RN-DAT-12); vista previa (RN-DAT-13). Las firmas exactas las fija el plan técnico.
 2. **Plan de la spec 007 (contrato v1.2):** `DataPort` gana `describe` y `current` y pierde `wipe`; `createData({ db, clock })` sin `TransactionRunner`, `DataDb` ni `onImported`; `previewImport` devuelve un `PendingImport` con `commit()` en lugar de `commitImport(preview)`; `registerDataPort` lanza con un nombre u orden repetido; el plan va como `program` (RN-PLN-29); `InvalidModuleDataDetails`. Orden de la revisión: spec 007 plan §6.9.
 3. **Casos de borde de la revisión, antes de T3 de la spec 007 (contrato v1.3, 19-nov-2026):** entradas de las funciones puras, qué es un sobre inválido, `details` de versiones y de módulos que faltan o sobran (`data/module-mismatch`), orden de la primera referencia rota, y que `buildPreview` lance si dos puertos aportan la misma cifra (§6, "Detalle de la revisión"). El sobre se valida con Zod en `infrastructure` (ADR-0012), como el esquema del seed; versiones, módulos, referencias y vista previa son dominio.
+4. **Casos de borde del servicio, antes de T11 de la spec 007 (contrato v1.4, 19-nov-2026):** registro y orden de los puertos, sin puertos lanza, transacciones sobre la unión de tablas, formato del archivo, límite exacto de 10 MB, lectura solo con `file.text()` (en jsdom `new Response(file)` da `"[object File]"`, así que no sirve de respaldo), fallos de puertos como rechazo y `commit()` de una sola vez (§6, "Detalle del servicio").
+5. **Ida y vuelta por contenido, durante T13 de la spec 007 (contrato v1.5, 19-nov-2026):** al importar, Zod construye cada fila en el orden de su esquema, así que una fila cuyo `finishedAt` se añadió al cerrar (la última clave) vuelve con `finishedAt` junto a `startedAt`. Los datos son idénticos; el texto no. RN-DAT-08 compara el contenido (el valor JSON sin `exportedAt`), no el texto. Se descartaron devolver el JSON crudo en `validate` (ignoraría en silencio un futuro valor por defecto o transformación del esquema) y ordenar las claves al exportar (código en cada exportación solo para el texto). Una segunda ida y vuelta ya da el mismo texto.

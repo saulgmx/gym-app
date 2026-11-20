@@ -26,7 +26,14 @@ export function createTestServices({
   const db = openDatabase({ name: crypto.randomUUID() });
   opened.push(db);
   const app = compose({ db, clock: seedClock, seed });
-  return { plan: app.plan, training: app.training, health: app.health, clock, ready: app.ready };
+  return {
+    plan: app.plan,
+    training: app.training,
+    health: app.health,
+    data: app.data,
+    clock,
+    ready: app.ready,
+  };
 }
 
 /** The database of the last createTestServices call, to write broken data the API forbids
