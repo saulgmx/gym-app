@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-// Spec 000 AC-1 and AC-23 on the production build. Spec 006 AC-1 adds the third tab, Historial.
+// Spec 000 AC-1 and AC-23 on the production build. Spec 006 AC-1 adds the third tab, Historial,
+// and spec 007 AC-1 the fourth, Ajustes.
 
 test('AC-1: / opens Hoy in Spanish with the dark theme', async ({ page }) => {
   await page.goto('/');
@@ -15,7 +16,7 @@ test('AC-1: / opens Hoy in Spanish with the dark theme', async ({ page }) => {
 test('AC-23: every TabBar target is at least 44 × 44 px', async ({ page }) => {
   await page.goto('/');
   const tabs = page.getByRole('navigation', { name: 'Principal' }).getByRole('link');
-  await expect(tabs).toHaveCount(3);
+  await expect(tabs).toHaveCount(4);
 
   for (const tab of await tabs.all()) {
     const box = await tab.boundingBox();
@@ -33,7 +34,7 @@ test('AC-23: TabBar links show a visible focus ring from the keyboard', async ({
   const tabKey = browserName === 'webkit' ? 'Alt+Tab' : 'Tab';
   const nav = page.getByRole('navigation', { name: 'Principal' });
 
-  for (const name of ['Hoy', 'Historial', 'Progreso']) {
+  for (const name of ['Hoy', 'Historial', 'Progreso', 'Ajustes']) {
     await page.keyboard.press(tabKey);
     const link = nav.getByRole('link', { name });
     await expect(link).toBeFocused();
