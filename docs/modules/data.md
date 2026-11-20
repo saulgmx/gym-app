@@ -1,6 +1,6 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.6 · **Depende de:** `shared` · **Lo usan:** `app`
+**Versión del contrato:** 1.7 · **Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
@@ -25,11 +25,11 @@ export interface DataPort<T = unknown> {
   describe(data: T): DataDescription;   // pura: facts de la vista previa y referencias (provides/requires)
   current(): Promise<LocalFacts>;       // estado local; solo lecturas Dexie, también dentro de la transacción
   importData(data: T): Promise<void>;   // vacía sus tablas y escribe las del archivo; dentro de la transacción
-  csv?(): Promise<{ filename: string; content: string }>;   // borrador: el plan de la spec 008 fija cómo se arman las filas de RN-DAT-14
+  seriesRows?(): Promise<SeriesRow[]>;  // solo training (RN-TRN-31): filas del CSV, ya en el orden de RN-DAT-14
 }
 ```
 
-`ImportFacts`, `LocalFacts` y `DataDescription` están en [`shared.md`](shared.md) §2. `wipe` entra con RF-43. Ningún puerto ve los datos de otro: las referencias entre módulos (RN-DAT-11) se cruzan en `data` con `describe`.
+`ImportFacts`, `LocalFacts`, `DataDescription` y `SeriesRow` están en [`shared.md`](shared.md) §2. `wipe` entra con RF-43. Ningún puerto ve los datos de otro: las referencias entre módulos (RN-DAT-11) se cruzan en `data` con `describe`.
 
 En la spec 007 hay tres puertos: `plan`, `training` y `health`. El de `progression` (solo `progressionSettings`; las `suggestions` son derivadas y se reconstruyen con `rebuild()`) y el de `app` (`uiPreferences`) entran cuando esos módulos tengan datos.
 
@@ -78,6 +78,7 @@ interface InvalidModuleDataDetails {
 interface DataApi {
   registerDataPort<T>(port: DataPort<T>): void;                     // lanza con un name u order repetido
   exportAll(): Promise<{ filename: string; blob: Blob }>;           // RF-40, RN-DAT-01, 09
+  exportSeriesCsv(): Promise<{ filename: string; blob: Blob }>;     // RF-40, RN-DAT-14 (spec 008)
   previewImport(file: Blob): Promise<Result<PendingImport, DataError>>;   // RF-41, RN-DAT-02, 05, 11, 12, 13
 }
 
@@ -135,6 +136,12 @@ interface ImportPreview {                // RN-DAT-13
 - **Fallos que son bugs:** si un `validate` o un `importData` lanza, la promesa rechaza; no es un `Result`. En `commit()`, eso aborta la transacción y no cambia nada.
 - **`commit()`:** una transacción `rw` sobre la unión de las tablas; dentro, `current()` de cada puerto (solo RN-DAT-05: cualquier otro cambio desde la vista previa da igual, porque se reemplaza todo) e `importData` en orden. Se puede llamar una sola vez: la segunda llamada rechaza, también si la primera no ha terminado.
 
+**Detalle del CSV** (spec 008 plan §3 y §6.5):
+
+- **`exportSeriesCsv`:** usa el único puerto con `seriesRows`; ninguno o más de uno lanza (error de composición). No abre transacción: el puerto lee lo suyo. Si el puerto rechaza, la promesa rechaza (ADR-0010). `Blob` de tipo `text/csv`.
+- **Dominio puro** (`domain/csv.ts`): `CSV_VERSION = 1`; `CSV_COLUMNS` con las claves de `SeriesRow` en el orden de RN-DAT-14 (una prueba de tipos exige que sean exactamente esas); `seriesCsv(rows)` = `'﻿'` + encabezados + una línea por fila, cada una con `\r\n`; `csvFilename(today)` = `gym-series-v${CSV_VERSION}-${today}.csv`.
+- **Campos:** `null` → vacío; número → `String(n)` (`62.5`, `100`, `-20`; `-0` da `0`); `boolean` → `true`/`false`; texto tal cual, o entre comillas con las comillas duplicadas si lleva `,`, `"`, CR o LF.
+
 RN-DAT-06 (recordatorio de respaldo, RF-42) y RN-DAT-07 (`wipeAll`, RF-43) salen del contrato hasta su spec; sus IDs no se reutilizan.
 
 ## 7. Errores
@@ -164,3 +171,4 @@ RF-40 (JSON y CSV), RF-41, RNF-09, RNF-10, CA-6, ADR-0013. Más adelante: RF-42,
 4. **Casos de borde del servicio, antes de T11 de la spec 007 (contrato v1.4, 19-nov-2026):** registro y orden de los puertos, sin puertos lanza, transacciones sobre la unión de tablas, formato del archivo, límite exacto de 10 MB, lectura solo con `file.text()` (en jsdom `new Response(file)` da `"[object File]"`, así que no sirve de respaldo), fallos de puertos como rechazo y `commit()` de una sola vez (§6, "Detalle del servicio").
 5. **Ida y vuelta por contenido, durante T13 de la spec 007 (contrato v1.5, 19-nov-2026):** al importar, Zod construye cada fila en el orden de su esquema, así que una fila cuyo `finishedAt` se añadió al cerrar (la última clave) vuelve con `finishedAt` junto a `startedAt`. Los datos son idénticos; el texto no. RN-DAT-08 compara el contenido (el valor JSON sin `exportedAt`), no el texto. Se descartaron devolver el JSON crudo en `validate` (ignoraría en silencio un futuro valor por defecto o transformación del esquema) y ordenar las claves al exportar (código en cada exportación solo para el texto). Una segunda ida y vuelta ya da el mismo texto.
 6. **Spec 008, CSV de series (contrato v1.6, 20-nov-2026):** RN-DAT-14 fija el contenido, el orden y el formato del CSV, que reemplaza el borrador de columnas de §4 (sin `workoutId`; con `week`, `session` y `metric`; el nombre del ejercicio en lugar de su ID). La versión del formato va en el nombre del archivo (ADR-0013, constitución v1.1). La firma en la API (`exportCsv` o similar) y quién arma las filas (`csv?()` de `training` o un cruce en `data`) los fija el plan técnico; hasta entonces `csv?()` de §3 es un borrador.
+7. **Plan de la spec 008 (contrato v1.7, 20-nov-2026):** `training` da las filas tipadas (`SeriesRow` del kernel, por `DataPort.seriesRows?()`, que reemplaza el borrador `csv?()`; RN-TRN-31) y `data` escribe el archivo con funciones puras (`domain/csv.ts`) en `exportSeriesCsv()`. Las columnas, su orden y `CSV_VERSION` viven juntos en `data`, y un cambio de `SeriesRow` obliga a revisarlos. Se descartaron que `training` lo hiciera todo (formato y versión fuera de `data`) y que lo armara `app`.
