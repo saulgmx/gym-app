@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { InvalidSetValuesDetails, SetErrorContext } from '@/modules/training';
 import {
   GENERIC_ERROR_MESSAGE,
+  describeImportError,
   describeTrainingError,
   errorMessages,
   setValueMessage,
@@ -10,7 +11,7 @@ import {
 // ADR-0010: every error code has a message (spec 001 plan §6.8, spec 002 plan §6.6).
 
 describe('errorMessages', () => {
-  it('los códigos de plan, training y health con sus textos aprobados', () => {
+  it('los códigos de plan, training, health y data con sus textos aprobados', () => {
     expect(errorMessages).toEqual({
       'plan/invalid-seed': GENERIC_ERROR_MESSAGE,
       'plan/high-risk-exercise': GENERIC_ERROR_MESSAGE,
@@ -41,6 +42,14 @@ describe('errorMessages', () => {
       'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
       // Spec 007 §6.3 (RN-HLT-21): data wraps it; the same text as data/invalid-module-data.
       'health/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
+      // Spec 007 §6.3.
+      'data/file-too-large': 'El archivo es demasiado grande para ser un respaldo de Gym.',
+      'data/not-gym-app-file': 'Este archivo no es un respaldo de Gym.',
+      'data/unsupported-version':
+        'Este respaldo es de una versión más nueva de la app. Actualízala e inténtalo de nuevo.',
+      'data/invalid-module-data': 'El respaldo está dañado o incompleto. No se cambió nada.',
+      'data/workout-in-progress':
+        'Tienes una sesión en curso. Termínala o descártala antes de restaurar un respaldo.',
     });
   });
 });
@@ -109,6 +118,38 @@ describe('describeTrainingError', () => {
   it('otro código → su texto', () => {
     expect(describeTrainingError({ code: 'training/max-sets-reached', message: '' }, context)).toBe(
       'Ya tienes el máximo de series de este ejercicio.',
+    );
+  });
+});
+
+describe('describeImportError (spec 007 §6.3, decisión 17 (e))', () => {
+  const invalid = (cause: string) => ({
+    code: 'data/invalid-module-data' as const,
+    message: 'invalid',
+    details: { module: 'plan', cause },
+  });
+
+  it('un ejercicio de riesgo alto da el texto de P-1', () => {
+    expect(describeImportError(invalid('plan/high-risk-exercise'))).toBe(
+      'Este respaldo incluye un ejercicio que la app no permite por tu espalda. No se cambió nada.',
+    );
+  });
+
+  it.each(['plan/invalid-seed', 'training/invalid-backup', 'data/missing-reference'])(
+    'otra causa (%s) da el texto de dañado',
+    (cause) => {
+      expect(describeImportError(invalid(cause))).toBe(
+        'El respaldo está dañado o incompleto. No se cambió nada.',
+      );
+    },
+  );
+
+  it('sin detalles, el texto de su código', () => {
+    expect(describeImportError({ code: 'data/invalid-module-data', message: 'invalid' })).toBe(
+      'El respaldo está dañado o incompleto. No se cambió nada.',
+    );
+    expect(describeImportError({ code: 'data/not-gym-app-file', message: 'x' })).toBe(
+      'Este archivo no es un respaldo de Gym.',
     );
   });
 });
