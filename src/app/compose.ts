@@ -28,21 +28,28 @@ export function compose({ db, clock, seed }: { db: Dexie; clock: Clock; seed: un
   const ids = createUuidV7Generator();
   // health before training, which takes health.painGate (RN-TRN-06).
   const health = createHealth({ db, clock, ids });
+  const training = createTraining({
+    db,
+    clock,
+    ids,
+    plan,
+    suggestions: nullSuggestions,
+    painGate: health.painGate, // RN-TRN-06
+  });
+
+  // Spec 007: each module with data registers its backup port (architecture §7.4, RN-DAT-04).
+  const data = createData({ db, clock });
+  data.registerDataPort(plan.dataPort);
+  data.registerDataPort(training.dataPort);
+  data.registerDataPort(health.dataPort);
 
   return {
     ready,
     plan,
-    training: createTraining({
-      db,
-      clock,
-      ids,
-      plan,
-      suggestions: nullSuggestions,
-      painGate: health.painGate, // RN-TRN-06
-    }),
+    training,
     progression: createProgression(),
     health,
-    data: createData({ db, clock }),
+    data,
   };
 }
 

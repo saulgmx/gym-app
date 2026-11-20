@@ -31,6 +31,7 @@ export function bootstrap(rootElement: HTMLElement, { storage }: BootstrapOption
     plan: app.plan,
     training: app.training,
     health: app.health,
+    data: app.data,
     clock: systemClock,
     ready: app.ready,
   };
