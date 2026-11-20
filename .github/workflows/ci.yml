@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: package.json # reads volta.node
+          node-version-file: .tool-versions # the same file mise reads locally
           cache: npm
 
       # Unreviewed install scripts fail the install instead of only warning.
