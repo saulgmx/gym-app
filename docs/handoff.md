@@ -5,7 +5,7 @@
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0013 (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.32, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0013 (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.33, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 176.66 kB de 200 kB. **E2E:** 146, en Chromium y WebKit.
 - **Fases hechas** (detalle en `handoff-history.md` y en cada spec):
