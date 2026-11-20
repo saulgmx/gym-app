@@ -1,6 +1,6 @@
 # Plan técnico: Respaldo (exportar e importar JSON)
 
-**Spec:** `specs/007-respaldo/spec.md` · **Estado:** Aprobado (19-nov-2026)
+**Spec:** `specs/007-respaldo/spec.md` · **Estado:** Implementado (20-nov-2026)
 
 ## 1. Resumen de la solución
 

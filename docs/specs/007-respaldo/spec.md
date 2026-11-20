@@ -1,6 +1,6 @@
 # Spec: Respaldo (exportar e importar JSON)
 
-**ID:** 007 · **Estado:** Aprobada · **Fecha:** 19-nov-2026
+**ID:** 007 · **Estado:** Implementada (20-nov-2026) · **Fecha:** 19-nov-2026
 **Requerimientos cubiertos:** RF-40 (parte JSON), RF-41, RNF-01, RNF-04, RNF-05, RNF-09, RNF-10, CA-6 · **Fase:** 3 (spec §13), tercera parte
 **Fuente de diseño:** sin tablero propio; reutiliza `Dialog`/`ConfirmDialog` de `shared` y los estilos de tarjeta de "Hoy"
 **ADRs aplicados:** 0002, 0005, 0009, 0010, 0012
