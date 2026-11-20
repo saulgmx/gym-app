@@ -24,6 +24,11 @@ export interface PainEntry {
 }
 
 // What the alert rules read from an entry; lists of these go latest first (RN-HLT-14).
+/** A backup of the module's table (RN-HLT-21, spec 007). */
+export interface HealthBackup {
+  painEntries: PainEntry[];
+}
+
 export type PainReading = Pick<PainEntry, 'level' | 'redFlags'>;
 
 export interface PersistentAlert {
