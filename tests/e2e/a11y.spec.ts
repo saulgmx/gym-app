@@ -1,10 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import {
+  chooseBackup,
   closeFridayOnWednesday,
   closeMondayWithFlags,
   doSet,
+  downloadBackup,
   freezeClockAt,
+  NOT_A_BACKUP,
   openTodayOn,
   openWednesday,
   painLevel,
@@ -12,6 +15,7 @@ import {
   startSession,
   TRAINED_TODAY,
   USER_TIME_ZONE,
+  withoutShare,
 } from './helpers';
 import { PAGES } from './pages';
 
@@ -442,6 +446,50 @@ test.describe('spec 006 AC-36: el historial', () => {
         await expectAccessible(page);
         expect(await fits(page)).toBe(true);
       }
+    });
+  }
+});
+
+// Spec 007 AC-40 (§8, decision 18 (f)): Ajustes with an error, the restore preview and the section
+// after restoring: axe, 44 px, and nothing overflows at 320 px.
+test.describe('spec 007 AC-40: Ajustes y la vista previa', () => {
+  test.use({ timezoneId: USER_TIME_ZONE });
+
+  async function expectAccessible(page: Page) {
+    const { violations } = await new AxeBuilder({ page }).withTags(WCAG_22_AA).analyze();
+    expect(violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+    expect(await smallTouchTargets(page)).toEqual([]);
+  }
+
+  const fits = (page: Page) =>
+    page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    );
+
+  for (const viewport of [null, { width: 320, height: 640 }]) {
+    test(viewport ? 'a 320 px de ancho' : 'en el viewport por defecto', async ({ page }) => {
+      if (viewport) await page.setViewportSize(viewport);
+      await withoutShare(page);
+      await closeMondayWithFlags(page);
+      await page.goto('/ajustes');
+      const section = page.getByRole('region', { name: 'Respaldo' });
+
+      await chooseBackup(page, NOT_A_BACKUP);
+      await expect(section.getByRole('alert')).toBeVisible();
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
+
+      const download = await downloadBackup(page);
+      await chooseBackup(page, await download.path());
+      const dialog = page.getByRole('dialog', { name: '¿Restaurar este respaldo?' });
+      await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
+
+      await dialog.getByRole('button', { name: 'Reemplazar mis datos' }).click();
+      await expect(section.getByRole('status')).toHaveText('Respaldo restaurado.');
+      await expectAccessible(page);
+      expect(await fits(page)).toBe(true);
     });
   }
 });

@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.4 · **Fecha:** 19-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
+**Versión:** 1.5 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -326,7 +326,7 @@ El dominio guarda siempre **kilogramos**. `lb` es solo una preferencia de visual
 
 - Errores esperados (validación, sesión inexistente, umbral) → `Result<T, DomainError>` con un `code` estable, tipado como unión literal por módulo ([ADR-0010](adr/0010-manejo-de-errores-result.md)).
 - `DomainError.message` es técnico (inglés, logs). El texto al usuario sale solo del mapa `code → español` en `app`, que cubre todos los códigos (lo verifica `tsc`).
-- Errores inesperados → excepción. El *error boundary* de `app` captura errores de render; un handler global de `error`/`unhandledrejection` captura los async (handlers, promesas, Dexie). Ambos muestran un mensaje y la opción de exportar un respaldo.
+- Errores inesperados → excepción. El *error boundary* de `app` captura errores de render; un handler global de `error`/`unhandledrejection` captura los async (handlers, promesas, Dexie). Un evento `error` sin objeto de error (`event.error` nulo) no viene del código de la app, que es del mismo origen y solo lanza `Error`: son scripts del navegador, de extensiones o de otro origen; se registra con `console.warn` y no muestra el aviso (spec 007 §8, decisión 19). Ambos muestran un mensaje y la opción de exportar un respaldo.
 - `QuotaExceededError` es un error esperado: la infraestructura lo convierte en `'data/storage-full'`, con aviso persistente "Almacenamiento lleno, exporta un respaldo".
 
 ### 7.8 Estado de UI
