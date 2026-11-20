@@ -71,6 +71,13 @@ export interface ExerciseFacts {
   equipment: string; // 'bodyweight' allows assistance (negative weight)
 }
 
+/** What RN-TRN-31 needs from an exercise; plan's Exercise satisfies it (spec 008). */
+export interface SeriesExercise {
+  id: ID;
+  name: string;
+  metric: 'weight' | 'reps' | 'time';
+}
+
 /** Input to create a workout: the plan of the day, already mapped by the application. */
 export interface PlannedSession {
   templateId: ID;
