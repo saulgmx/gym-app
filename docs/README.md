@@ -15,6 +15,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | [`templates/`](templates/) | Plantillas para specs de feature, planes, tareas y ADRs | Rara vez |
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
 | [`handoff.md`](handoff.md) | Estado actual y siguiente paso | Al final de cada sesión de trabajo |
+| [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (consulta, no hace falta para retomar) | Al cerrar una fase, se mueve aquí su detalle |
 
 ## Jerarquía de autoridad
 
