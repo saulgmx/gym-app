@@ -156,7 +156,9 @@ Mismo estilo que el seed (`strictObject`, `exactOptional`, `jitless`). Los primi
 ### 6.7 Entrega del archivo (decisión 7, aprobada)
 `app/pages/settings/deliver.ts`, `deliverFile(file, env)` con `navigator` y `document` inyectables:
 1. Si `navigator.canShare?.({ files: [file] })`, `await navigator.share({ files: [file], title: file.name })`. `AbortError` → fin, sin mensaje (AC-6). Otro error → paso 2.
-2. `URL.createObjectURL(file)`, un `<a download={file.name}>` temporal, `click()`, y `revokeObjectURL` en un `setTimeout(…, 0)`.
+2. `URL.createObjectURL(file)`, un `<a download={file.name}>` temporal añadido al documento, `click()`, quitarlo, y `revokeObjectURL` en un `setTimeout(…, 60_000)` (spec §8, decisión 15: con 0 Safari puede cortar la descarga).
+
+Sin `canShare` (aunque exista `share`) se descarga. Devuelve `'shared'`, `'cancelled'` o `'downloaded'`.
 
 `exportAll` devuelve `{ filename, blob }`; `app` crea el `File` con `type: 'application/json'`.
 
