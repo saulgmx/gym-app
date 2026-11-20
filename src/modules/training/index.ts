@@ -1,10 +1,20 @@
 // Public API of the `training` module (docs/modules/training.md). The only file other modules may import.
 
 import type { Dexie } from 'dexie';
-import type { Clock, IdGenerator } from '@/shared/kernel';
+import type { Clock, DataPort, IdGenerator } from '@/shared/kernel';
 import type { PainGate, PlanReader, SuggestionProvider } from './application/ports';
-import { createTrainingService, type TrainingApi } from './application/service';
+import {
+  createTrainingService,
+  type TrainingApi as TrainingServiceApi,
+} from './application/service';
+import type { TrainingBackup } from './domain/types';
+import { createTrainingDataPort } from './infrastructure/data-port';
 import { createDexieTrainingRepository } from './infrastructure/dexie-repository';
+
+// The service plus the backup port (RN-TRN-30, spec 007), which lives in infrastructure.
+export interface TrainingApi extends TrainingServiceApi {
+  dataPort: DataPort<TrainingBackup>;
+}
 
 // Wires the application service to Dexie (architecture §5.3). Ports come in as dependencies;
 // compose resolves the cycle with progression in phase 4 (plan §6.2).
@@ -16,7 +26,7 @@ export function createTraining(deps: {
   suggestions: SuggestionProvider;
   painGate: PainGate; // RN-TRN-06; health.painGate (spec 005)
 }): TrainingApi {
-  return createTrainingService({
+  const service = createTrainingService({
     repository: createDexieTrainingRepository(deps.db),
     plan: deps.plan,
     suggestions: deps.suggestions,
@@ -24,6 +34,7 @@ export function createTraining(deps: {
     clock: deps.clock,
     ids: deps.ids,
   });
+  return { ...service, dataPort: createTrainingDataPort(deps.db) };
 }
 
 export { workoutProgress } from './application/progress';
@@ -43,7 +54,6 @@ export { SetRow } from './ui/SetRow';
 export { SessionHeader } from './ui/SessionHeader';
 export { SetTable } from './ui/SetTable';
 
-export type { TrainingApi } from './application/service';
 export type {
   HistoryEntry,
   PainGate,

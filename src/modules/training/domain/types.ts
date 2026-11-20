@@ -108,6 +108,12 @@ export type TrainingErrorCode =
   | 'training/already-done' // RN-TRN-24
   | 'training/day-already-trained'; // RN-TRN-27 (spec 005b)
 
+/** A backup of the module's two tables (RN-TRN-30, spec 007). */
+export interface TrainingBackup {
+  workouts: Workout[];
+  sets: SetLog[];
+}
+
 export type SetField = 'weightKg' | 'reps' | 'rir';
 export type SetValueProblem = 'missing' | 'not-a-number' | 'out-of-range' | 'step' | 'not-allowed';
 
