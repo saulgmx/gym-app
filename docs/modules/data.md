@@ -75,7 +75,7 @@ interface DataApi {
 
 interface PendingImport {
   preview: ImportPreview;
-  commit(): Promise<Result<void, DataError>>;   // RN-DAT-03, 04, 05, 10; una segunda llamada lanza
+  commit: () => Promise<Result<void, DataError>>;   // RN-DAT-03, 04, 05, 10; una segunda llamada rechaza. Propiedad, no método (se pasa a la UI)
 }
 
 interface ImportPreview {                // RN-DAT-13
