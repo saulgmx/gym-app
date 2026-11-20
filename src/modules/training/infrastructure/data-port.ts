@@ -1,14 +1,18 @@
 import type { Dexie } from 'dexie';
-import { err, ok, type DataPort, type ID } from '@/shared/kernel';
+import { err, ok, type DataPort, type ID, type SeriesRow } from '@/shared/kernel';
 import { checkTrainingBackup, describeTrainingBackup } from '../domain/backup';
 import type { SetLog, TrainingBackup, Workout } from '../domain/types';
 import { trainingBackupSchema } from './backup-schema';
 
 // Training backup port (RN-TRN-30, contract v1.31 decision 33). Rows travel as stored.
+// seriesRows (RN-TRN-31, spec 008) comes from the application layer, which reads plan.
 
 const VERSION = 1;
 
-export function createTrainingDataPort(db: Dexie): DataPort<TrainingBackup> {
+export function createTrainingDataPort(
+  db: Dexie,
+  seriesRows: () => Promise<SeriesRow[]>,
+): DataPort<TrainingBackup> {
   const workouts = db.table<Workout, ID>('workouts');
   const sets = db.table<SetLog, ID>('sets');
   const tables = [workouts, sets];
@@ -67,5 +71,7 @@ export function createTrainingDataPort(db: Dexie): DataPort<TrainingBackup> {
         await workouts.bulkAdd(data.workouts);
         await sets.bulkAdd(data.sets);
       }),
+
+    seriesRows,
   };
 }
