@@ -1,0 +1,88 @@
+# Tareas: Respaldo (exportar e importar JSON)
+
+**Plan:** `specs/007-respaldo/plan.md`
+
+Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación concreta.
+- **Prueba primero:** en RN-DAT-02, 11, 12 y 13 (dominio de `data`), RN-PLN-29, RN-TRN-30, RN-HLT-21 y el servicio de `data`, la tarea de pruebas va antes que la de implementación. El commit en rojo se queda local y se sube con la tarea que lo pone en verde. En las piezas de `shared` y `app`, las pruebas se escriben primero dentro de la misma tarea.
+- **Antes de escribir pruebas:** revisar si el contrato deja comportamientos sin definir. Si los deja, proponerlos y, con tu aprobación, escribirlos en los docs antes del código (handoff, notas).
+- **Mutaciones:** tras cada prueba en verde, romper el código a propósito y ver que falla la prueba correcta.
+
+**Responsable:** C = Claude Code · U = usuario (requiere tu cuenta, tu dispositivo o una decisión tuya).
+
+## A. Kernel y dominio de `data`
+
+| # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
+|---|---|---|---|---|---|---|
+| T1 | `shared/kernel/schemas.ts` (plan §3, §6.6): `idSchema` (se mueve desde `plan/infrastructure/seed-schema.ts`, que pasa a importarlo), `localDateSchema` y `instantSchema`, en `zod/mini` con `jitless`; exportarlos por el `index.ts` del kernel | `shared/kernel`, `plan/infrastructure` | Pruebas primero (`schemas.test.ts`): UUIDv7 en minúsculas sí, mayúsculas y v4 no; `2026-11-16` sí, `2026-02-30`, `2026-1-5` y `2026-11-16T00:00` no; `2026-11-19T22:30:00-06:00` y con `Z` sí, sin offset y fecha imposible no; la salida lleva el tipo *branded* (`schemas.test-d.ts`). Las pruebas del seed siguen en verde sin cambios; `npm run lint` (dependency-cruiser deja a `shared` importar `zod`); mutaciones detectadas | RN-PLN-24 (b); AC-32 | C | ☐ |
+| T2 | `DataPort` nuevo en `kernel/data-port.ts`: `describe` y `current`, sin `wipe`; `ImportFacts`, `LocalFacts` y `DataDescription` exportados (`shared.md` §2) | `shared/kernel` | `npm run typecheck`; prueba de tipos (`data-port.test-d.ts`): un puerto de ejemplo compila y uno sin `describe` no | — | C | ☐ |
+| T3 | Pruebas del dominio de `data` (plan §6.2, §6.3, §6.9). **Sobre** (`envelope.test.ts`): JSON roto, `app` distinto, sin `schemaVersion`, clave de más en el sobre → `data/not-gym-app-file`; `schemaVersion: 2` o módulo con `version: 2` → `data/unsupported-version`; un módulo que falta o sobra → `data/invalid-module-data` con `module: null`; un archivo que falla en dos pasos devuelve el primero (RN-DAT-02). **Referencias** (`references.test.ts`): todas presentes → `null`; un `exercise` o `workout` que falta → el primero en orden de puertos, con `module`, `kind` e `id`; un `kind` que nadie ofrece cuenta como roto (RN-DAT-11). **Vista previa** (`preview.test.ts`): junta los `facts` y rellena 0, `null` y `false`; sin `programStartDate` lanza; `currentCompletedWorkouts` sale de lo local (RN-DAT-13) | `data/domain` | Pruebas en rojo | RN-DAT-02, 11, 13; AC-14 a AC-18, AC-30 a AC-32, AC-36 | C | ☐ |
+| T4 | Implementar `parseEnvelope`, `checkVersions`, `checkModules`, `missingReference` y `buildPreview` en `data/domain/`, y `DataErrorCode` con `InvalidModuleDataDetails` | `data/domain` | T3 en verde; `npm run lint`; mutaciones detectadas (`>` por `≥` en las versiones, sin comprobar módulos de más, referencias solo del primer puerto, rellenos con `undefined`) | Ídem | C | ☐ |
+
+**Punto de control A:** PR "backup: kernel and data domain". No cambia nada visible.
+
+## B. Puertos de `plan`, `training` y `health`
+
+Necesita T1 y T2. Los tres puertos son independientes entre sí.
+
+| # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
+|---|---|---|---|---|---|---|
+| T5 | Pruebas de RN-PLN-29 (`data-port.test.ts`, con `fake-indexeddb`): `exportData` del seed sembrado da el formato del seed con `program.startDate`; `validate` de ese resultado → `ok` igual; sin `startDate`, clave desconocida o bloque con hueco → `plan/invalid-seed`; un ejercicio `high` en el catálogo y en una plantilla → `plan/high-risk-exercise` aunque haya otro error (RN-PLN-19); `describe` → `provides.exercise` con los 36 IDs y `programStartDate`; `current` → `{}`; `importData` en una base con otro plan deja exactamente el del archivo en las 4 tablas | `plan/infrastructure` | Pruebas en rojo | RN-PLN-29; AC-8, AC-25, AC-34, AC-35 | C | ☐ |
+| T6 | Implementar `planBackupSchema`, `createPlanDataPort` (`infrastructure/data-port.ts`, con `exportAll` y `replaceAll` en el repositorio Dexie) y `dataPort` en `PlanApi` | `plan` | T5 en verde; `npm run lint`; mutaciones detectadas (sin `validateSeed`, `importData` sin vaciar, `startDate` ignorado) | Ídem | C | ☐ |
+| T7 | Pruebas de RN-TRN-30. **Dominio** (`backup.test.ts`, `checkTrainingBackup`): cada regla en su orden, con el `rule` y el ID; dos `completed` el mismo `date` y un `completed` sin dolor → `ok` (RN-DAT-12). **Puerto** (`data-port.test.ts`): esquema (estado desconocido, `weightKg` como texto, clave de más, opcional con `undefined` explícito); `describe` con las cifras de la spec §4 (2 sesiones, 15 series hechas, rango 16-18 nov, la `discarded` no cuenta) y `requires.exercise` con `options` incluidas; `current` con y sin sesión en curso; `exportData` → `importData` en otra base da filas iguales (`toStrictEqual`) | `training/domain`, `infrastructure` | Pruebas en rojo | RN-TRN-30; AC-9, AC-10, AC-15, AC-17, AC-37, AC-38 | C | ☐ |
+| T8 | Implementar `checkTrainingBackup` (`domain/backup.ts`), `trainingBackupSchema`, `createTrainingDataPort` y `dataPort` en `TrainingApi`; `training/invalid-backup` | `training` | T7 en verde; `npm run lint`; mutaciones detectadas (sin la regla de `one-active`, `doneSets` contando no hechas o de `discarded`, rango con `plannedFor`, `requires` sin `options`) | Ídem | C | ☐ |
+| T9 | Pruebas de RN-HLT-21 (P-5). **Dominio** (`backup.test.ts`, `checkHealthBackup`): IDs repetidos y dos entradas del mismo `workoutId`, en ese orden. **Puerto** (`data-port.test.ts`): nivel 11 y 2.5, bandera desconocida o repetida, `recordedAt` sin offset → `health/invalid-backup` con `rule: 'schema'`; `describe` → `requires.workout` y `facts.painEntries`; ida y vuelta de las filas | `health/domain`, `infrastructure` | Pruebas en rojo | RN-HLT-21; AC-32, AC-37 | C | ☐ |
+| T10 | Implementar `checkHealthBackup`, `healthBackupSchema`, `createHealthDataPort` y `dataPort` en `HealthApi`; `health/invalid-backup` | `health` | T9 en verde; `npm run lint`; mutaciones detectadas (sin `one-per-workout`, bandera repetida aceptada) | Ídem | C | ☐ |
+
+**Punto de control B:** PR "backup: module ports". No cambia nada visible.
+
+## C. Servicio de `data` y composición
+
+| # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
+|---|---|---|---|---|---|---|
+| T11 | Pruebas del servicio (`data-service.test.ts`, puertos falsos sobre tablas de `fake-indexeddb`): `registerDataPort` lanza con nombre u `order` repetido; `exportAll` → nombre `gym-respaldo-2026-11-19.json`, `exportedAt` del reloj, claves y módulos en orden, sangría de 2 (RN-DAT-01, 09); `previewImport`: más de 10 MB → `data/file-too-large` sin llamar a `text()`, puerto que rechaza → `invalid-module-data` con su `cause` y `details`, sesión en curso local → `data/workout-in-progress`; `commit()`: llama a `importData` en orden (RN-DAT-04), un puerto que lanza a mitad no deja nada cambiado (RN-DAT-03, AC-27), una sesión creada tras la vista previa → `workout-in-progress` (AC-28), una segunda llamada lanza | `data/application` | Pruebas en rojo | RN-DAT-01 a 05, 09, 10; AC-7, AC-27 a AC-29, AC-33 | C | ☐ |
+| T12 | Implementar `createData({ db, clock })`, `exportAll`, `previewImport` y `PendingImport` (plan §6.5, §6.9, §6.10); leer el archivo con `text()` o `new Response(file).text()` si jsdom no lo tiene (plan §8) | `data/application`, `index.ts` | T11 en verde; `npm run lint`; mutaciones detectadas (sin la segunda comprobación en la transacción, `importData` fuera de la transacción, orden por inserción en vez de `order`) | Ídem | C | ☐ |
+| T13 | `compose` crea `data` con `db` y `clock` y registra los tres puertos; prueba de ida y vuelta con los puertos reales en `app/__tests__/backup-roundtrip.test.ts` (dos bases, datos de la spec §4 escritos por la API, más la `discarded`) | `app` | Pruebas primero: AC-26 (bases iguales tabla por tabla y archivos iguales salvo `exportedAt`); AC-11 (base recién sembrada); AC-22 a AC-24 a nivel de base; AC-36 (serie con un ejercicio fuera del plan); `npm run lint` | RN-DAT-08; AC-11, AC-22 a AC-26, AC-36 | C | ☐ |
+
+**Punto de control C:** PR "backup: data service". No cambia nada visible; el respaldo funciona desde las pruebas.
+
+## D. Ajustes
+
+| # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
+|---|---|---|---|---|---|---|
+| T14 | Formatos (plan §6.8): `formatInstantLong`, `formatDateRangeLong` y `formatWeekdayDateLong` en `app/format-date.ts`; `formatPreviewCounts` en `app/pages/settings/format.ts` | `app` | Pruebas primero (`settings-format.test.ts`): "19 de noviembre de 2026, 22:30" en UTC−6 con un `Instant` en `Z`; rangos en el mismo mes, entre meses y entre años; "lunes 16 de noviembre de 2026"; "2 sesiones · 15 series · 2 registros de dolor" y "1 sesión · 1 serie · 1 registro de dolor"; mutaciones detectadas | AC-14, AC-16 | C | ☐ |
+| T15 | `deliverFile(file, env)` en `app/pages/settings/deliver.ts` (plan §6.7) | `app` | Pruebas primero (`deliver.test.ts`): con `canShare` llama a `share` con el archivo; `AbortError` → nada; otro error → descarga; sin `canShare` → `<a download>` con el nombre, `click` y `revokeObjectURL`; mutaciones detectadas | AC-4 a AC-6 | C | ☐ |
+| T16 | Ruta `ajustes`, `NavLink` "Ajustes" con engranaje en `TabBar`, `SettingsPage` con la sección "Respaldo" (solo "Descargar respaldo" funcional; "Restaurar respaldo" entra en T17 en el mismo PR) y la sección "Aviso"; textos en `settings/texts.ts`. Actualizar `shell.spec.ts` (4 pestañas) y correr los E2E en local antes del PR (handoff) | `app` | Pruebas primero: `router.test.tsx` (AC-1 a AC-3) y `settings-page.test.tsx` (AC-4, AC-5, AC-7, AC-10, AC-12 con `deliverFile` simulado); stylelint; mutaciones detectadas | AC-1 a AC-12 | C | ☐ |
+| T17 | Restaurar (plan §6.8): input de archivo, estados `checking`/`pending`/`restoring`, `ImportDialog` sobre `Dialog`, mensajes de §6.3 de la spec en `app/errors/messages.ts` (`DataErrorCode` completo, `describeImportError` con el caso `high`) | `app` | Pruebas primero (`settings-page.test.tsx`, con `compose` real y archivos construidos en la prueba): AC-13 a AC-24, AC-29 a AC-39; foco inicial en "Cancelar"; mensaje anterior reemplazado; el mismo archivo dos veces (AC-21); `tsc` exige todos los códigos; mutaciones detectadas (diálogo cerrable mientras restaura, mensaje `alert` como `status`, input sin limpiar) | AC-13 a AC-39 | C | ☐ |
+| T18 | Medir el bundle (`npm run build` y `npm run size`) | raíz | `npm run size` < 200 kB; si pasa de 190 kB, proponer la carga diferida de §6.6 antes de seguir; la medición se anota en el plan §6.11 | AC-42 | C | ☐ |
+
+**Punto de control D:** PR "backup: settings page". Tras D, el respaldo funciona en la app.
+
+## E. Verificación y cierre
+
+| # | Tarea | Módulo / capa | Verificación | Cubre | Resp. | Estado |
+|---|---|---|---|---|---|---|
+| T19 | E2E en `tests/e2e/backup.spec.ts` (`describe('spec 007 …')`): cerrar una sesión, "Descargar respaldo" (`waitForEvent('download')`), abrir otro contexto del navegador, restaurar el archivo con `setInputFiles`, confirmar y ver la sesión en "Historial"; un archivo inválido muestra su mensaje; el recorrido sin conexión (AC-41); sin violaciones de CSP en la descarga (AC-44, como `csp.spec.ts`). En `a11y.spec.ts`: axe, 44 px y 320 px en `/ajustes` y en el diálogo de vista previa | `tests/e2e` | `npm run test:e2e` pasa en local y en CI, en Chromium y WebKit; las pruebas nuevas, estables en 5 repeticiones (`--grep "spec 007" --repeat-each=5`) | AC-40, AC-41, AC-44 | C | ☐ |
+| T20 | En el iPhone (PWA instalada), tras el despliegue: **antes**, borrar los datos de prueba (Ajustes de iOS → Safari → Avanzado → Datos de sitios web → `gym.saulgmx.com` → Eliminar) y abrir la app; registrar y cerrar una sesión corta; "Descargar respaldo" → la hoja de compartir → "Guardar en Archivos"; borrar otra vez los datos del sitio; "Restaurar respaldo" con ese archivo y ver "Hoy" e "Historial" como antes; todo también en modo avión | producción | La hoja de compartir sale y guarda; la vista previa dice lo correcto; tras restaurar, la semana del programa y la sesión siguen; nada se pierde | AC-4, AC-14, AC-22 a AC-25, AC-41 (manual en iOS) | U + C | ☐ |
+| T21 | Actualizar `handoff.md` y marcar la spec y el plan como implementados | docs | Revisión | — | C | ☐ |
+
+**Punto de control E:** PR "backup: e2e and handoff".
+
+## Modelo recomendado por tarea
+
+Guía para elegir el modelo de Claude Code en cada tarea. Si el costo o los límites de uso no importan, Opus en todas es lo más simple y reduce el retrabajo.
+
+| Punto | Modelo | Por qué |
+|---|---|---|
+| A (T1-T4) | Sonnet en T1 y T2; Opus en T3 y T4 | El orden de la revisión y los rellenos de la vista previa |
+| B (T5-T10) | Sonnet en T5, T6, T9 y T10; Opus en T7 y T8 | El esquema de `Workout` y la ida y vuelta exacta |
+| C (T11-T13) | Opus | Transacción única, zona de Dexie y la prueba con los puertos reales |
+| D (T14-T18) | Sonnet en T14, T15 y T18; Opus en T16 y T17 | Estados del diálogo y mensajes |
+| E (T19-T21) | Opus en T19; Sonnet en T21 | Descarga y `setInputFiles` estables en WebKit; T20 es tuya |
+
+## Notas
+
+- **Orden:** A va primero (B necesita el kernel y C el dominio de `data`); los tres puertos de B son independientes; C necesita A y B; D necesita C; E necesita D.
+- **Usabilidad entre PR:** tras A, B y C no cambia nada visible. Tras D, la pestaña "Ajustes" y el respaldo funcionan.
+- **T16 y "Restaurar respaldo":** el botón entra en T16 sin acción y T17 lo conecta antes de abrir el PR de D, así que `main` nunca tiene un botón que no hace nada.
+- **T20 empieza borrando tus datos de prueba** (spec §8, decisión 9). Si ya los borraste antes, basta con abrir la app y registrar una sesión corta.
+- **Texto del aviso médico:** sigue `[PROPUESTO]` hasta T24 de la spec 005; si el traumatólogo lo cambia, va en el mismo PR de docs que los demás textos de salud.
