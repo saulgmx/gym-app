@@ -155,4 +155,4 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md, plan.md y tasks.md, docs/modules/data.md (RN-DAT-14 y el detalle del CSV), docs/modules/training.md (RN-TRN-31) y docs/modules/shared.md §2. La spec 008, su plan y sus tareas están aprobados. Empieza el punto de control A con T1. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md, plan.md y tasks.md, docs/modules/data.md (RN-DAT-14 y el detalle del CSV), docs/modules/training.md (RN-TRN-31) y docs/modules/shared.md §2. La spec 008, su plan y sus tareas están aprobados; T1 a T4 están hechas en la rama feat/008-csv-a. Sigue con T5 del punto de control A. Guíame paso a paso, una tarea a la vez."
