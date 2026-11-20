@@ -192,6 +192,8 @@ Los pasos 2 a 6 son funciones puras en `data/domain/` y el servicio solo las enc
 ### 6.11 Presupuesto del bundle
 Actual: 171.09 kB de 200 kB. Entran `data`, tres puertos con sus esquemas, la página y el diálogo; se estiman 5 a 8 kB. Se mide en la tarea de cierre del punto de la interfaz.
 
+**Medido en T18 (19-nov):** 176.66 kB gzip de 200 kB (+5.57 kB, dentro de lo estimado). Por debajo del umbral de 190 kB, así que Ajustes se queda en el bundle inicial, sin carga diferida (§6.6).
+
 ## 7. Estrategia de pruebas
 
 Las reglas nuevas van **prueba primero**: commit en rojo local, que se sube con la tarea que lo pone en verde. Los nombres citan la regla o el AC.
