@@ -110,6 +110,26 @@ describe('async errors', () => {
     expect(consoleError).toHaveBeenCalledWith(expect.any(String), error);
   });
 
+  it('spec 007 decisión 19: an error event without an error object (a browser script) only warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    render(<AppNotice />);
+    const message =
+      "TypeError: null is not an object (evaluating 'this.viewportDominantIFrameElement().contentWindow')";
+    act(() => {
+      window.dispatchEvent(new ErrorEvent('error', { message }));
+      window.dispatchEvent(new ErrorEvent('error', { message: 'Script error.', error: null }));
+    });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(useNoticeStore.getState().notice).toBeNull();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(warn.mock.calls).toEqual([
+      ['Ignored error from outside the app', message],
+      ['Ignored error from outside the app', 'Script error.'],
+    ]);
+    warn.mockRestore();
+  });
+
   it('keeps a single notice when several errors arrive', () => {
     render(<AppNotice />);
     act(() => {
