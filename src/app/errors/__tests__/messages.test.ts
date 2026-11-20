@@ -39,6 +39,8 @@ describe('errorMessages', () => {
       // health (spec 005 plan §6.10): they guard the API, the selector cannot send them.
       'health/pain-out-of-range': 'El dolor va de 0 a 10.',
       'health/invalid-red-flag': 'Revisa las señales de alarma marcadas.',
+      // Spec 007 §6.3 (RN-HLT-21): data wraps it; the same text as data/invalid-module-data.
+      'health/invalid-backup': 'El respaldo está dañado o incompleto. No se cambió nada.',
     });
   });
 });

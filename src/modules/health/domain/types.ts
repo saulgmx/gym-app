@@ -43,5 +43,12 @@ export interface PainNoticeInfo {
   message: string;
 }
 
-export type HealthErrorCode = 'health/pain-out-of-range' | 'health/invalid-red-flag';
+export type HealthErrorCode =
+  'health/pain-out-of-range' | 'health/invalid-red-flag' | 'health/invalid-backup'; // RN-HLT-21 (spec 007)
+
+/** details of health/invalid-backup (RN-HLT-21, contract v1.14 decision 16 (b)). */
+export type InvalidBackupDetails =
+  | { rule: 'schema'; issues: { path: string; code: string }[] }
+  | { rule: 'unique-id'; id: ID }
+  | { rule: 'one-per-workout'; workoutId: ID };
 export type HealthError = DomainError<HealthErrorCode>;

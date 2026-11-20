@@ -35,6 +35,7 @@ export type { PainGate } from './application/ports';
 export type {
   HealthError,
   HealthErrorCode,
+  InvalidBackupDetails as HealthBackupErrorDetails,
   NoticeCause,
   PainAssessment,
   PainEntry,

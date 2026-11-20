@@ -107,7 +107,7 @@ describe('RN-HLT-21: validate', () => {
     ['nivel 11', { level: 11 }, 'painEntries.0.level'],
     ['nivel negativo', { level: -1 }, 'painEntries.0.level'],
     ['nivel decimal', { level: 2.5 }, 'painEntries.0.level'],
-    ['bandera desconocida', { redFlags: ['dizziness'] }, 'painEntries.0.redFlags'],
+    ['bandera desconocida', { redFlags: ['dizziness'] }, 'painEntries.0.redFlags.0'],
     ['bandera repetida', { redFlags: ['numbness', 'numbness'] }, 'painEntries.0.redFlags'],
     ['recordedAt sin offset', { recordedAt: '2026-11-16T18:53:00' }, 'painEntries.0.recordedAt'],
     ['fecha imposible', { date: '2026-02-30' }, 'painEntries.0.date'],
