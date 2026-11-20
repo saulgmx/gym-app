@@ -1,10 +1,10 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.5 · **Depende de:** `shared` · **Lo usan:** `app`
+**Versión del contrato:** 1.6 · **Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
-Exportar e importar todos los datos (JSON). Más adelante: exportar las series a CSV (RF-40), recordar respaldos (RF-42) y borrar todo (RF-43). No conoce los módulos: trabaja con los `DataPort` que `app/compose.ts` le registra.
+Exportar e importar todos los datos (JSON) y exportar las series a CSV (RF-40, spec 008). Más adelante: recordar respaldos (RF-42) y borrar todo (RF-43). No conoce los módulos: trabaja con los `DataPort` que `app/compose.ts` le registra.
 
 ## 2. Datos propios
 
@@ -25,7 +25,7 @@ export interface DataPort<T = unknown> {
   describe(data: T): DataDescription;   // pura: facts de la vista previa y referencias (provides/requires)
   current(): Promise<LocalFacts>;       // estado local; solo lecturas Dexie, también dentro de la transacción
   importData(data: T): Promise<void>;   // vacía sus tablas y escribe las del archivo; dentro de la transacción
-  csv?(): Promise<{ filename: string; content: string }>;   // training aporta las series (spec futura del CSV)
+  csv?(): Promise<{ filename: string; content: string }>;   // borrador: el plan de la spec 008 fija cómo se arman las filas de RN-DAT-14
 }
 ```
 
@@ -50,7 +50,15 @@ En la spec 007 hay tres puertos: `plan`, `training` y `health`. El de `progressi
 
 - JSON con sangría de 2 espacios. Nombre: `gym-respaldo-<LocalDate de hoy>.json`, tipo `application/json`.
 - `modules` tiene exactamente un elemento por puerto registrado, en orden de `order`. Cada `data` lo define su contrato: RN-PLN-29 (el formato del seed con `program.startDate`), RN-TRN-30 y RN-HLT-21; las filas son los objetos del dominio tal como están guardados.
-- CSV de series (spec futura, RF-40): `date,workoutId,exercise,setNumber,weightKg,reps,rir,isExtra,completedAt`, UTF-8 con BOM para que Excel lo abra bien.
+- **CSV de series** (RF-40, spec 008, RN-DAT-14): una fila por serie hecha de cada sesión `completed`, para abrir en una hoja de cálculo; no se importa. Ejemplo (las líneas terminan en CRLF y el archivo empieza con el BOM de UTF-8):
+
+  ```csv
+  date,week,session,exercise,metric,setNumber,weightKg,reps,rir,isExtra,completedAt
+  2026-11-16,1,Full body A,Prensa de piernas,weight,2,100,9,2,false,2026-11-16T18:06:00-06:00
+  2026-11-16,1,Full body A,Dead bug,reps,1,,12,1,false,2026-11-16T18:47:00-06:00
+  ```
+
+  Nombre `gym-series-v1-<LocalDate de hoy>.csv`, tipo `text/csv`. `v1` es la versión del formato CSV, independiente de `schemaVersion` (ADR-0013).
 
 ## 5. API pública (`index.ts`)
 
@@ -97,7 +105,7 @@ interface ImportPreview {                // RN-DAT-13
 
 | ID | Regla | Origen |
 |---|---|---|
-| RN-DAT-01 | La exportación incluye siempre `schemaVersion`, `exportedAt` y la versión de cada módulo. | RNF-09 |
+| RN-DAT-01 | El respaldo JSON incluye siempre `schemaVersion`, `exportedAt` y la versión de cada módulo. El CSV lleva su versión en el nombre (RN-DAT-14). | RNF-09, ADR-0013 |
 | RN-DAT-02 | **Revisar un archivo**, en este orden, y el primer fallo gana: tamaño ≤ 10 MB sin leerlo (`data/file-too-large`); JSON válido con `app === 'gym-app'` (`data/not-gym-app-file`); `schemaVersion` y la versión de cada módulo ≤ las actuales (`data/unsupported-version`); el sobre con exactamente los módulos registrados; cada parte se migra desde su versión y se valida con su puerto, en orden de `order` (`data/invalid-module-data` con `details.module` y la causa); sin sesión en curso local (`data/workout-in-progress`). Nada se escribe al revisar. | RF-41, RNF-10, spec 007 |
 | RN-DAT-03 | `commitImport` es todo o nada: una transacción; si un puerto falla, no cambia nada. | P-2 |
 | RN-DAT-04 | El orden de importación sigue `order` ascendente. | spec §8.9 |
@@ -108,6 +116,7 @@ interface ImportPreview {                // RN-DAT-13
 | RN-DAT-11 | **Referencias entre módulos:** un respaldo se rechaza si una serie apunta a un workout que no está, si un ítem de un workout o una serie usa un ejercicio que no está en el plan del archivo, o si una entrada de dolor apunta a un workout que no está. Se valida contra el contenido del archivo, no contra la base local. | P-2, spec 007 |
 | RN-DAT-12 | **Datos tolerados:** al validar no se comprueban RN-TRN-27 ni RN-TRN-06: dos `completed` con el mismo `date` y un `completed` sin entrada de dolor se aceptan, como ya los muestra el historial. Lo que la app nunca tolera (dos `in_progress`, dos entradas de dolor por workout, ejercicios `high`) se rechaza. | spec 007 |
 | RN-DAT-13 | **Vista previa** (`ImportPreview`): `exportedAt`, `schemaVersion`, sesiones `completed` y sus series hechas, entradas de dolor, rango de `date` de las `completed` (`null` sin ninguna), si trae un workout `in_progress`, `startDate` del programa y las sesiones `completed` que hay hoy en el dispositivo. | RF-41, P-2, spec 007 |
+| RN-DAT-14 | **CSV de series:** una fila por serie hecha (`done`) de cada workout `completed`, ordenadas por `date`, luego `startedAt` (`compareInstants`), luego el `order` del ítem y luego `setNumber`. Columnas `date,week,session,exercise,metric,setNumber,weightKg,reps,rir,isExtra,completedAt`: `date` (`LocalDate`), `week` (`programWeek`, vacío si es `null`), `session` (`Workout.name`), `exercise` (nombre actual del ejercicio de la serie en el plan) y `metric` (del ejercicio); `weightKg`, `reps` y `rir` como números con punto decimal sin ceros de más, vacíos si son `null`; `isExtra` `true`/`false`; `completedAt` tal como está guardado. UTF-8 con BOM, separador coma, CRLF al final de cada línea, campos de texto entre comillas solo si llevan coma, comilla, CR o LF (RFC 4180). Nombre `gym-series-v<versión del formato>-<LocalDate de hoy>.csv` (hoy `v1`), tipo `text/csv`. La versión del formato CSV es una constante de `data`, independiente de `schemaVersion`: sube cuando cambian las columnas, su orden o su significado. Solo lectura. | RF-40, ADR-0013, spec 008 |
 
 **Detalle de la revisión** (casos de borde, antes de T3 de la spec 007, decisión 3):
 
@@ -145,7 +154,7 @@ Un fallo de la base al leer o escribir no es un `Result`: la promesa rechaza y l
 
 ## 9. Trazabilidad
 
-RF-40 (parte JSON), RF-41, RNF-09, RNF-10, CA-6. Más adelante: RF-40 (CSV), RF-42, RF-43.
+RF-40 (JSON y CSV), RF-41, RNF-09, RNF-10, CA-6, ADR-0013. Más adelante: RF-42, RF-43.
 
 ## 10. Decisiones (19-nov-2026)
 
@@ -154,3 +163,4 @@ RF-40 (parte JSON), RF-41, RNF-09, RNF-10, CA-6. Más adelante: RF-40 (CSV), RF-
 3. **Casos de borde de la revisión, antes de T3 de la spec 007 (contrato v1.3, 19-nov-2026):** entradas de las funciones puras, qué es un sobre inválido, `details` de versiones y de módulos que faltan o sobran (`data/module-mismatch`), orden de la primera referencia rota, y que `buildPreview` lance si dos puertos aportan la misma cifra (§6, "Detalle de la revisión"). El sobre se valida con Zod en `infrastructure` (ADR-0012), como el esquema del seed; versiones, módulos, referencias y vista previa son dominio.
 4. **Casos de borde del servicio, antes de T11 de la spec 007 (contrato v1.4, 19-nov-2026):** registro y orden de los puertos, sin puertos lanza, transacciones sobre la unión de tablas, formato del archivo, límite exacto de 10 MB, lectura solo con `file.text()` (en jsdom `new Response(file)` da `"[object File]"`, así que no sirve de respaldo), fallos de puertos como rechazo y `commit()` de una sola vez (§6, "Detalle del servicio").
 5. **Ida y vuelta por contenido, durante T13 de la spec 007 (contrato v1.5, 19-nov-2026):** al importar, Zod construye cada fila en el orden de su esquema, así que una fila cuyo `finishedAt` se añadió al cerrar (la última clave) vuelve con `finishedAt` junto a `startedAt`. Los datos son idénticos; el texto no. RN-DAT-08 compara el contenido (el valor JSON sin `exportedAt`), no el texto. Se descartaron devolver el JSON crudo en `validate` (ignoraría en silencio un futuro valor por defecto o transformación del esquema) y ordenar las claves al exportar (código en cada exportación solo para el texto). Una segunda ida y vuelta ya da el mismo texto.
+6. **Spec 008, CSV de series (contrato v1.6, 20-nov-2026):** RN-DAT-14 fija el contenido, el orden y el formato del CSV, que reemplaza el borrador de columnas de §4 (sin `workoutId`; con `week`, `session` y `metric`; el nombre del ejercicio en lugar de su ID). La versión del formato va en el nombre del archivo (ADR-0013, constitución v1.1). La firma en la API (`exportCsv` o similar) y quién arma las filas (`csv?()` de `training` o un cruce en `data`) los fija el plan técnico; hasta entonces `csv?()` de §3 es un borrador.
