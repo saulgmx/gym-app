@@ -56,15 +56,16 @@
 
 Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
-1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T4 hechas (T4, pruebas de `data/domain/csv.ts` en rojo, con commit **local sin push**); sigue **T5** (implementar `csv.ts`), luego push y PR listo. Antes de seguir, traer `main` a la rama (cambio a mise, PR `chore/mise`). Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
+1. **Punto de control A de la spec 008** (rama `feat/008-csv-a`, PR #70 en borrador): T1 a T4 hechas (T4, pruebas de `data/domain/csv.ts` en rojo, con commit **local sin push**); sigue **T5** (implementar `csv.ts`), luego push y PR listo. `main` (con mise, PR #71) ya está fusionado en la rama, también solo en local. Detalle en `docs/specs/008-csv/tasks.md` de esa rama. Resumen de lo aprobado:
    - Spec (AC-1 a AC-31): "Exportar series (CSV)" en la sección "Respaldo" de Ajustes; una fila por serie hecha de cada sesión `completed` (RN-DAT-14); `gym-series-v1-AAAA-MM-DD.csv` con la versión del formato en el nombre (ADR-0013); sin base ni migración.
    - Plan: `training` da filas tipadas (`seriesRows`, RN-TRN-31) y `data` escribe el archivo (`domain/csv.ts`, `exportSeriesCsv`).
    - Tareas: T1 a T15 en 4 puntos de control (A kernel y dominio, B puerto, servicio y composición, C Ajustes, D verificación y cierre). T1 cambia `data-port.test-d.ts` de la 007 (`csv` → `seriesRows`). T14 (iPhone, Numbers y Sheets) es tuya.
 2. **Pendientes tuyos que no bloquean:**
    - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
    - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
-3. **Después:** fase 4 (progresión, alertas, temporizador, peso corporal, gráficas; pregunta 7 pendiente).
-4. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
+3. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
+4. **Después:** fase 4 (progresión, alertas, temporizador, peso corporal, gráficas; pregunta 7 pendiente).
+5. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
 ## Notas para retomar
 
