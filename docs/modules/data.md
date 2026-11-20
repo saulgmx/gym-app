@@ -1,6 +1,6 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.1 · **Depende de:** `shared` · **Lo usan:** `app`
+**Versión del contrato:** 1.2 · **Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
@@ -20,15 +20,16 @@ export interface DataPort<T = unknown> {
   version: number;                      // versión del formato de exportación de este módulo
   order: number;                        // orden de importación: plan 10, training 20, health 30, progression 35, app 40
   tables: string[];                     // tablas Dexie que toca (para la transacción única)
-  exportData(): Promise<T>;
+  exportData(): Promise<T>;             // filas tal como están guardadas
   validate(raw: unknown, fromVersion: number): Result<T>;   // migra y valida con Zod y las reglas del módulo
-  importData(data: T): Promise<void>;   // reemplaza todo el contenido del módulo; se llama dentro de la transacción
-  wipe(): Promise<void>;
+  describe(data: T): DataDescription;   // pura: facts de la vista previa y referencias (provides/requires)
+  current(): Promise<LocalFacts>;       // estado local; solo lecturas Dexie, también dentro de la transacción
+  importData(data: T): Promise<void>;   // vacía sus tablas y escribe las del archivo; dentro de la transacción
   csv?(): Promise<{ filename: string; content: string }>;   // training aporta las series (spec futura del CSV)
 }
 ```
 
-La firma de `validate` puede cambiar en el plan técnico de la spec 007 para que un puerto vea las partes ya validadas de los anteriores (RN-DAT-11) sin romper las fronteras.
+`ImportFacts`, `LocalFacts` y `DataDescription` están en [`shared.md`](shared.md) §2. `wipe` entra con RF-43. Ningún puerto ve los datos de otro: las referencias entre módulos (RN-DAT-11) se cruzan en `data` con `describe`.
 
 En la spec 007 hay tres puertos: `plan`, `training` y `health`. El de `progression` (solo `progressionSettings`; las `suggestions` son derivadas y se reconstruyen con `rebuild()`) y el de `app` (`uiPreferences`) entran cuando esos módulos tengan datos.
 
@@ -40,7 +41,7 @@ En la spec 007 hay tres puertos: `plan`, `training` y `health`. El de `progressi
   "schemaVersion": 1,
   "exportedAt": "2026-11-19T22:30:00-06:00",
   "modules": {
-    "plan":     { "version": 1, "data": { "exercises": [], "programs": [], "blocks": [], "templates": [] } },
+    "plan":     { "version": 1, "data": { "exercises": [], "program": {}, "blocks": [], "templates": [] } },
     "training": { "version": 1, "data": { "workouts": [], "sets": [] } },
     "health":   { "version": 1, "data": { "painEntries": [] } }
   }
@@ -48,19 +49,33 @@ En la spec 007 hay tres puertos: `plan`, `training` y `health`. El de `progressi
 ```
 
 - JSON con sangría de 2 espacios. Nombre: `gym-respaldo-<LocalDate de hoy>.json`, tipo `application/json`.
-- `modules` tiene exactamente un elemento por puerto registrado. La forma exacta de cada `data` la fija el plan técnico; las filas son los objetos del dominio tal como están guardados.
+- `modules` tiene exactamente un elemento por puerto registrado, en orden de `order`. Cada `data` lo define su contrato: RN-PLN-29 (el formato del seed con `program.startDate`), RN-TRN-30 y RN-HLT-21; las filas son los objetos del dominio tal como están guardados.
 - CSV de series (spec futura, RF-40): `date,workoutId,exercise,setNumber,weightKg,reps,rir,isExtra,completedAt`, UTF-8 con BOM para que Excel lo abra bien.
 
 ## 5. API pública (`index.ts`)
 
 ```ts
-export function createData(deps: { db: DataDb; clock: Clock; transaction: TransactionRunner; onImported: () => Promise<void> }): DataApi;
+export function createData(deps: { db: Dexie; clock: Clock }): DataApi;
+
+export type DataErrorCode =
+  | 'data/file-too-large' | 'data/not-gym-app-file' | 'data/unsupported-version'
+  | 'data/invalid-module-data' | 'data/workout-in-progress';
+
+interface InvalidModuleDataDetails {
+  module: string | null;                 // null: el sobre (módulos que faltan o sobran)
+  cause: string;                         // código del puerto ('plan/high-risk-exercise'…) o 'data/missing-reference'
+  details?: unknown;                     // los details del puerto, o { kind, id } de la referencia rota
+}
 
 interface DataApi {
-  registerDataPort(port: DataPort): void;
+  registerDataPort<T>(port: DataPort<T>): void;                     // lanza con un name u order repetido
   exportAll(): Promise<{ filename: string; blob: Blob }>;           // RF-40, RN-DAT-01, 09
-  previewImport(file: File): Promise<Result<ImportPreview, DataError>>;   // RF-41, RN-DAT-02, 05, 13
-  commitImport(preview: ImportPreview): Promise<Result<void, DataError>>; // RN-DAT-03, 04, 05, 10
+  previewImport(file: Blob): Promise<Result<PendingImport, DataError>>;   // RF-41, RN-DAT-02, 05, 11, 12, 13
+}
+
+interface PendingImport {
+  preview: ImportPreview;
+  commit(): Promise<Result<void, DataError>>;   // RN-DAT-03, 04, 05, 10; una segunda llamada lanza
 }
 
 interface ImportPreview {                // RN-DAT-13
@@ -76,7 +91,7 @@ interface ImportPreview {                // RN-DAT-13
 }
 ```
 
-Los nombres exactos, cómo `previewImport` obtiene las cifras de cada módulo sin conocerlos, dónde guarda los datos validados para `commitImport` y si `exportAll` devuelve un `Blob` o un `File` los fija el plan técnico de la spec 007. `onImported` no hace nada hasta la fase 4, cuando `compose.ts` lo conecte a `progression.rebuild()`. `TransactionRunner` lo aporta `app/db.ts` para ejecutar todo el import en una transacción sobre las tablas de todos los puertos; sin `dataMeta`, `DataDb` puede no hacer falta (lo decide el plan).
+`previewImport` junta los `facts` de `describe` de cada puerto y el `current()` local (spec 007 plan §6.3). Los datos validados viven dentro de `commit`, que no se puede llamar con una vista previa inventada. La transacción sobre las tablas de todos los puertos la abre `data` con `db`. `onImported` (para `progression.rebuild()`) vuelve en la fase 4.
 
 ## 6. Reglas de negocio
 
@@ -98,7 +113,7 @@ RN-DAT-06 (recordatorio de respaldo, RF-42) y RN-DAT-07 (`wipeAll`, RF-43) salen
 
 ## 7. Errores
 
-`data/file-too-large`, `data/not-gym-app-file`, `data/unsupported-version`, `data/invalid-module-data` (con `details.module` y la causa: la ruta Zod o el código de error del módulo, por ejemplo `plan/high-risk-exercise`), `data/workout-in-progress`. `data/wrong-confirmation` entra con RF-43.
+`data/file-too-large`, `data/not-gym-app-file` (no es JSON o el sobre no tiene la forma de §4), `data/unsupported-version`, `data/invalid-module-data` (`InvalidModuleDataDetails`: `module`, `cause` y los `details` del puerto, por ejemplo `plan/high-risk-exercise`), `data/workout-in-progress`. `data/wrong-confirmation` entra con RF-43.
 
 Un fallo de la base al leer o escribir no es un `Result`: la promesa rechaza y lo muestra el aviso genérico (ADR-0010), como RN-TRN-18 y RN-HLT-16.
 
@@ -106,7 +121,7 @@ Un fallo de la base al leer o escribir no es un `Result`: la promesa rechaza y l
 
 - QS-04: base con datos de prueba → exportar → base vacía → importar → comparación profunda (RN-DAT-08).
 - Import con `training` inválido → nada cambia (ni siquiera `plan`) (RN-DAT-03).
-- Un puerto que lanza a mitad de `commitImport` → nada cambia.
+- Un puerto que lanza a mitad de `commit()` → nada cambia.
 - Cada error de RN-DAT-02 en su orden, con un archivo que falla en dos puntos a la vez.
 - Referencias rotas (RN-DAT-11) y datos tolerados (RN-DAT-12).
 - `schemaVersion` o versión de módulo mayor que la actual → `data/unsupported-version`. La migración desde una versión anterior se prueba cuando exista una versión 2.
@@ -118,3 +133,4 @@ RF-40 (parte JSON), RF-41, RNF-09, RNF-10, CA-6. Más adelante: RF-40 (CSV), RF-
 ## 10. Decisiones (19-nov-2026)
 
 1. **Spec 007, respaldo (contrato v1.1):** el contrato se recorta a lo que entra en la spec 007: sin `dataMeta`, `exportCsv`, `wipeAll` ni `getBackupStatus`; tres puertos (`plan`, `training`, `health`); RN-DAT-02 y 05 sin `[PROPUESTO]` (10 MB; restaurar bloqueado con una sesión en curso, exportar siempre); restaurar reemplaza todo (RN-DAT-10); referencias entre módulos validadas sobre el archivo (RN-DAT-11); datos tolerados (RN-DAT-12); vista previa (RN-DAT-13). Las firmas exactas las fija el plan técnico.
+2. **Plan de la spec 007 (contrato v1.2):** `DataPort` gana `describe` y `current` y pierde `wipe`; `createData({ db, clock })` sin `TransactionRunner`, `DataDb` ni `onImported`; `previewImport` devuelve un `PendingImport` con `commit()` en lugar de `commitImport(preview)`; `registerDataPort` lanza con un nombre u orden repetido; el plan va como `program` (RN-PLN-29); `InvalidModuleDataDetails`. Orden de la revisión: spec 007 plan §6.9.

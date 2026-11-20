@@ -35,8 +35,32 @@ function floorToStep(value: number, step: number): number;  // al múltiplo infe
 function kgToLb(kg: number): number;  // 1 lb = 0.45359237 kg exacto; redondeado a 2 decimales
 function lbToKg(lb: number): number;  // ídem
 
-// Exportación: contrato que implementa cada módulo con datos (ver modules/data.md §3)
-interface DataPort<T = unknown> { /* name, version, order, tables, exportData, validate, importData, wipe, csv? */ }
+// Exportación: contrato que implementa cada módulo con datos (ver modules/data.md §3; spec 007 plan §3)
+interface ImportFacts {            // cifras de la vista previa; cada campo lo aporta un solo puerto (RN-DAT-13)
+  completedWorkouts?: number; doneSets?: number; painEntries?: number;
+  dateRange?: { from: LocalDate; to: LocalDate } | null; hasActiveWorkout?: boolean; programStartDate?: LocalDate;
+}
+interface LocalFacts { completedWorkouts?: number; hasActiveWorkout?: boolean }
+interface DataDescription {
+  facts: ImportFacts;
+  provides: Record<string, readonly ID[]>;   // IDs que ofrece por tipo ('exercise', 'workout')
+  requires: Record<string, readonly ID[]>;   // IDs de otros módulos que necesita (RN-DAT-11)
+}
+interface DataPort<T = unknown> {
+  name: string; version: number; order: number; tables: string[];
+  exportData(): Promise<T>;                                  // filas tal como están guardadas
+  validate(raw: unknown, fromVersion: number): Result<T>;    // migra, esquema Zod y reglas propias
+  describe(data: T): DataDescription;                        // pura
+  current(): Promise<LocalFacts>;                            // solo lecturas Dexie (corre dentro de la transacción)
+  importData(data: T): Promise<void>;                        // vacía sus tablas y escribe (dentro de la transacción)
+  csv?(): Promise<{ filename: string; content: string }>;
+}
+// `wipe` entra con RF-43 (borrar todo).
+
+// Esquemas primitivos para validar entradas externas (kernel/schemas.ts, zod/mini con jitless; spec 007 plan §6.6)
+const idSchema;          // UUIDv7 en minúsculas → ID
+const localDateSchema;   // 'AAAA-MM-DD' de una fecha real → LocalDate
+const instantSchema;     // ISO 8601 con offset → Instant
 
 // Implementaciones de producción
 const systemClock: Clock;  // now(): Instant con el offset local; today(): LocalDate local

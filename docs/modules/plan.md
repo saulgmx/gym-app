@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.20 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Versión del contrato:** 1.21 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -194,6 +194,8 @@ No escucha eventos.
 | RN-PLN-27 | Duración estimada de una sesión planificada, en segundos: `600 + Σ por ítem (plannedSets × (trabajo + descansoMedio) + 90)`. `trabajo` = 45 s por serie, o la media de `repRange` si `metric = 'time'`; `descansoMedio` = media de `exercise.restSeconds`. Se muestra en minutos redondeados al múltiplo de 5 más cercano (`Math.round`), mínimo 5. Las constantes (600 de calentamiento, 45 de trabajo, 90 de cambio de ejercicio) tienen nombre en el dominio y son las mismas que usa `training` para el tiempo restante (RN-TRN-20). Función pura del dominio, sin almacenamiento. | Spec 003, `plan.md` (60 min por sesión, 10 de calentamiento) |
 | RN-PLN-28 | **Bloque de una semana del programa:** el bloque cuya `startWeek ≤ week ≤ endWeek`, o ninguno si `week` está fuera del programa. Depende solo de `week`, no de `startDate`: si se cambia la fecha de inicio (RF-03), las semanas ya entrenadas conservan su bloque, porque `Workout.programWeek` es parte de la instantánea. No depende del orden de `blocks` (RN-PLN-15 (b) impide solapes, así que hay como mucho un candidato); `getBlocks` los devuelve ordenados por `startWeek` porque el almacenamiento los lee por `programId` sin orden. No valida que `week` sea entero: `programWeek` siempre lo es o es `null`. | RF-32, spec 006 |
 
+| RN-PLN-29 | **Respaldo del plan** (`dataPort`: `name 'plan'`, `version 1`, `order 10`). Formato `{ exercises, program, blocks, templates }`: el del seed con `startDate` dentro de `program`. `validate` aplica `planBackupSchema` (el esquema del seed, RN-PLN-24, con `program.startDate`) y después `validateSeed` sobre lo mismo sin `startDate` (RN-PLN-07 primero, RN-PLN-15, 19): un fallo de esquema es `plan/invalid-seed` con sus `issues`; uno de reglas, su propio código. `describe`: `provides.exercise` = IDs del catálogo y `facts.programStartDate`. `current`: `{}`. `exportData` lee las 4 tablas en una transacción `r` (más de un programa lanza, RN-PLN-25); `importData` vacía las 4 y escribe con `bulkAdd`. | RF-40, RF-41, P-1, spec 007 |
+
 ## 7. Errores
 
 `plan/invalid-seed`, `plan/high-risk-exercise`, `plan/template-not-found`, `plan/week-out-of-range`.
@@ -263,3 +265,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, s
 21. **Plan de la spec 006 (contrato v1.18, 19-nov-2026):** RN-PLN-28 como `blockOfWeek(blocks, week)` pura, con `getBlocks()` y `useBlocks` para que la lista resuelva todos sus bloques en una lectura. Se descartó `getBlockForWeek(week)` (una llamada por grupo).
 22. **Casos de borde de RN-PLN-28, antes de T1 de la spec 006 (contrato v1.19, 19-nov-2026):** `getBlocks` sin programa lanza (RN-PLN-22); `useBlocks` sin clave, `undefined` solo al cargar (RN-PLN-26); `blockOfWeek` no depende del orden de la lista ni valida que la semana sea entera (RN-PLN-28).
 23. **Spec 007, respaldo (contrato v1.20, 19-nov-2026):** `dataPort` entra en `PlanApi`. Exporta las 4 tablas tal cual (RN-PLN-25) y al importar valida el plan con las mismas reglas del seed: esquema (RN-PLN-24), RN-PLN-07 primero (un respaldo con un ejercicio `high` se rechaza, P-1), RN-PLN-15 y un solo programa. Importar reemplaza las 4 tablas, también `startDate`. La forma de sus datos, su versión y cómo expone los IDs de ejercicio a `training` para RN-DAT-11 los fija el plan técnico de la spec 007.
+24. **Plan de la spec 007 (contrato v1.21, 19-nov-2026):** RN-PLN-29. El formato es el del seed con `startDate` dentro de `program` (no `programs: []`), para reutilizar `planSeedSchema` y `validateSeed`; los IDs del catálogo salen en `describe` como `provides.exercise`. `id` del esquema del seed pasa a `idSchema` de `shared/kernel/schemas.ts`.

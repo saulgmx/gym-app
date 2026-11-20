@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.3 · **Fecha:** 17-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
+**Versión:** 1.4 · **Fecha:** 19-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -215,16 +215,18 @@ sequenceDiagram
   participant D as data
   participant Ports as DataPorts
   S->>D: previewImport(file)
-  D->>D: tamaño ≤ límite, JSON.parse, migra a schemaVersion actual
-  D->>Ports: validate(part) por módulo (Zod)
-  D-->>S: resumen (n sesiones, series, rango de fechas)
+  D->>D: tamaño ≤ límite, JSON y sobre, versiones, módulos
+  D->>Ports: validate(parte, version) en orden (Zod y reglas del módulo)
+  D->>Ports: describe(datos) → facts, provides, requires
+  D->>D: referencias entre módulos (RN-DAT-11) y vista previa
+  D->>Ports: current() → ¿sesión en curso?
+  D-->>S: PendingImport { preview, commit }
   S->>S: confirmación del usuario
-  S->>D: commitImport(preview)
-  D->>Ports: importData en orden: plan → training → health → progression (ajustes) → app
-  D->>D: onImported() → progression.rebuild()
+  S->>D: commit()
+  D->>Ports: transacción rw: current() otra vez e importData en orden (plan → training → health)
 ```
 
-La importación es todo o nada: se ejecuta en una sola transacción Dexie sobre todas las tablas afectadas.
+La importación es todo o nada: se ejecuta en una sola transacción Dexie sobre todas las tablas afectadas. Desde la fase 4, `data` llamará a `progression.rebuild()` al terminar. Detalle: [modules/data.md](modules/data.md) y spec 007 plan §6.9.
 
 ## 7. Conceptos transversales
 

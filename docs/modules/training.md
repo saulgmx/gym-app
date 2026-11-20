@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.29 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.30 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -86,7 +86,8 @@ export type TrainingErrorCode =
   | 'training/invalid-exercise-choice' | 'training/item-has-done-sets'
   | 'training/pain-required' | 'training/nothing-done' | 'training/notes-too-long'   // RN-TRN-22 (spec 005)
   | 'training/already-done'                                                             // RN-TRN-24 (spec 005)
-  | 'training/day-already-trained';                                                     // RN-TRN-27 (spec 005b)
+  | 'training/day-already-trained'                                                      // RN-TRN-27 (spec 005b)
+  | 'training/invalid-backup';                                                          // RN-TRN-30 (spec 007)
 
 interface InvalidSetValuesDetails {     // details de training/invalid-set-values; app elige el texto
   field: 'weightKg' | 'reps' | 'rir';
@@ -253,9 +254,11 @@ No escucha eventos. Los eventos se publican desde que un módulo los escuche (`W
 | RN-TRN-29 | **Detalle del historial** (función pura del dominio sobre una `WorkoutView`): un elemento por ítem del workout, ordenados por su `order` (como RN-TRN-17, no por la posición en el arreglo), con el ejercicio elegido (`exerciseId`), el principal (`options[0]`) si es otro (no se valida que el elegido esté en `options`: lo garantiza RN-TRN-13), y sus series **hechas** de ese ejercicio ordenadas por `setNumber` (también las extra). Un ítem sin series hechas sale con la lista vacía. Las series no hechas, o hechas de un ejercicio que no es el elegido, no salen (RN-TRN-08); estas últimas no deberían existir, porque `chooseExercise` mueve las series y exige que no haya hechas (RN-TRN-13), y el filtro protege ante datos inconsistentes. Solo para workouts `completed`; para otro estado, `null`. | RF-32, spec 006 |
 | RN-TRN-15 | `discardWorkout` pasa un workout `in_progress` a `discarded` y conserva sus series; no se borra nada ni se fija `finishedAt` (es del cierre). Los workouts `discarded` no aparecen en el historial (RN-TRN-08) ni cuentan para RN-TRN-01. | P-2, decisión 2 |
 
+| RN-TRN-30 | **Respaldo de training** (`dataPort`: `name 'training'`, `version 1`, `order 20`). Formato `{ workouts, sets }`: todas las filas, en cualquier estado (`discarded` e `in_progress` también), tal como están guardadas. `validate`: esquema estricto de `Workout`, `WorkoutItem` y `SetLog` (los opcionales con `exactOptional`; un fallo es `training/invalid-backup` con `details: { rule: 'schema', issues }`), y después la función pura `checkTrainingBackup` (`domain/backup.ts`), que devuelve el primer fallo en este orden: IDs de `workouts` únicos (`rule: 'unique-workout-id'`), IDs de `sets` únicos (`'unique-set-id'`), cada serie con un `workoutId` del archivo (`'set-without-workout'`), como mucho un `in_progress` (`'one-active'`, RN-TRN-01); `details` lleva también el ID implicado. No comprueba RN-TRN-06 ni RN-TRN-27 (RN-DAT-12). `describe`: `provides.workout` = IDs de los workouts; `requires.exercise` = `exerciseId` y `options` de cada ítem y `exerciseId` de cada serie; `facts`: `completedWorkouts`, `doneSets` (hechas de los `completed`), `dateRange` (`date` mínima y máxima de los `completed`, como texto; `null` sin ninguno) y `hasActiveWorkout`. `current`: `completedWorkouts` (índice `status`) y `hasActiveWorkout`. `importData` vacía las dos tablas y escribe con `bulkAdd`. | RF-40, RF-41, spec 007 |
+
 ## 7. Errores
 
-`training/workout-not-found`, `training/workout-already-active`, `training/workout-closed`, `training/set-not-found`, `training/invalid-set-values`, `training/pain-required`, `training/no-plan-today`, `training/planned-date-out-of-week`, `training/max-sets-reached`, `training/set-not-removable`, `training/invalid-exercise-choice`, `training/item-has-done-sets`, `training/nothing-done`, `training/notes-too-long`, `training/already-done`, `training/day-already-trained`.
+`training/workout-not-found`, `training/workout-already-active`, `training/workout-closed`, `training/set-not-found`, `training/invalid-set-values`, `training/pain-required`, `training/no-plan-today`, `training/planned-date-out-of-week`, `training/max-sets-reached`, `training/set-not-removable`, `training/invalid-exercise-choice`, `training/item-has-done-sets`, `training/nothing-done`, `training/notes-too-long`, `training/already-done`, `training/day-already-trained`, `training/invalid-backup`.
 
 ## 8. Pruebas de contrato
 
@@ -320,3 +323,4 @@ RF-10 a RF-17, RF-19 a RF-21, RF-23, RF-32, RF-40 y RF-41 (`dataPort`, spec 007)
 29. **Casos de borde de RN-TRN-28, antes de T8 de la spec 006 (contrato v1.27, 19-nov-2026):** el resumen de la lista recibe `now = startedAt` en vez de `clock.now()` (mismo resultado con `finishedAt`; 0 min con un dato roto, y la consulta no depende del reloj); `findCompletedStates` lee las dos tablas en una transacción `r` y sin orden; `useWorkoutHistory` con clave fija y `[]` sin sesiones.
 30. **`formatDoneSet`, antes de T10 de la spec 006 (contrato v1.28, 19-nov-2026):** una serie hecha puede no tener RIR (RN-TRN-04: `rir` puede quedar `null` al marcar); entonces la línea omite " · RIR" ("100 × 10") en vez de mostrar "RIR null".
 31. **Spec 007, respaldo (contrato v1.29, 19-nov-2026):** `dataPort` entra en `TrainingApi`. Exporta `workouts` y `sets` completos, en cualquier estado (también `discarded` e `in_progress`), tal como están guardados. Al importar valida el esquema, IDs únicos, que cada serie pertenezca a un workout del archivo, que cada ejercicio (ítems y series) esté en el plan del archivo (RN-DAT-11) y como mucho un `in_progress` (RN-TRN-01). No comprueba RN-TRN-27 ni RN-TRN-06 (RN-DAT-12: datos que la app tolera). Importar reemplaza las dos tablas. La forma de sus datos y su versión las fija el plan técnico de la spec 007.
+32. **Plan de la spec 007 (contrato v1.30, 19-nov-2026):** RN-TRN-30 y el código `training/invalid-backup`. Las reglas del archivo son una función pura del dominio, con pruebas primero; las referencias al plan no las comprueba `training`, sino `data` con `describe` (RN-DAT-11), porque `training` no ve el plan del archivo.
