@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.35 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Versión del contrato:** 1.36 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -170,12 +170,32 @@ function SessionHeader(props: {
   onNavigate: (index: number) => void;
   onExit: () => void;                               // la flecha; el aviso de salida lo pone app
 }): JSX.Element;
-export { SetRow, SetTable, SessionHeader } from './ui';   // RestTimer y el descanso (RN-TRN-32 a 35): firma en el plan de la spec 009
+export { SetRow, SetTable, SessionHeader, RestTimer } from './ui';
+
+// Descanso (RN-TRN-32 a 35, spec 009, plan §6.1 a §6.3). El dominio (restOf) recibe restSeconds como
+// función, como progressOf; application lo arma con view.exercises.
+interface RestAdjustment { setId: ID; offsetSeconds: number; skipped: boolean } // RN-TRN-34; se ignora si setId no es la serie de referencia
+interface RestState {
+  setId: ID;                        // serie de referencia (RN-TRN-32)
+  phase: 'resting' | 'ready';       // RN-TRN-33
+  remainingSeconds: number;         // entero, hacia arriba; hasta minAt (resting) o maxAt (ready)
+  range: [number, number];          // restSeconds sin ajustes, para "Rango 2:00–3:00"
+}
+interface RestSignal { tones: 0 | 1 | 2; announce: 'ready' | 'ended' | null } // RN-TRN-35
+export function restTimer(view: WorkoutView, now: Instant, adjustment: RestAdjustment | null): RestState | null; // application/rest.ts; lanza si el ejercicio no está en la vista
+export function restSignal(prev: RestState | null, next: RestState | null, byTime: boolean): RestSignal;       // domain/rest.ts, pura
+function RestTimer(props: {
+  rest: RestState;
+  onShift: (seconds: 15 | -15) => void;
+  onSkip: () => void;
+}): JSX.Element;
 
 // Textos de la sesión (ui/format.ts), para que app no los repita (spec 004 plan §6.6)
 export function formatRange(range: [number, number]): string;   // [6, 10] → "6-10"; [4, 4] → "4"
 export function formatTarget(item: Pick<WorkoutItem, 'plannedSets' | 'repRange'>, metric: ExerciseFacts['metric']): string; // "2 × 6-10", "2 × 30-45 s"
 export function formatSetCount(n: number): string;              // "1 serie", "2 series"
+export function formatRestTime(seconds: number): string;          // 120 → "2:00", 36 → "0:36" (RN-TRN-33)
+export function formatRestRange(range: [number, number]): string; // [120, 180] → "2:00–3:00" (guion U+2013)
 ```
 
 ### `SetTable` y `SetRow` (spec 002 §6, T18)
@@ -196,6 +216,14 @@ export function formatSetCount(n: number): string;              // "1 serie", "2
 - Un botón por ítem, en orden, con `data-state="done" | "current" | "pending"` (el de `workoutProgress().items`, como en "Hoy"): marca decorativa (✓ hecho, anillo en curso, número pendiente), nombre del ejercicio elegido y subtítulo: pendiente `formatTarget(item, metric)` ("2 × 6-10"), o "N de M series" si ya tiene alguna hecha (sin ✓); en curso "En curso · serie N"; hecho "N de N series" (con las extra; "1 de 1 serie"). El nombre accesible incluye el estado con texto oculto (`visually-hidden`) dentro del botón, sin `aria-label`: "Prensa de piernas, hecho, 2 de 2 series", "Dominadas, pendiente, 2 × 6-10"; en curso no lleva texto oculto, porque "En curso · serie N" ya lo dice. El ejercicio que se ve lleva `aria-current="step"` y su propio resaltado.
 - Elegir un ítem cierra el menú y llama a `onNavigate`. Fondo o Escape lo cierran sin navegar; el foco vuelve al botón.
 - Ya no tiene "Descartar sesión": el descarte vive en el aviso de salida de `app` (spec 004 §6.3).
+
+### `RestTimer` (spec 009 §6.1, plan §6.6)
+
+- Solo presentación: no sabe de reloj, store, sonido ni Wake Lock; el tic, los ajustes, los tonos, la región de estado y el foco los cablea `app`.
+- Un `role="group"` cuyo nombre es su título (`aria-labelledby`), con `data-rest` y `data-phase="resting" | "ready"`.
+- Fila 1: el título ("Descanso" en `resting`, "Ya puedes" en `ready`) y debajo el tiempo (`formatRestTime(remainingSeconds)`, cifras tabulares, sin región viva); a la derecha "Rango " + `formatRestRange(range)` en `--text-muted`.
+- Fila 2: "−15 s" (U+2212), "+15 s" y "Saltar", botones del mismo ancho, ≥ 44 px de alto, con su texto visible como nombre accesible (sin `aria-label`). Llaman a `onShift(-15)`, `onShift(15)` y `onSkip()`.
+- Por `data-phase`: en `resting`, título en `--text-muted` y fondo `--surface`; en `ready`, título en `--accent` y borde de 1 px en `--accent`. Sin colores nuevos, barra ni animaciones.
 
 ### Puertos que requiere (`application/ports.ts`)
 
@@ -338,3 +366,4 @@ RF-10 a RF-17, RF-18 (solo durante el descanso, spec 009), RF-19 a RF-21, RF-23,
 35. **Casos de borde de RN-TRN-31, antes de T2 de la spec 008 (contrato v1.33, 20-nov-2026):** (f) `SeriesExercise` en el dominio, como `ExerciseFacts`, porque el dominio no importa `plan`; (g) los datos rotos lanzan citando la regla y solo se comprueban las series que salen, coherente con (c), que solo pide esos ejercicios; (h) la función no modifica su entrada.
 36. **Casos de borde de la lectura de RN-TRN-31, antes de T6 de la spec 008 (contrato v1.34, 20-nov-2026):** (i) el orden de los IDs que recibe `getExercises` queda libre, porque a `plan` no le importa y así la implementación no se ata a uno; (j) un rechazo de la lectura de `training` o de `plan` llega tal cual a quien llama (ADR-0010).
 37. **Spec 009, temporizador de descanso (contrato v1.35, 20-nov-2026):** RN-TRN-32 a 35. El descanso se calcula de la última serie hecha (`completedAt` + `restSeconds`) y no se guarda: sin tablas ni migración. Los ajustes (−15 s, +15 s, Saltar) viven en memoria y se pierden al recargar. Termina en el máximo; un tono al mínimo y dos al máximo, solo por el paso del tiempo y con la app en primer plano. Wake Lock solo durante el descanso. La firma de la función del dominio y de `RestTimer` las fija el plan.
+38. **Plan de la spec 009 (contrato v1.36, 20-nov-2026):** `restOf(state, restSeconds, now, adjustment)` pura en `domain/rest.ts`, y `restTimer(view, now, adjustment)` pública en `application/rest.ts`, como `progressOf` y `workoutProgress`. El ajuste lleva el `setId` de su serie: si no es la de referencia, se ignora, así que el reinicio de RN-TRN-34 es puro y el store de `app` no vigila la vista. `restSignal(prev, next, byTime)` pura (RN-TRN-35): 1 tono al pasar a `ready` y 2 al terminar, solo con `byTime`; el paso a `ready` sin `byTime` (control o vuelta a primer plano) se anuncia sin tono; con `min = max` el fin por tiempo da 2 tonos. `RestTimer` es solo presentación; los ajustes (Zustand), el sonido (Web Audio), el Wake Lock y el foco viven en `app`. Casos de borde en el plan §6.1.
