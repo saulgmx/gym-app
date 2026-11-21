@@ -1,8 +1,8 @@
 import type { PainStatus } from './types';
 
 // Health texts (spec §6.2, docs/modules/health.md §6.1). They are rules, not errors, so they do not
-// go through the ADR-0010 message map. The red flag texts stay [PROPUESTO] until the specialist
-// validates them (spec 005 T24).
+// go through the ADR-0010 message map. Validated unchanged by the specialist on 2026-11-20 (spec 005
+// T24).
 
 export const BAND_MESSAGES: Readonly<Record<PainStatus, string>> = {
   normal: 'Molestia leve, dentro de lo normal. Sigue con el plan.',

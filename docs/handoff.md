@@ -5,7 +5,7 @@
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -56,10 +56,22 @@
 ## Piloto Opus → Qwen
 
 - **Calibración T5 (spec 008):** 1 intento (~3 min), 1 ronda de revisión (~2 min), 0 violaciones, 19/19 pruebas, 7/7 mutaciones.
-- **T9 (spec 008), sin supervisión:** Claude lanza `qwen` en modo no interactivo (prompt posicional; `-p` está obsoleto en la 0.28.0) con `--approval-mode auto-edit --exclude-tools run_shell_command --max-wall-time 20m --max-session-turns 40`; brief y logs en `/tmp/qwen-T9/`. Intento 1 (119 s) falló en lint (`unbound-method`) por una línea de ejemplo del brief; intento 2 (962 s, con un `ETIMEDOUT` de LM Studio y reintento) pasó. 0 archivos fuera de lo permitido, 8/8 mutaciones; Claude solo retocó el orden de un import y un comentario. **Lecciones:** el código de ejemplo del brief tiene que pasar lint; en jsdom, comparar bytes como arrays (`Uint8Array` de jsdom y de Node no son `toEqual`).
-- **Script para las próximas delegaciones:** `~/qwen-calib/run-qwen.sh <tarea> <intento>` (fuera del repo, aprobado el 20-nov, aún sin uso real). Lee `~/qwen-calib/<tarea>/brief-N.md` y `allowed.txt`; pasa el brief por stdin con los mismos límites que T9 más `--max-tool-calls 80` y `--output-format stream-json`; mide lo que cambió Qwen contra una foto del árbol y deja `attempt-N.log`, `.jsonl`, `.stderr`, `.patch` y `summary.tsv`. No carga modelos a mano (JIT). Lanzarlo en segundo plano: puede pasar de 10 min. En su primer uso, confirmar en el `.jsonl` los eventos `tool_use`, `tool_result` e `is_error` (vistos solo en el código de `qwen`).
-- **Entorno:** LM Studio con JIT y un solo modelo en memoria (no cargar modelos a mano). El 35B con contexto 131072 y `samplingParams` en `~/.qwen/settings.json` (temperature 0.6, top_p 0.95, top_k 20), porque Qwen Code manda su propia temperatura.
-- **Pendientes:** el 27B falla al formatear llamadas a herramientas; apagar la memoria automática de Qwen Code. (El MCP de AWS ya no está: `qwen mcp list` no muestra servidores.)
+- **T9 (spec 008), sin supervisión:** Claude lanza `qwen` en modo no interactivo (prompt posicional; `-p` está obsoleto en la 0.28.0) con `--approval-mode auto-edit --exclude-tools run_shell_command --max-wall-time 20m --max-session-turns 40`; briefs, logs y script de mutaciones en `~/qwen-calib/008-T9/`. Intento 1 (119 s) falló en lint (`unbound-method`) por una línea de ejemplo del brief; intento 2 (962 s, con un `ETIMEDOUT` y reintento) pasó. 0 archivos fuera de lo permitido, 8/8 mutaciones; Claude solo retocó el orden de un import y un comentario. El `ETIMEDOUT` probablemente no fue de LM Studio: la petición de las 16:47:43 generó sin parar unos 10 min (la caché de LM Studio crecía cada minuto) y el cliente la cortó a los 600 s del timeout del SDK, como en un bucle de razonamiento. Por eso no se subió el timeout: se limitó `max_tokens`. En jsdom, comparar bytes como arrays (`Uint8Array` de jsdom y de Node no son `toEqual`).
+- **Script para las próximas delegaciones:** `~/qwen-calib/run-qwen.sh <tarea> <intento>` (fuera del repo, aprobado el 20-nov; primer uso real en la fase 4). Lee `~/qwen-calib/<tarea>/brief-N.md` y `allowed.txt`; pasa el brief por stdin con los mismos límites que T9 más `--max-tool-calls 80` y `--output-format stream-json` (para contar los errores de herramienta); mide lo que cambió Qwen contra una foto del árbol y deja `attempt-N.log`, `.jsonl`, `.stderr`, `.patch` y `summary.tsv`. No carga modelos a mano (JIT). Lanzarlo en segundo plano: puede pasar de 10 min. En su primer uso, confirmar en el `.jsonl` los eventos `tool_use`, `tool_result.is_error` y `result` (vistos solo en el código de `qwen`). Los briefs y logs van en `~/qwen-calib/<tarea>/`, no en `/tmp` (se borra al reiniciar).
+- **Entorno (20-nov):** LM Studio con JIT y un solo modelo en memoria (no cargar modelos a mano). El 35B con contexto 131072 y `samplingParams` en `~/.qwen/settings.json` (temperature 0.6, top_p 0.95, top_k 20, `max_tokens` 16384), porque Qwen Code manda su propia temperatura; `budget_tokens` sigue en 32000 y LM Studio no se queja, pero el tope efectivo es 16384. Sin servidores MCP. Memoria automática apagada en los tres subsistemas (auto-memory, auto-dream y auto-skill) y memorias guardadas borradas: había memorias de otro proyecto (Rust) que se inyectaban en los briefs. Costo fijo de Qwen Code: unos 13.8k tokens de contexto por ejecución antes del brief.
+- **Pendiente:** el 27B falla al formatear llamadas a herramientas.
+- **Lecciones para ADR-0014, antes de aceptarlo:**
+  - El código de ejemplo del brief pasa lint y typecheck antes de enviarse.
+  - El brief apunta a las pruebas en lugar de copiarlas: Qwen las lee.
+  - La evidencia registra la causa de cada fallo: brief, prueba, modelo o infraestructura.
+  - Delegar solo si la salida es grande frente al contexto: UI, estilos, código repetitivo (como referencia, más de unas 50 líneas o varios archivos parecidos). Una tarea de ~15 líneas con mucho contexto no ahorra nada: T5 y T9 sirvieron para calibrar, no para ahorrar.
+  - Modo no interactivo con `--output-format stream-json` para contar los errores de herramienta.
+- **Al escribir las tareas de la fase 4:**
+  - Asignar `Q` con el criterio anterior y dividir pensando en quién ejecuta: la "hoja" de UI para Qwen; los estados compartidos, las conexiones entre módulos y `compose` para Opus.
+  - Cada tarea `Q` lleva su columna de archivos permitidos.
+  - Trabajo en olas dentro de cada punto de control: primero todas las pruebas de Opus y después la ola de Qwen, para dejarla corriendo con `run-qwen.sh`.
+  - Riesgo alto, con pruebas de Opus y revisión por tarea: todo lo de `progression` y `health` (sugerencia de progresión, alertas de dolor, deload) y cualquier cambio de esquema de Dexie (peso corporal, plan editable). La restricción lumbar (P-1, RN-PRG-00) nunca se delega.
+  - Tercera calibración (la de UI, que ADR-0014 pide para aceptarse): el temporizador de descanso.
 - La sección "Ejecución delegada" de `docs/README.md`, `QWEN.md` y la columna `Q` de `templates/tasks.md` se agregan cuando ADR-0014 pase a `Aceptado`.
 
 ## Siguiente paso
@@ -70,9 +82,7 @@ La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró co
 
 Además:
 
-1. **Pendientes tuyos que no bloquean:**
-   - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
-   - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
+1. **Ya sin pendientes tuyos (20-nov):** T20a de la 007 verificada en el iPhone (el aviso ya no sale al tocar "Compartir" en Safari) y T24 de la 005 hecha (el traumatólogo validó sin cambios los textos de salud y el aviso médico de Ajustes; `health.md` v1.15).
 2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
 3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
