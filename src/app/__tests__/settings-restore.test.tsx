@@ -229,7 +229,13 @@ describe('Restaurar respaldo: elegir el archivo', () => {
     const user = await openSettings(emptyDevice());
 
     await act(() => user.click(downloadButton()));
+    expect(restoreButton()).toBeDisabled();
 
+    // Also while the sheet is open. Waiting here keeps the late exportAll from reaching the next
+    // test's deliverFile.
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
     expect(restoreButton()).toBeDisabled();
   });
 
