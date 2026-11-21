@@ -22,10 +22,12 @@ export function BackupSection() {
   );
 }
 
-// One thing at a time: a download and a restore never overlap (decision 17 (a)).
+// One thing at a time: a download, a restore and the CSV never overlap (decision 17 (a), spec 008
+// AC-5).
 type State =
   | { kind: 'idle' }
   | { kind: 'preparing' }
+  | { kind: 'exporting' }
   | { kind: 'checking' }
   | { kind: 'pending'; pending: PendingImport }
   | { kind: 'restoring'; pending: PendingImport };
@@ -58,6 +60,20 @@ function BackupActions() {
     } catch {
       // Caught here, so the global unhandledrejection notice does not repeat it (decision 16 (c)).
       setMessage({ role: 'alert', text: GENERIC_ERROR_MESSAGE });
+    } finally {
+      setState({ kind: 'idle' });
+    }
+  }
+
+  // Spec 008 plan §6.6: as download, with no success message (decision 9).
+  async function exportCsv() {
+    setMessage(null); // AC-7
+    setState({ kind: 'exporting' });
+    try {
+      const { filename, blob } = await data.exportSeriesCsv();
+      await deliverFile(new File([blob], filename, { type: 'text/csv' }));
+    } catch {
+      setMessage({ role: 'alert', text: GENERIC_ERROR_MESSAGE }); // AC-6
     } finally {
       setState({ kind: 'idle' });
     }
@@ -133,6 +149,18 @@ function BackupActions() {
           tabIndex={-1}
           onChange={(event) => void review(event)}
         />
+      </div>
+      {/* Spec 008 §6.1: below the backup buttons; the messages stay after all three (AC-1). */}
+      <p className={styles.csvText}>{SETTINGS_TEXTS.csvText}</p>
+      <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.secondary}
+          disabled={busy}
+          onClick={() => void exportCsv()}
+        >
+          {state.kind === 'exporting' ? SETTINGS_TEXTS.preparingCsv : SETTINGS_TEXTS.exportCsv}
+        </button>
       </div>
       {/* The status region stays mounted so "Respaldo restaurado." is announced; an alert is
           announced when it is inserted. */}

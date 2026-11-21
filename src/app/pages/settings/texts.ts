@@ -10,6 +10,10 @@ export const SETTINGS_TEXTS = {
   restore: 'Restaurar respaldo',
   checking: 'Revisando…',
   restored: 'Respaldo restaurado.',
+  // Series CSV (spec 008 §6.1, plan §6.6)
+  csvText: 'Para abrir tus series en una hoja de cálculo.',
+  exportCsv: 'Exportar series (CSV)',
+  preparingCsv: 'Preparando CSV…',
   // Preview (spec §6.2, AC-14 to AC-18)
   previewTitle: '¿Restaurar este respaldo?',
   inProgress: 'Incluye una sesión en curso.',

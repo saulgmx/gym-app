@@ -103,6 +103,8 @@ const restoreButton = () =>
   screen.getByRole('button', { name: /^(Restaurar respaldo|Revisando…)$/ });
 const downloadButton = () =>
   screen.getByRole('button', { name: /^(Descargar|Preparando) respaldo…?$/ });
+const csvButton = () =>
+  screen.getByRole('button', { name: /^(Exportar series \(CSV\)|Preparando CSV…)$/ });
 const previewDialog = () => screen.queryByRole('dialog', { name: '¿Restaurar este respaldo?' });
 const section = () => screen.getByRole('region', { name: 'Respaldo' });
 
@@ -214,6 +216,7 @@ describe('Restaurar respaldo: elegir el archivo', () => {
     expect(restoreButton()).toHaveTextContent('Revisando…');
     expect(restoreButton()).toBeDisabled();
     expect(downloadButton()).toBeDisabled();
+    expect(csvButton()).toBeDisabled(); // spec 008 AC-5
 
     act(() => {
       finish();
@@ -582,6 +585,22 @@ describe('Restaurar respaldo: archivos rechazados (§6.3)', () => {
     await act(() => user.click(downloadButton()));
 
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('spec 008 AC-7: exportar el CSV borra "Respaldo restaurado."', async () => {
+    const user = await openSettings(emptyDevice());
+    const dialog = await preview(user);
+    await act(() =>
+      user.click(within(dialog).getByRole('button', { name: 'Reemplazar mis datos' })),
+    );
+    await restoredShown();
+
+    await act(() => user.click(csvButton()));
+
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
   });
 });
 
