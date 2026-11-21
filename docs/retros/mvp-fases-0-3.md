@@ -89,7 +89,7 @@ El tiempo de reloj no está registrado: las cifras miden esfuerzo por commits y 
 
 | # | Acción | Hallazgo | Dónde | Cuándo |
 |---|---|---|---|---|
-| S-1 | `[PROPUESTO]` Sección "Fuente de diseño" obligatoria en toda spec con interfaz: sin diseño elegido, la spec no pasa la puerta Spec → Plan | H-11 | `templates/feature-spec.md`, `docs/README.md` (puertas) | Antes de la spec 010 |
+| S-1 | Aprobado (21-nov). Sección "Fuente de diseño" obligatoria en toda spec con interfaz: sin diseño elegido, la spec no pasa la puerta Spec → Plan | H-11 | `templates/feature-spec.md`, `docs/README.md` (puertas) | Antes de la spec 010 |
 | S-2 | `[PROPUESTO]` Sección "Casos de borde por regla" en el plan, cerrada antes de aprobarlo | H-12 | `templates/feature-plan.md` | Antes de la spec 010 |
 | S-3 | `[PROPUESTO]` Columnas "Ejecutor (Q/C/U)", "Archivos permitidos" y "Mutaciones" en las tareas, y tareas fijas: bundle, iPhone y cierre de casos de borde | H-18, H-21 | `templates/tasks.md` | Con la aceptación de ADR-0014, o antes si se aprueba |
 | S-4 | `[PROPUESTO]` Evaluar Stryker (mutaciones con Vitest) para `progression` y `health`, en lugar del script manual | H-17 | ADR nuevo si se adopta (P-7) | Spec 010 |

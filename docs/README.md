@@ -14,6 +14,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | `specs/NNN-<feature>/` | Spec, plan y tareas de una feature o fase concreta | Por feature |
 | [`templates/`](templates/) | Plantillas para specs de feature, planes, tareas y ADRs | Rara vez |
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
+| `design-*.md` | ¿Cómo se ve cada pantalla? (diseño elegido y sus tableros) | Antes de la spec que construye o cambia la pantalla |
 | [`handoff.md`](handoff.md) | Estado actual y siguiente paso | Al final de cada sesión de trabajo |
 | [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (consulta, no hace falta para retomar) | Al cerrar una fase, se mueve aquí su detalle |
 
@@ -45,7 +46,7 @@ Una contradicción es un bug de documentación: se corrige el documento de menor
 
 Puertas de control (no se avanza si fallan):
 
-- **Spec → Plan:** cada requerimiento tiene criterio de aceptación verificable; no hay "[POR DEFINIR]" sin resolver.
+- **Spec → Plan:** cada requerimiento tiene criterio de aceptación verificable; no hay "[POR DEFINIR]" sin resolver; si la spec tiene interfaz, su **Fuente de diseño** nombra un diseño ya elegido (`design-*.md` y tablero) o las piezas existentes que reutiliza. Sin diseño elegido no se escribe el plan.
 - **Plan → Tareas:** el plan respeta la constitución y el grafo de dependencias; los contratos afectados están actualizados.
 - **Tareas → Código:** todo comportamiento con ID tiene su prueba antes que el código (P-5); las excepciones están declaradas en `tasks.md`.
 - **Código → Hecho:** CI verde (tsc, lint, fronteras, pruebas, build) y criterios de aceptación cubiertos por pruebas, o por la verificación manual que declara `tasks.md` (P-5).
