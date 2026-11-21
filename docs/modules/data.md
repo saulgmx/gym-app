@@ -1,6 +1,6 @@
 # Contrato del módulo `data`
 
-**Versión del contrato:** 1.7 · **Depende de:** `shared` · **Lo usan:** `app`
+**Depende de:** `shared` · **Lo usan:** `app`
 
 ## 1. Responsabilidad
 
@@ -172,3 +172,4 @@ RF-40 (JSON y CSV), RF-41, RNF-09, RNF-10, CA-6, ADR-0013. Más adelante: RF-42,
 5. **Ida y vuelta por contenido, durante T13 de la spec 007 (contrato v1.5, 19-nov-2026):** al importar, Zod construye cada fila en el orden de su esquema, así que una fila cuyo `finishedAt` se añadió al cerrar (la última clave) vuelve con `finishedAt` junto a `startedAt`. Los datos son idénticos; el texto no. RN-DAT-08 compara el contenido (el valor JSON sin `exportedAt`), no el texto. Se descartaron devolver el JSON crudo en `validate` (ignoraría en silencio un futuro valor por defecto o transformación del esquema) y ordenar las claves al exportar (código en cada exportación solo para el texto). Una segunda ida y vuelta ya da el mismo texto.
 6. **Spec 008, CSV de series (contrato v1.6, 20-nov-2026):** RN-DAT-14 fija el contenido, el orden y el formato del CSV, que reemplaza el borrador de columnas de §4 (sin `workoutId`; con `week`, `session` y `metric`; el nombre del ejercicio en lugar de su ID). La versión del formato va en el nombre del archivo (ADR-0013, constitución v1.1). La firma en la API (`exportCsv` o similar) y quién arma las filas (`csv?()` de `training` o un cruce en `data`) los fija el plan técnico; hasta entonces `csv?()` de §3 es un borrador.
 7. **Plan de la spec 008 (contrato v1.7, 20-nov-2026):** `training` da las filas tipadas (`SeriesRow` del kernel, por `DataPort.seriesRows?()`, que reemplaza el borrador `csv?()`; RN-TRN-31) y `data` escribe el archivo con funciones puras (`domain/csv.ts`) en `exportSeriesCsv()`. Las columnas, su orden y `CSV_VERSION` viven juntos en `data`, y un cambio de `SeriesRow` obliga a revisarlos. Se descartaron que `training` lo hiciera todo (formato y versión fuera de `data`) y que lo armara `app`.
+8. **Fin de la numeración (21-nov-2026):** el contrato deja de llevar número de versión (último: v1.7); el historial es git (`docs/README.md`, "Versiones y registro de cambios"; retro X-1).

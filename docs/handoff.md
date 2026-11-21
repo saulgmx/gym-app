@@ -1,27 +1,16 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 21-nov-2026 (fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de lo hecho por fase está en [`handoff-history.md`](handoff-history.md); el detalle, en la spec de cada fase.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.16, `architecture.md` v1.7, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.36, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos:** `constitution.md` v1.2 (P-2 enmendado, ADR-0013; P-5 enmendado, ADR-0015; P-8 enlaza a ADR-0012), ADR-0001 a 0015 (0014 propuesto) (0007 reemplazado por 0012). `spec.md`, `architecture.md` y los contratos ya no llevan número de versión: el historial es git (`docs/README.md`, "Versiones y registro de cambios"). `progression` sin preguntas abiertas, `health` con textos validados, `shared` §2 con `SeriesRow`. Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
-- **Fases hechas** (detalle en `handoff-history.md` y en cada spec):
-
-| Fase | Spec | Qué entregó | PR |
-|---|---|---|---|
-| 0 | `000-fase-0` | Herramientas, fronteras en CI, kernel, PWA, Vercel y dominio | #3 a #6 |
-| 1 | `001-fase-1` | Módulo `plan`, seed, "Hoy" | #7 a #10 |
-| 2 | `002-fase-2` | Módulo `training`, sesión activa, base v2 | #12 a #17 |
-| 2.5 | `003-rediseno-hoy`, `004-rediseno-sesion` | Rediseño de "Hoy" y de la sesión activa | #20 a #30 |
-| 3 | `005-cierre` | Módulo `health`, Cierre con dolor lumbar, base v3 | #37 a #45 |
-| 3 | `005b-una-sesion-por-dia` | Una sola sesión cerrada por día (RN-TRN-27) | #46 a #50 |
-| 3 | `006-historial` | Pestaña "Historial", lista y detalle | #51 a #57 |
-| 3 | `007-respaldo` | Módulo `data`, pestaña "Ajustes", respaldo JSON | #58 a #65 |
-| 3 | `008-csv` | "Exportar series (CSV)" en Ajustes; cierra la fase 3 | #66 a #68, #70, #73, #75 y el de cierre |
+- **Fases hechas:** 0 a 3 (specs 000 a 008). Índice con enlaces y PRs en `handoff-history.md`.
+- **Retrospectiva del MVP** ([`retros/mvp-fases-0-3.md`](retros/mvp-fases-0-3.md), 21-nov): aplicadas F-1, F-2, S-1, S-2, S-5, X-1 y X-3. Pendientes de decidir: S-3, S-4, S-6, S-7, S-8, X-2, X-4, F-3 y las preguntas abiertas de §5.
 
 ## Decisiones tomadas
 

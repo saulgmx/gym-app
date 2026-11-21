@@ -1,6 +1,6 @@
 # Contrato del módulo `plan`
 
-**Versión del contrato:** 1.22 · **Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
+**Depende de:** `shared` · **Lo usan:** `training`, `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -267,3 +267,4 @@ RF-01, RF-02, RF-03, RF-04, RF-05, RF-17 (`cue`), RF-32 (bloque de una semana, s
 23. **Spec 007, respaldo (contrato v1.20, 19-nov-2026):** `dataPort` entra en `PlanApi`. Exporta las 4 tablas tal cual (RN-PLN-25) y al importar valida el plan con las mismas reglas del seed: esquema (RN-PLN-24), RN-PLN-07 primero (un respaldo con un ejercicio `high` se rechaza, P-1), RN-PLN-15 y un solo programa. Importar reemplaza las 4 tablas, también `startDate`. La forma de sus datos, su versión y cómo expone los IDs de ejercicio a `training` para RN-DAT-11 los fija el plan técnico de la spec 007.
 24. **Plan de la spec 007 (contrato v1.21, 19-nov-2026):** RN-PLN-29. El formato es el del seed con `startDate` dentro de `program` (no `programs: []`), para reutilizar `planSeedSchema` y `validateSeed`; los IDs del catálogo salen en `describe` como `provides.exercise`. `id` del esquema del seed pasa a `idSchema` de `shared/kernel/schemas.ts`.
 25. **Casos de borde de RN-PLN-29, antes de T5 de la spec 007 (contrato v1.22, 19-nov-2026):** orden de las filas por `id`; todos los bloques; sin programa lanza; solo `fromVersion` 1; esquema antes que reglas; `startDate` sin exigir lunes; transacciones propias que se anidan; `describe` sin `requires`.
+26. **Fin de la numeración (21-nov-2026):** el contrato deja de llevar número de versión (último: v1.22); el historial es git (`docs/README.md`, "Versiones y registro de cambios"; retro X-1).
