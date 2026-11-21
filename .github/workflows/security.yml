@@ -33,7 +33,7 @@ jobs:
 
       - name: Upload to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -70,11 +70,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+npm ci --strict-allow-scripts
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate
-        continue-on-error: true
+continue-on-error: false
 
       - name: Run npm audit fix (dry-run)
         run: npm audit fix --dry-run
