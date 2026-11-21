@@ -2,7 +2,7 @@
 
 **Plan:** `specs/NNN-<feature>/plan.md`
 
-Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación concreta. En `progression` y `health`, la tarea de pruebas va antes que la de implementación.
+Cada tarea es pequeña (≤ 1-2 h), deja el CI verde y tiene una verificación concreta. Todo comportamiento con ID tiene su tarea de pruebas antes que la de implementación (P-5); una tarea que va sin prueba previa lo declara con su motivo, y en `progression` y `health` no hay excepciones.
 
 | # | Tarea | Módulo / capa | Verificación | Cubre | Estado |
 |---|---|---|---|---|---|

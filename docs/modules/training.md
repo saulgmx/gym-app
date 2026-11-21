@@ -1,6 +1,6 @@
 # Contrato del módulo `training`
 
-**Versión del contrato:** 1.36 · **Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
+**Depende de:** `plan` (API), `shared` · **Lo usan:** `progression`, `app`
 
 ## 1. Responsabilidad
 
@@ -367,3 +367,4 @@ RF-10 a RF-17, RF-18 (solo durante el descanso, spec 009), RF-19 a RF-21, RF-23,
 36. **Casos de borde de la lectura de RN-TRN-31, antes de T6 de la spec 008 (contrato v1.34, 20-nov-2026):** (i) el orden de los IDs que recibe `getExercises` queda libre, porque a `plan` no le importa y así la implementación no se ata a uno; (j) un rechazo de la lectura de `training` o de `plan` llega tal cual a quien llama (ADR-0010).
 37. **Spec 009, temporizador de descanso (contrato v1.35, 20-nov-2026):** RN-TRN-32 a 35. El descanso se calcula de la última serie hecha (`completedAt` + `restSeconds`) y no se guarda: sin tablas ni migración. Los ajustes (−15 s, +15 s, Saltar) viven en memoria y se pierden al recargar. Termina en el máximo; un tono al mínimo y dos al máximo, solo por el paso del tiempo y con la app en primer plano. Wake Lock solo durante el descanso. La firma de la función del dominio y de `RestTimer` las fija el plan.
 38. **Plan de la spec 009 (contrato v1.36, 20-nov-2026):** `restOf(state, restSeconds, now, adjustment)` pura en `domain/rest.ts`, y `restTimer(view, now, adjustment)` pública en `application/rest.ts`, como `progressOf` y `workoutProgress`. El ajuste lleva el `setId` de su serie: si no es la de referencia, se ignora, así que el reinicio de RN-TRN-34 es puro y el store de `app` no vigila la vista. `restSignal(prev, next, byTime)` pura (RN-TRN-35): 1 tono al pasar a `ready` y 2 al terminar, solo con `byTime`; el paso a `ready` sin `byTime` (control o vuelta a primer plano) se anuncia sin tono; con `min = max` el fin por tiempo da 2 tonos. `RestTimer` es solo presentación; los ajustes (Zustand), el sonido (Web Audio), el Wake Lock y el foco viven en `app`. Casos de borde en el plan §6.1.
+39. **Fin de la numeración (21-nov-2026):** el contrato deja de llevar número de versión (último: v1.36); el historial es git (`docs/README.md`, "Versiones y registro de cambios"; retro X-1).

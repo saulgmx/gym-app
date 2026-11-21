@@ -14,7 +14,7 @@ Dos o tres frases.
 
 ## 3. Cambios de contrato
 
-API, eventos, puertos o tablas que cambian. **Actualizar `modules/*.md` antes de escribir código.**
+API, eventos, puertos o tablas que cambian. **Actualizar `modules/*.md` antes de escribir código** y agregar una entrada en la sección Decisiones del contrato.
 
 ## 4. Datos
 
@@ -29,16 +29,24 @@ Diagrama de secuencia (Mermaid) si involucra más de un módulo.
 
 Alternativas consideradas. Si es estructural → ADR-nnnn.
 
-## 7. Estrategia de pruebas
+## 7. Casos de borde por regla
+
+Cada regla nueva o cambiada (`RN-<MOD>-nn`) con sus casos de borde y el resultado esperado. Parte de los casos límite de la spec (§7) y agrega los técnicos: vacíos, límites del rango, empates en el orden, datos borrados o de otra versión, zona horaria y medianoche. Se cierran antes de aprobar el plan y se copian al contrato junto con la regla. Un caso que aparezca al escribir la prueba es un hueco del plan: se agrega aquí y en el contrato antes del código.
+
+| Regla | Caso | Resultado esperado |
+|---|---|---|
+| RN-XXX-nn | (a) … | … |
+
+## 8. Estrategia de pruebas
 
 | Criterio | Tipo de prueba | Archivo |
 |---|---|---|
 | AC-1 | Unitaria (dominio) | `modules/x/__tests__/…` |
 
-## 8. Riesgos
+## 9. Riesgos
 
 - …
 
-## 9. Checklist de la constitución
+## 10. Checklist de la constitución
 
 - [ ] P-1 · [ ] P-2 · [ ] P-3 · [ ] P-4 · [ ] P-5 · [ ] P-6 · [ ] P-7 · [ ] P-8

@@ -1,6 +1,6 @@
 # Constitución del proyecto
 
-**Versión:** 1.1 · **Fecha:** 20-nov-2026
+**Versión:** 1.2 · **Fecha:** 21-nov-2026
 
 Principios no negociables. Cada spec, plan, ADR y PR se revisa contra esta lista. Una excepción requiere enmendar este documento (ver al final), no un comentario en el código.
 
@@ -36,10 +36,10 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 - Cada módulo es el único dueño de sus tablas; los demás usan su API pública.
 - El CI falla si se rompe una frontera ([ADR-0008](adr/0008-verificacion-de-fronteras.md)). No se desactivan las reglas con comentarios `eslint-disable` para fronteras.
 
-## P-5. Dominio puro y probado primero
+## P-5. Dominio puro y pruebas primero
 
 - La capa `domain` es TypeScript puro: sin React, Dexie, `Date.now()` ni `Math.random()` directos. El tiempo y los IDs entran como parámetros o puertos (`Clock`, `IdGenerator`).
-- Las reglas de `progression` y `health` se escriben **prueba primero**, citando su ID (`RN-PRG-nn`, `RN-HLT-nn`).
+- Todo comportamiento con ID (regla `RN-<MOD>-nn` o criterio de aceptación verificable por prueba automática) se escribe **prueba primero**, en cualquier módulo y en `app`, citando su ID. Corregir un fallo empieza con una prueba que lo reproduce. En `progression` y `health` no hay excepciones. En el resto pueden ir sin prueba previa, si la tarea lo declara con su motivo: tareas sin comportamiento propio (herramientas, configuración, estilos), refactors cubiertos por pruebas existentes y criterios que se verifican a mano (iPhone o revisión visual) ([ADR-0015](adr/0015-pruebas-primero.md)).
 - Cobertura del dominio > 80% (RNF-08).
 
 ## P-6. Rápido de usar en el gym
@@ -58,7 +58,7 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 
 - UI y documentación en español. Código, identificadores, nombres técnicos y commits en inglés.
 - TypeScript estricto (`strict: true`, `noUncheckedIndexedAccess: true`). Sin `any` en APIs públicas.
-- Todo dato que entra desde fuera (import JSON, seed) se valida con Zod ([ADR-0007](adr/0007-zod-en-fronteras.md)).
+- Todo dato que entra desde fuera (import JSON, seed) se valida con Zod ([ADR-0012](adr/0012-validacion-del-seed-zod-y-dominio.md)).
 
 ---
 
@@ -68,7 +68,7 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 - [ ] P-2: ¿se guarda cada cambio al instante? ¿Hay migración y prueba de ida y vuelta si cambió el esquema? ¿Cada exportación lleva la versión de su formato?
 - [ ] P-3: ¿cada cambio tiene spec o contrato? ¿Quedan `[POR DEFINIR]`?
 - [ ] P-4: ¿solo se importan `index.ts` de otros módulos? ¿Sin ciclos? ¿Nadie toca tablas ajenas?
-- [ ] P-5: ¿el dominio es puro? ¿Las pruebas de progression/health se escribieron antes?
+- [ ] P-5: ¿el dominio es puro? ¿Cada tarea con comportamiento tiene su commit en rojo antes del verde? ¿Las excepciones están declaradas en `tasks.md` con su motivo?
 - [ ] P-6: ¿objetivos ≥ 44 px, contraste AA, bundle dentro del presupuesto?
 - [ ] P-7: ¿hay algo que se pueda quitar?
 - [ ] P-8: ¿entradas externas validadas con Zod? ¿Sin `any` público?
@@ -83,3 +83,4 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 |---|---|---|
 | 1.0 | 16-nov-2026 | Versión inicial |
 | 1.1 | 20-nov-2026 | P-2: toda exportación lleva la versión de su formato; el CSV, en el nombre del archivo (ADR-0013, spec 008) |
+| 1.2 | 21-nov-2026 | P-8: el enlace pasa de ADR-0007 a ADR-0012, que lo reemplazó (corrección editorial, sin ADR). P-5: prueba primero para todo comportamiento con ID, con excepciones declaradas (ADR-0015) |

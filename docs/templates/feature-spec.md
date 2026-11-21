@@ -2,6 +2,7 @@
 
 **ID:** NNN · **Estado:** Borrador | En revisión | Aprobada · **Fecha:** dd-mmm-aaaa
 **Requerimientos cubiertos:** RF-xx, RF-yy · **Fase:** n (spec §13)
+**Fuente de diseño:** `docs/design-<pantalla>.md`, tablero "<nombre>" | sin tablero propio; reutiliza <piezas y su documento> | sin interfaz
 
 ## 1. Problema y objetivo
 
@@ -31,7 +32,7 @@ RN-xxx-nn (enlazar al contrato del módulo). Reglas nuevas: proponerlas aquí y 
 
 ## 6. UX
 
-Pantallas, estados (vacío, cargando, error, sin conexión), textos en español, accesibilidad.
+Lo que la fuente de diseño no fija: estados (vacío, cargando, error, sin conexión), textos en español, accesibilidad. Si la spec cambia el diseño elegido, se anota aquí el cambio y se actualiza el `design-*.md` en el mismo PR.
 
 ## 7. Casos límite
 

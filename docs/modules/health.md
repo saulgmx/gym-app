@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.15 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -245,6 +245,7 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 15. **Plan de la spec 007 (contrato v1.13, 19-nov-2026):** RN-HLT-21 y el código `health/invalid-backup`, con pruebas primero (P-5). `health` no ve los workouts del archivo: declara sus `workoutId` en `describe` como `requires.workout` y `data` los cruza con lo que ofrece `training` (RN-DAT-11).
 16. **Casos de borde de RN-HLT-21, antes de T9 de la spec 007 (contrato v1.14, 19-nov-2026):** banderas en cualquier orden y sin repetir; orden de las reglas y sus `details`; sin comprobar `date` contra el workout; `describe` sin `provides`; filas por `id`, `current()` vacío, solo `fromVersion` 1 y transacciones que se anidan.
 17. **Textos validados (contrato v1.15, 20-nov-2026, T24 de la spec 005):** el traumatólogo validó sin cambios los textos de §6.1 y el aviso médico de Ajustes (spec 007 §6.1); dejan de ser `[PROPUESTO]`. Ninguna regla cambia.
+18. **Fin de la numeración (21-nov-2026):** el contrato deja de llevar número de versión (último: v1.15); el historial es git (`docs/README.md`, "Versiones y registro de cambios"; retro X-1).
 
 Preguntas abiertas:
 
