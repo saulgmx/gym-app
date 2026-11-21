@@ -323,7 +323,13 @@ describe('Exportar series (CSV) (spec 008)', () => {
     const { user } = await openSettings();
 
     await act(() => user.click(downloadButton()));
+    expect(csvButton()).toBeDisabled();
 
+    // Also while the sheet is open. Waiting here keeps the late exportAll from reaching the next
+    // test's deliverFile.
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
     expect(csvButton()).toBeDisabled();
   });
 

@@ -13,6 +13,12 @@
   color: var(--text-muted);
 }
 
+/* Spec 008 §6.1: a second group, set apart from the backup buttons. */
+.csvText {
+  margin: 1rem 0 0.5rem;
+  color: var(--text-muted);
+}
+
 .actions {
   display: grid;
   gap: 0.5rem;
