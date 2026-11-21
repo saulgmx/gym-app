@@ -21,7 +21,7 @@ export const SETTINGS_TEXTS = {
   restoring: 'Restaurando…',
   cancel: 'Cancelar',
   notice: 'Aviso',
-  // [PROPUESTO] until T24 of spec 005, like the other health texts (spec 007 §8 decision 11).
+  // Validated unchanged by the specialist on 2026-11-20, with the health texts (spec 005 T24).
   noticeText:
     'Esta app no es un dispositivo médico. Los avisos sobre el dolor lumbar son orientativos y no sustituyen la valoración de tu traumatólogo o fisioterapeuta.',
 } as const;

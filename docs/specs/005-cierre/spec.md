@@ -1,6 +1,6 @@
 # Spec: Cierre de sesión
 
-**ID:** 005 · **Estado:** Implementada (19-nov-2026; los textos de salud siguen `[PROPUESTO]` hasta T24) · **Fecha:** 18-nov-2026
+**ID:** 005 · **Estado:** Implementada (19-nov-2026; textos de salud validados el 20-nov-2026, T24) · **Fecha:** 18-nov-2026
 **Requerimientos cubiertos:** RF-20, RF-21, RF-22, RF-23, RNF-01, RNF-05 · **Fase:** 3 (spec §13), primera parte
 **Fuente de diseño:** [`docs/design-cierre.md`](../../design-cierre.md), tablero "Cierre" (`Cierre.dc.html`) del lienzo de diseño; [`docs/design-hoy.md`](../../design-hoy.md) para lo que cambia en "Hoy"
 **ADRs aplicados:** 0002, 0005, 0009, 0010
@@ -62,8 +62,8 @@ Las fechas suponen un programa que empieza el lunes 16-nov-2026. La semana 1 tie
 | AC-11 | AC-10 | Toco "2" | "2" queda con `aria-pressed="true"`; el mensaje dice "Molestia leve, dentro de lo normal. Sigue con el plan." (RN-HLT-02) y se anuncia una vez (`aria-live="polite"`); "Guardar sesión" se habilita y el texto de ayuda desaparece |
 | AC-12 | AC-11 | Toco "5", luego "8" | Con 5: "Molestia alta. Baja la carga la próxima sesión y evita los ejercicios que la provocaron.", botón elegido en ámbar. Con 8: "Dolor alto. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta.", con barra ámbar. Solo un botón queda elegido |
 | AC-13 | AC-7 | Miro "Banderas rojas" | Cuatro casillas sin marcar, opcionales: "Dolor que baja por la pierna", "Hormigueo o adormecimiento", "Debilidad en el pie" y "Problemas de control de vejiga o intestino" |
-| AC-14 | AC-13 | Marco "Hormigueo o adormecimiento" | Aparece el aviso ámbar "Consulta a un médico antes de seguir entrenando. No se sugerirá subir carga." [PROPUESTO] (RN-HLT-06) |
-| AC-15 | AC-14 | Marco también "Problemas de control de vejiga o intestino" | El aviso cambia a "Acude a urgencias. No sigas entrenando hasta que te revise un médico." [PROPUESTO]. Al desmarcar todas, el aviso desaparece |
+| AC-14 | AC-13 | Marco "Hormigueo o adormecimiento" | Aparece el aviso ámbar "Consulta a un médico antes de seguir entrenando. No se sugerirá subir carga." (RN-HLT-06) |
+| AC-15 | AC-14 | Marco también "Problemas de control de vejiga o intestino" | El aviso cambia a "Acude a urgencias. No sigas entrenando hasta que te revise un médico.". Al desmarcar todas, el aviso desaparece |
 | AC-16 | AC-7 | Miro "Notas de la sesión" | Un campo de texto opcional, vacío, con etiqueta visible |
 | AC-17 | AC-7, en un teléfono | Desplazo el contenido | "Guardar sesión" (56 px) y "Volver a la sesión" (48 px) quedan fijos abajo con la zona segura; el contenido no queda tapado por el pie |
 
@@ -107,11 +107,11 @@ Las fechas suponen un programa que empieza el lunes 16-nov-2026. La semana 1 tie
 |---|---|---|---|
 | AC-37 | Sin ninguna entrada de dolor | Abro "Hoy" | Ni aviso ni chip "Espalda" (spec 003 §6.6) |
 | AC-38 | La última entrada: 3, sin banderas, sin alerta persistente | Abro "Hoy" (estado D) | Chip "Espalda 3/10" junto a bloque y RIR; sin aviso (RN-HLT-12) |
-| AC-39 | La última entrada: 5 | Abro "Hoy" | Aviso ámbar arriba de la tarjeta: "Espalda baja 5/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron." [PROPUESTO]; chip "Espalda 5/10" |
-| AC-40 | Las 3 últimas entradas 1, 2 y 3 | Abro "Hoy" | Aviso: "Tu dolor lumbar subió en las 3 últimas sesiones (1 → 2 → 3). Hoy prioriza la técnica y no añadas carga." [PROPUESTO] (RN-HLT-05) |
-| AC-41 | Las 2 últimas entradas 4 y 5 | Abro "Hoy" | Aviso de alerta persistente: "Espalda baja por encima de 3/10 en las 2 últimas sesiones. Hoy prioriza la técnica y no añadas carga; si sigue, consulta a tu traumatólogo o fisioterapeuta." [PROPUESTO] (RN-HLT-04, manda sobre Atención) |
-| AC-42 | La última entrada: 8 | Abro "Hoy" | Aviso: "Espalda baja 8/10 en la última sesión. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta." [PROPUESTO] |
-| AC-43 | La última entrada con "Debilidad en el pie" | Abro "Hoy" | Aviso: "En la última sesión marcaste una señal de alarma. Consulta a un médico antes de seguir entrenando." [PROPUESTO]; con "Problemas de control de vejiga o intestino": "En la última sesión marcaste problemas de control de vejiga o intestino. Acude a urgencias antes de volver a entrenar." [PROPUESTO] |
+| AC-39 | La última entrada: 5 | Abro "Hoy" | Aviso ámbar arriba de la tarjeta: "Espalda baja 5/10 en la última sesión. Hoy baja la carga y evita los ejercicios que la provocaron."; chip "Espalda 5/10" |
+| AC-40 | Las 3 últimas entradas 1, 2 y 3 | Abro "Hoy" | Aviso: "Tu dolor lumbar subió en las 3 últimas sesiones (1 → 2 → 3). Hoy prioriza la técnica y no añadas carga." (RN-HLT-05) |
+| AC-41 | Las 2 últimas entradas 4 y 5 | Abro "Hoy" | Aviso de alerta persistente: "Espalda baja por encima de 3/10 en las 2 últimas sesiones. Hoy prioriza la técnica y no añadas carga; si sigue, consulta a tu traumatólogo o fisioterapeuta." (RN-HLT-04, manda sobre Atención) |
+| AC-42 | La última entrada: 8 | Abro "Hoy" | Aviso: "Espalda baja 8/10 en la última sesión. Detén el entrenamiento de esta zona y consulta a tu traumatólogo o fisioterapeuta." |
+| AC-43 | La última entrada con "Debilidad en el pie" | Abro "Hoy" | Aviso: "En la última sesión marcaste una señal de alarma. Consulta a un médico antes de seguir entrenando."; con "Problemas de control de vejiga o intestino": "En la última sesión marcaste problemas de control de vejiga o intestino. Acude a urgencias antes de volver a entrenar." |
 | AC-44 | AC-39 con una sesión en curso (D2) | Abro "Hoy" | Ni aviso ni chip (spec 003 §6.6) |
 | AC-45 | AC-41 y luego una sesión guardada con dolor 2 | Abro "Hoy" | Ya no hay aviso: la alerta es derivada (RN-HLT-08); chip "Espalda 2/10" |
 
@@ -191,12 +191,12 @@ Cambios de documentos hechos al aprobar (18-nov):
 
 ## 8. Preguntas abiertas
 
-Ninguna que bloquee. Los textos de salud (banderas rojas en AC-14 y AC-15, aviso de "Hoy" en AC-39 a AC-43) se aprueban y siguen `[PROPUESTO]` solo hasta validarlos con el traumatólogo (spec §14); cambiarlos no cambia ninguna regla.
+Ninguna que bloquee. Los textos de salud (banderas rojas en AC-14 y AC-15, aviso de "Hoy" en AC-39 a AC-43) se aprobaron como `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14); se validaron sin cambios el 20-nov-2026 (T24, `health.md` decisión 17).
 
 Decisiones cerradas el 18-nov-2026 (conversación con el dueño del producto):
 
 1. **Alcance:** solo el Cierre; historial en la 006 y exportar/importar en la 007.
-2. **Banderas rojas:** los textos del diseño, `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). No bloquean esta spec.
+2. **Banderas rojas:** los textos del diseño, `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). No bloquean esta spec. Validados sin cambios el 20-nov-2026 (T24).
 3. **"Terminar sesión":** en el pie del último ejercicio, en lugar de "Siguiente".
 4. **Notas:** `Workout.notes`, se guardan con `finishWorkout` y no se editan después (RN-TRN-07).
 5. **Sesión parcial:** mismo Cierre, dolor obligatorio, título igual, "N de M" en ejercicios; cuenta como hecha en la tira (`design-cierre.md` §4).

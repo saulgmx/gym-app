@@ -5,7 +5,7 @@
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -70,9 +70,7 @@ La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró co
 
 Además:
 
-1. **Pendientes tuyos que no bloquean:**
-   - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
-   - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
+1. **Ya sin pendientes tuyos (20-nov):** T20a de la 007 verificada en el iPhone (el aviso ya no sale al tocar "Compartir" en Safari) y T24 de la 005 hecha (el traumatólogo validó sin cambios los textos de salud y el aviso médico de Ajustes; `health.md` v1.15).
 2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
 3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 

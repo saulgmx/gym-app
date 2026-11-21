@@ -1,6 +1,6 @@
 # Contrato del módulo `health`
 
-**Versión del contrato:** 1.14 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
+**Versión del contrato:** 1.15 · **Depende de:** `shared` · **Lo usan:** `progression`, `app`, `training` (vía puerto `PainGate`)
 
 ## 1. Responsabilidad
 
@@ -163,9 +163,9 @@ No escucha eventos.
 | RN-HLT-20 | `getPainForWorkouts(workoutIds)` devuelve un mapa con la entrada de cada id que tiene una (RN-HLT-09: como mucho una por workout); los ids sin entrada no están; los ids repetidos cuentan una vez; con la lista vacía, mapa vacío sin leer la base. Rechaza si falla la base (RN-HLT-16). `usePainForWorkouts(health, ids)` sigue RN-HLT-19: `undefined` mientras carga o con el resultado de otra lista de ids, y se actualiza con `painEntries`. La clave es `ids.join('|')` en el orden recibido (un UUIDv7 no contiene `|`): la misma lista en otro orden es otra clave y pasa un instante por `undefined`; un arreglo nuevo con los mismos ids en cada render no repite la consulta. Con `[]`, `undefined` y luego un mapa vacío, sin leer la base. Cada valor es la `PainEntry` guardada tal cual; el orden de las claves del mapa no está garantizado (se busca con `get`). `health` no comprueba que los workouts existan. | RF-32, spec 006 |
 | RN-HLT-21 | **Respaldo de health** (`dataPort`: `name 'health'`, `version 1`, `order 30`). Formato `{ painEntries }`, tal como están guardadas. `validate`: esquema estricto de `PainEntry` (nivel entero 0-10, banderas de `RED_FLAGS` sin repetir, `date` `LocalDate`, `recordedAt` `Instant`; un fallo es `health/invalid-backup` con `details: { rule: 'schema', issues }`) y después la función pura `checkHealthBackup` (`domain/backup.ts`), que devuelve el primer fallo: IDs únicos (`rule: 'unique-id'`) y como mucho una entrada por `workoutId` (`'one-per-workout'`, RN-HLT-09), con el ID implicado en `details`. `describe`: `requires.workout` = `workoutId` de cada entrada y `facts.painEntries`. `current`: `{}`. `importData` vacía `painEntries` y escribe con `bulkAdd`. **Casos de borde** (decisión 16): (a) las banderas se aceptan en cualquier orden; una repetida es un error de esquema; (b) primero `unique-id` (`{ rule, id }`) y después `one-per-workout` (`{ rule, workoutId }`); el esquema da `{ rule: 'schema', issues }`; (c) no se comprueba que `date` coincida con la del workout (`health` no ve los workouts, RN-HLT-09); (d) `describe`: `requires.workout` en el orden de las entradas, `facts.painEntries` = número de entradas, `provides` vacío; (e) filas por `id`, `current()` = `{}`, solo `fromVersion` 1 (otra lanza) y transacciones propias que se anidan en la de `data`, como `plan` y `training`. | RF-40, RF-41, spec 007 |
 
-### 6.1 Textos [PROPUESTO]
+### 6.1 Textos
 
-Aprobados en la spec 005; quedan `[PROPUESTO]` hasta validarlos con el traumatólogo (spec §14). N = nivel de la última entrada; U = umbral; los dos se escriben como enteros (`String`). En `rising_3x`, "a → b → c" va en orden cronológico (a = la más antigua de las tres, c = la última), separados por " → " (U+2192 con un espacio a cada lado): `latestFirst` [3, 2, 1] → "(1 → 2 → 3)".
+Aprobados en la spec 005 y validados sin cambios con el traumatólogo el 20-nov-2026 (decisión 17, T24 de la spec 005). N = nivel de la última entrada; U = umbral; los dos se escriben como enteros (`String`). En `rising_3x`, "a → b → c" va en orden cronológico (a = la más antigua de las tres, c = la última), separados por " → " (U+2192 con un espacio a cada lado): `latestFirst` [3, 2, 1] → "(1 → 2 → 3)".
 
 | Causa | Texto |
 |---|---|
@@ -244,7 +244,8 @@ Decisiones (pregunta 8, 18-nov-2026, contrato v1.1):
 14. **Spec 007, respaldo (contrato v1.12, 19-nov-2026):** `dataPort` entra en `HealthApi`. Exporta `painEntries` tal cual (sin `bodyMetrics` ni ajustes, que no existen todavía). Al importar valida el esquema (nivel entero 0-10, banderas de `RED_FLAGS`), IDs únicos, como mucho una entrada por workout (RN-HLT-09) y que cada `workoutId` esté en los workouts del archivo (RN-DAT-11). Importar reemplaza la tabla. La forma de sus datos, su versión y cómo ve los workouts del archivo sin depender de `training` los fija el plan técnico de la spec 007.
 15. **Plan de la spec 007 (contrato v1.13, 19-nov-2026):** RN-HLT-21 y el código `health/invalid-backup`, con pruebas primero (P-5). `health` no ve los workouts del archivo: declara sus `workoutId` en `describe` como `requires.workout` y `data` los cruza con lo que ofrece `training` (RN-DAT-11).
 16. **Casos de borde de RN-HLT-21, antes de T9 de la spec 007 (contrato v1.14, 19-nov-2026):** banderas en cualquier orden y sin repetir; orden de las reglas y sus `details`; sin comprobar `date` contra el workout; `describe` sin `provides`; filas por `id`, `current()` vacío, solo `fromVersion` 1 y transacciones que se anidan.
+17. **Textos validados (contrato v1.15, 20-nov-2026, T24 de la spec 005):** el traumatólogo validó sin cambios los textos de §6.1 y el aviso médico de Ajustes (spec 007 §6.1); dejan de ser `[PROPUESTO]`. Ninguna regla cambia.
 
 Preguntas abiertas:
 
-1. Validar los umbrales y mensajes con tu traumatólogo antes de depender de ellos (spec §14).
+1. Validar los umbrales con tu traumatólogo antes de depender de ellos (spec §14). Los mensajes ya están validados (decisión 17).

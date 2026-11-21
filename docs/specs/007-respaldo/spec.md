@@ -165,7 +165,7 @@ Cambios de documentos hechos al aprobar (19-nov):
 ### 6.1 Ajustes (`/ajustes`)
 - Con barra inferior; pestaña "Ajustes" con icono de engranaje decorativo. `h1` "Ajustes".
 - **Respaldo** (`h2`): "Tus datos solo están en este teléfono. Descarga un respaldo de vez en cuando y guárdalo en Archivos, iCloud o tu correo." Debajo, "Descargar respaldo" (botón principal) y "Restaurar respaldo" (botón secundario), cada uno ≥ 44 px y a lo ancho. Debajo de los botones, la zona de mensajes (§6.3).
-- **Aviso** (`h2`): "Esta app no es un dispositivo médico. Los avisos sobre el dolor lumbar son orientativos y no sustituyen la valoración de tu traumatólogo o fisioterapeuta." `[PROPUESTO]` como los demás textos de salud, hasta T24 de la spec 005.
+- **Aviso** (`h2`): "Esta app no es un dispositivo médico. Los avisos sobre el dolor lumbar son orientativos y no sustituyen la valoración de tu traumatólogo o fisioterapeuta." Validado sin cambios con el traumatólogo el 20-nov-2026, con los demás textos de salud (T24 de la spec 005).
 
 ### 6.2 Restaurar
 - "Restaurar respaldo" abre un `<input type="file" accept="application/json,.json">` oculto (el botón visible es el control con etiqueta). Al elegir, se revisa; el botón dice "Revisando…" y queda `disabled` mientras tanto (AC-20). Al terminar, el valor del input se limpia para poder elegir el mismo archivo otra vez (AC-21).
@@ -221,7 +221,7 @@ Propuestas al escribir la spec, aprobadas con ella (19-nov):
 
 9. **Datos tolerados** (RN-DAT-12): dos `completed` el mismo día y un `completed` sin dolor se aceptan. Rechazarlos exigiría comprobar dos reglas más al importar (P-7), contradiría lo que el historial ya muestra y dejaría sin arreglo un respaldo así, porque borrar sesiones no existe todavía. Las sesiones de prueba de la semana del 16-nov en el iPhone no cuentan como motivo: el dueño del producto las limpiará borrando los datos del sitio (RF-43 sigue en v1.0).
 10. **Las `discarded` viajan en el archivo** (AC-9), para que la ida y vuelta sea exacta (RN-DAT-08), aunque no se cuenten en la vista previa.
-11. **Texto del aviso médico** de §6.1, `[PROPUESTO]` hasta T24 de la spec 005.
+11. **Texto del aviso médico** de §6.1, `[PROPUESTO]` hasta T24 de la spec 005. Validado sin cambios el 20-nov-2026.
 12. **Después de restaurar no se navega:** se queda en Ajustes con "Respaldo restaurado.".
 
 Decisiones durante la implementación (19-nov):
