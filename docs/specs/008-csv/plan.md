@@ -132,6 +132,8 @@ Como `ImportFacts`, el tipo lo comparten `training` (lo produce) y `data` (lo co
 
 Dos funciones pequeñas y tres textos; sin dependencias nuevas. Se mide en la tarea de la página (AC-29).
 
+**Medido en T12 (20-nov):** 177.49 kB gzip de 200 kB (+0.83 kB sobre los 176.66 kB de la spec 007, con A, B y C). Por debajo del umbral de 190 kB de la spec 007 §6.6, así que Ajustes sigue en el bundle inicial.
+
 ## 7. Estrategia de pruebas
 
 Pruebas primero en las dos funciones puras y en el servicio (commit en rojo local, como siempre).
