@@ -47,6 +47,9 @@ async function openSettings(app: AppServices = services()) {
 
 const downloadButton = () =>
   screen.getByRole('button', { name: /^(Descargar|Preparando) respaldo…?$/ });
+const restoreButton = () => screen.getByRole('button', { name: 'Restaurar respaldo' });
+const csvButton = () =>
+  screen.getByRole('button', { name: /^(Exportar series \(CSV\)|Preparando CSV…)$/ });
 
 /** Taps "Descargar respaldo" and returns the file handed to deliverFile. */
 async function download(user: ReturnType<typeof userEvent.setup>): Promise<File> {
@@ -87,7 +90,7 @@ describe('SettingsPage', () => {
       within(backup)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Descargar respaldo', 'Restaurar respaldo']);
+    ).toEqual(['Descargar respaldo', 'Restaurar respaldo', 'Exportar series (CSV)']); // + spec 008
 
     const notice = screen.getByRole('region', { name: 'Aviso' });
     expect(within(notice).getByText(NOTICE_TEXT)).toBeInTheDocument();
@@ -214,6 +217,142 @@ describe('Descargar respaldo', () => {
     await act(() => user.click(screen.getByRole('button', { name: 'Descargar respaldo' })));
 
     // The message goes as soon as the tap lands, before the new export finishes.
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+// Spec 008 §4.1 (AC-1 to AC-7), §6 and plan §6.6: "Exportar series (CSV)". The file's content is
+// covered in series-csv.test.ts; here, what the page hands to deliverFile and its states.
+
+const CSV_TEXT = 'Para abrir tus series en una hoja de cálculo.';
+const CSV_HEADER =
+  'date,week,session,exercise,metric,setNumber,weightKg,reps,rir,isExtra,completedAt';
+
+/** True when `later` comes after `earlier` in the document. */
+const follows = (earlier: Node, later: Node) =>
+  (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+/** Taps "Exportar series (CSV)" and returns the file handed to deliverFile. */
+async function exportCsv(user: ReturnType<typeof userEvent.setup>): Promise<File> {
+  await act(() => user.click(screen.getByRole('button', { name: 'Exportar series (CSV)' })));
+  await waitFor(() => {
+    expect(deliverFile).toHaveBeenCalledTimes(1);
+  });
+  await waitFor(() => {
+    expect(csvButton()).toBeEnabled();
+  });
+  const file = deliverFile.mock.calls[0]?.[0];
+  if (!file) throw new Error('deliverFile got no file');
+  return file;
+}
+
+describe('Exportar series (CSV) (spec 008)', () => {
+  it('AC-1: debajo de "Restaurar respaldo", el texto y el botón secundario; la zona de mensajes al final', async () => {
+    await openSettings();
+    const backup = screen.getByRole('region', { name: 'Respaldo' });
+
+    const text = within(backup).getByText(CSV_TEXT);
+    const csv = within(backup).getByRole('button', { name: 'Exportar series (CSV)' });
+    const status = within(backup).getByRole('status');
+    expect(follows(restoreButton(), text)).toBe(true);
+    expect(follows(text, csv)).toBe(true);
+    expect(follows(csv, status)).toBe(true);
+    // Secondary, as "Restaurar respaldo" (full width and ≥ 44 px come from that class).
+    expect(csv.className).toBe(restoreButton().className);
+  });
+
+  it('AC-2, AC-3: entrega gym-series-v1-2026-11-19.csv de tipo text/csv, con el BOM y los encabezados', async () => {
+    const { user } = await openSettings();
+    const file = await exportCsv(user);
+
+    expect(file).toBeInstanceOf(File);
+    expect(file.name).toBe('gym-series-v1-2026-11-19.csv');
+    expect(file.type).toBe('text/csv');
+    // No sessions yet: only the header (AC-23). ignoreBOM keeps the BOM in the text.
+    const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(await file.arrayBuffer());
+    expect(text).toBe(`\uFEFF${CSV_HEADER}\r\n`);
+  });
+
+  it('AC-4: cerrar la hoja de compartir no muestra nada', async () => {
+    deliverFile.mockResolvedValue('cancelled');
+    const { user } = await openSettings();
+    await exportCsv(user);
+
+    expect(csvButton()).toHaveTextContent('Exportar series (CSV)');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).toBeEmptyDOMElement();
+  });
+
+  it('AC-5: "Preparando CSV…" y los tres botones desactivados hasta que termina la entrega', async () => {
+    let finish!: (outcome: DeliveryOutcome) => void;
+    deliverFile.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { user } = await openSettings();
+
+    await act(() => user.click(csvButton()));
+    expect(csvButton()).toHaveTextContent('Preparando CSV…');
+    // Still preparing while the sheet is open, not only while exportSeriesCsv runs.
+    await waitFor(() => {
+      expect(deliverFile).toHaveBeenCalledTimes(1);
+    });
+    expect(csvButton()).toHaveTextContent('Preparando CSV…');
+    expect(csvButton()).toBeDisabled();
+    expect(downloadButton()).toBeDisabled();
+    expect(restoreButton()).toBeDisabled();
+
+    act(() => {
+      finish('shared');
+    });
+    await waitFor(() => {
+      expect(csvButton()).toHaveTextContent('Exportar series (CSV)');
+    });
+    expect(csvButton()).toBeEnabled();
+    expect(downloadButton()).toBeEnabled();
+    expect(restoreButton()).toBeEnabled();
+  });
+
+  it('AC-5: mientras se prepara un respaldo, "Exportar series (CSV)" está desactivado', async () => {
+    deliverFile.mockImplementation(() => new Promise(() => undefined));
+    const { user } = await openSettings();
+
+    await act(() => user.click(downloadButton()));
+
+    expect(csvButton()).toBeDisabled();
+  });
+
+  it('AC-6: si exportar falla, el botón vuelve y sale el texto genérico al final de la sección', async () => {
+    const app = services();
+    vi.spyOn(app.data, 'exportSeriesCsv').mockRejectedValue(new Error('disk failure'));
+    const { user } = await openSettings(app);
+
+    await act(() => user.click(csvButton()));
+
+    const backup = screen.getByRole('region', { name: 'Respaldo' });
+    const alert = await within(backup).findByRole('alert');
+    expect(alert).toHaveTextContent(GENERIC_ERROR_MESSAGE);
+    expect(follows(csvButton(), alert)).toBe(true);
+    expect(deliverFile).not.toHaveBeenCalled();
+    expect(csvButton()).toHaveTextContent('Exportar series (CSV)');
+    expect(csvButton()).toBeEnabled();
+  });
+
+  it('AC-7: exportar borra el error anterior', async () => {
+    const app = services();
+    vi.spyOn(app.data, 'exportAll').mockRejectedValueOnce(new Error('disk failure'));
+    const { user } = await openSettings(app);
+    await act(() => user.click(downloadButton()));
+    await screen.findByRole('alert');
+
+    await act(() => user.click(csvButton()));
+
+    // The message goes as soon as the tap lands, before the export finishes.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(deliverFile).toHaveBeenCalledTimes(1);
