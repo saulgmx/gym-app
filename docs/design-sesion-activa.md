@@ -26,7 +26,7 @@ Restricción de producto: la app nunca sugiere peso muerto ni impacto (espondilo
 | "Cambiar a …" deshabilitado con su texto de ayuda | **Ya implementado** |
 | Anterior / Siguiente | **Ya implementado** |
 | "Terminar y guardar", Cierre, PainGate | spec 005 |
-| Temporizador de descanso, "+30 s", Wake Lock | fase 4 |
+| Temporizador de descanso con "−15 s", "+15 s" y "Saltar" (reemplaza "+30 s"); Wake Lock solo durante el descanso | spec 009 |
 | Recuadro de sugerencia y "Última vez" | fase 4 |
 
 El tablero dibuja piezas de fases futuras (descanso, sugerencia, "Última vez", "Terminar y guardar"); están marcadas o fuera del alcance de la spec 004 y **no deben construirse ahora**.
@@ -121,7 +121,7 @@ Opciones en la spec 004:
 - Piezas de la fase 4 marcadas en el tablero con la etiqueta "Fase 4": sugerencia, "Última vez" y la tarjeta de descanso.
 - Cada serie se guarda en Dexie al marcarla (RN-TRN-03).
 - Ciclo de vida (`training.md`): `getActiveWorkout()` (RF-19), `discardWorkout`, un solo `in_progress` (RN-TRN-01). `finishWorkout` es de la spec 005. El evento `WorkoutDiscarded` es diseño del contrato, aún no implementado: `training` no publica eventos hasta la fase 4 (spec 002 §5).
-- Temporizador (fase 4): guardar `endsAt` (ADR-0006), no depender de `setInterval`; aviso visual y sonoro dentro de la app; Wake Lock con alternativa.
+- Temporizador (spec 009): se calcula de la última serie hecha, sin guardar nada (RN-TRN-32); aviso visual y sonoro dentro de la app; Wake Lock solo durante el descanso, sin aviso si no está disponible.
 - Ejercicios por tiempo: **no** usan una métrica `seconds`; usan `metric: 'time'` y las reps cuentan segundos.
 - Asistencia: peso negativo en el dominio (ya implementado).
 

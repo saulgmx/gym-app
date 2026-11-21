@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.5 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
+**Versión:** 1.6 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -173,7 +173,7 @@ sequenceDiagram
   T->>R: put(set)  (una transacción, < 100 ms)
   T->>B: publish('training/SetLogged')
   T-->>UI: Result.ok
-  Note over UI: useLiveQuery refleja el cambio;<br/>el temporizador arranca (Zustand)
+  Note over UI: useLiveQuery refleja el cambio;<br/>el descanso se calcula de la serie (spec 009)
 ```
 
 No hay botón "guardar" global: cada serie es una escritura atómica (RF-13).
@@ -334,10 +334,10 @@ El dominio guarda siempre **kilogramos**. `lb` es solo una preferencia de visual
 | Tipo | Dónde | Regla |
 |---|---|---|
 | Persistente | Dexie vía hooks del módulo | Fuente de verdad |
-| Sesión activa (temporizador y lo que deba sobrevivir a la navegación) | Zustand `useSessionStore` en `app`, desde la fase 4 | Derivable de Dexie; se rehidrata. El ejercicio actual va en la URL y los borradores de los campos en estado local (spec 002, plan §6.3) |
+| Sesión activa (ajustes del temporizador y lo que deba sobrevivir a la navegación) | Zustand `useSessionStore` en `app`, desde la fase 4 | Derivable de Dexie; se rehidrata. El ejercicio actual va en la URL y los borradores de los campos en estado local (spec 002, plan §6.3) |
 | Efímero (temporizador, selección de gráfica) | Zustand o `useState` | Se puede perder sin consecuencia |
 
-El temporizador guarda `endsAt` (instante), no un contador, para sobrevivir a la app en segundo plano.
+El temporizador de descanso no guarda nada: se calcula con el `completedAt` de la última serie hecha y el `restSeconds` de su ejercicio, que ya están en Dexie, y `now` (RN-TRN-32). Sus extremos son instantes, no un contador, así que sobrevive a la app en segundo plano y a una recarga. Zustand solo guarda los ajustes (−15 s, +15 s, Saltar), que se pierden al recargar (spec 009).
 
 ### 7.9 PWA y offline
 
