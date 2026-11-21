@@ -88,10 +88,10 @@ jobs:
         run: |
           echo '### npm audit (non-blocking)' >> "$GITHUB_STEP_SUMMARY"
           echo >> "$GITHUB_STEP_SUMMARY"
-          if [ "$AUDIT_OUTCOME" = "failure" ]; then
-            echo 'Audit did not pass; inspect the audit step log for vulnerability findings or execution errors.' >> "$GITHUB_STEP_SUMMARY"
-          else
+          if [ "$AUDIT_OUTCOME" = "success" ]; then
             echo 'Audit passed.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Audit did not complete successfully (outcome: ${AUDIT_OUTCOME:-unknown}); inspect the audit step log for vulnerability findings or execution errors." >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ "$AUDIT_FIX_OUTCOME" = "failure" ]; then
             echo 'The remediation dry-run did not pass; inspect its step log for details.' >> "$GITHUB_STEP_SUMMARY"
