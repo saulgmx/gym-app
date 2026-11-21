@@ -104,7 +104,7 @@ El tiempo de reloj no está registrado: las cifras miden esfuerzo por commits y 
 |---|---|---|---|---|
 | X-1 | Aprobado (21-nov). Dejar de numerar las versiones de los contratos y de `spec.md`; el historial es git. Conservar solo un registro de cambios para decisiones de contrato | H-6, H-8 | `docs/README.md`, `docs/modules/*.md` | Antes de la spec 010 |
 | X-2 | `[PROPUESTO]` Dejar de escribir lecciones como prosa cuando pueden ser código: ayudantes de prueba, script de mutaciones, reglas de lint | H-9, H-13 | Handoff → `tests/`, `scripts/`, `eslint.config.js` | Gradual, en cada spec |
-| X-3 | `[PROPUESTO]` Dejar de mantener `handoff-history.md` como copia: un índice de enlaces a specs y PRs basta | H-8 | `docs/handoff-history.md` | Cuando convenga |
+| X-3 | Aprobado (21-nov). Dejar de mantener `handoff-history.md` como copia: un índice de enlaces a specs y PRs basta | H-8 | `docs/handoff-history.md` | Cuando convenga |
 | X-4 | `[PROPUESTO]` Dejar de delegar a Qwen tareas de menos de ~50 líneas o con mucho contexto | H-19 | ADR-0014 | Ya (criterio del handoff) |
 
 ### Continue

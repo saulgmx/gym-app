@@ -9,19 +9,7 @@
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
-- **Fases hechas** (detalle en `handoff-history.md` y en cada spec):
-
-| Fase | Spec | Qué entregó | PR |
-|---|---|---|---|
-| 0 | `000-fase-0` | Herramientas, fronteras en CI, kernel, PWA, Vercel y dominio | #3 a #6 |
-| 1 | `001-fase-1` | Módulo `plan`, seed, "Hoy" | #7 a #10 |
-| 2 | `002-fase-2` | Módulo `training`, sesión activa, base v2 | #12 a #17 |
-| 2.5 | `003-rediseno-hoy`, `004-rediseno-sesion` | Rediseño de "Hoy" y de la sesión activa | #20 a #30 |
-| 3 | `005-cierre` | Módulo `health`, Cierre con dolor lumbar, base v3 | #37 a #45 |
-| 3 | `005b-una-sesion-por-dia` | Una sola sesión cerrada por día (RN-TRN-27) | #46 a #50 |
-| 3 | `006-historial` | Pestaña "Historial", lista y detalle | #51 a #57 |
-| 3 | `007-respaldo` | Módulo `data`, pestaña "Ajustes", respaldo JSON | #58 a #65 |
-| 3 | `008-csv` | "Exportar series (CSV)" en Ajustes; cierra la fase 3 | #66 a #68, #70, #73, #75 y el de cierre |
+- **Fases hechas:** 0 a 3 (specs 000 a 008). Índice con enlaces y PRs en `handoff-history.md`.
 
 ## Decisiones tomadas
 

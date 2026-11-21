@@ -16,7 +16,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
 | `design-*.md` | ¿Cómo se ve cada pantalla? (diseño elegido y sus tableros) | Antes de la spec que construye o cambia la pantalla |
 | [`handoff.md`](handoff.md) | Estado actual y siguiente paso | Al final de cada sesión de trabajo |
-| [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (consulta, no hace falta para retomar) | Al cerrar una fase, se mueve aquí su detalle |
+| [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (índice de specs y PRs; no hace falta para retomar) | Al cerrar una spec, se agrega su fila |
 
 ## Jerarquía de autoridad
 
