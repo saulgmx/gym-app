@@ -93,7 +93,7 @@ El tiempo de reloj no está registrado: las cifras miden esfuerzo por commits y 
 | S-2 | Aprobado (21-nov). Sección "Casos de borde por regla" en el plan, cerrada antes de aprobarlo | H-12 | `templates/feature-plan.md` | Antes de la spec 010 |
 | S-3 | `[PROPUESTO]` Columnas "Ejecutor (Q/C/U)", "Archivos permitidos" y "Mutaciones" en las tareas, y tareas fijas: bundle, iPhone y cierre de casos de borde | H-18, H-21 | `templates/tasks.md` | Con la aceptación de ADR-0014, o antes si se aprueba |
 | S-4 | `[PROPUESTO]` Evaluar Stryker (mutaciones con Vitest) para `progression` y `health`, en lugar del script manual | H-17 | ADR nuevo si se adopta (P-7) | Spec 010 |
-| S-5 | `[PROPUESTO]` Vía ligera para specs chicas (una regla, sin cambio de esquema): spec, plan y tareas en un archivo y un PR | H-7, H-15 | `docs/README.md` | Antes de la spec 011 |
+| S-5 | Aprobado (21-nov). Vía ligera para specs chicas (una regla, sin cambio de esquema): spec, plan y tareas en un archivo y un PR | H-7, H-15 | `docs/README.md` | Antes de la spec 011 |
 | S-6 | `[PROPUESTO]` Métrica de éxito de ADR-0014: tokens de Claude por tarea `Q` frente a hacerla con Opus, tiempo de brief y revisión, % de escalamientos y mutantes vivos | H-19, H-22 | ADR-0014 (sigue propuesto, se puede editar) | T16 de la spec 009 |
 | S-7 | `[PROPUESTO]` Regla de carga diferida para pantallas nuevas con dependencias pesadas, en lugar de decidirlo spec por spec | H-26 | `architecture.md`; constitución P-6 si se quiere como principio | Spec 012 |
 | S-8 | `[PROPUESTO]` Regla en la constitución o el checklist: P-1, `progression`, `health` y las migraciones de Dexie nunca se delegan | H-21 | `constitution.md` (enmienda con ADR) o ADR-0014 | Con la aceptación de ADR-0014 |

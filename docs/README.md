@@ -51,6 +51,18 @@ Puertas de control (no se avanza si fallan):
 - **Tareas → Código:** todo comportamiento con ID tiene su prueba antes que el código (P-5); las excepciones están declaradas en `tasks.md`.
 - **Código → Hecho:** CI verde (tsc, lint, fronteras, pruebas, build) y criterios de aceptación cubiertos por pruebas, o por la verificación manual que declara `tasks.md` (P-5).
 
+### Vía ligera
+
+Una feature puede ir en un solo archivo y un solo PR de docs si cumple **todo** esto:
+
+- Agrega o cambia como mucho dos reglas `RN-*`, de un solo módulo.
+- No cambia el esquema de Dexie ni el formato de exportación (`DataPort.version`, CSV).
+- No necesita ADR ni dependencia nueva.
+- No tiene pantalla nueva: su fuente de diseño es un diseño ya elegido o piezas existentes.
+- No toca `progression` ni `health`.
+
+El archivo `specs/NNN-<feature>/spec.md` lleva tres partes con las secciones que apliquen de cada plantilla: **Spec** (problema, criterios de aceptación, reglas), **Plan** (módulos, cambios de contrato, casos de borde por regla) y **Tareas** (la tabla de `tasks.md`, con las excepciones de P-5 declaradas). Las tres puertas se revisan juntas en ese PR, y el contrato se actualiza en el mismo PR. Si al escribirla deja de cumplir alguna condición, se separa en los tres documentos de siempre.
+
 ## Convenciones de IDs
 
 | Prefijo | Significado | Dónde se define |
