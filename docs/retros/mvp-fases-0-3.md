@@ -124,7 +124,7 @@ El tiempo de reloj no está registrado: las cifras miden esfuerzo por commits y 
 | # | Acción | Hallazgo |
 |---|---|---|
 | F-1 | Aprobado (21-nov). P-8 debe citar ADR-0012 en lugar de ADR-0007 | H-23 |
-| F-2 | Decidir si P-5 exige pruebas primero en todos los módulos (como se hizo) o solo en `progression` y `health` | H-24 |
+| F-2 | Aprobado (21-nov): opción 2, prueba primero para todo comportamiento con ID, con excepciones declaradas en `tasks.md` (ADR-0015) | H-24 |
 | F-3 | Sincronizar los docs del Project de claude.ai con el repo, o declarar el repo como única fuente | H-25 |
 
 ## 5. Preguntas abiertas

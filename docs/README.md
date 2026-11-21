@@ -47,8 +47,8 @@ Puertas de control (no se avanza si fallan):
 
 - **Spec → Plan:** cada requerimiento tiene criterio de aceptación verificable; no hay "[POR DEFINIR]" sin resolver.
 - **Plan → Tareas:** el plan respeta la constitución y el grafo de dependencias; los contratos afectados están actualizados.
-- **Tareas → Código:** para `progression` y `health`, las pruebas se escriben antes que el código.
-- **Código → Hecho:** CI verde (tsc, lint, fronteras, pruebas, build) y criterios de aceptación cubiertos por pruebas.
+- **Tareas → Código:** todo comportamiento con ID tiene su prueba antes que el código (P-5); las excepciones están declaradas en `tasks.md`.
+- **Código → Hecho:** CI verde (tsc, lint, fronteras, pruebas, build) y criterios de aceptación cubiertos por pruebas, o por la verificación manual que declara `tasks.md` (P-5).
 
 ## Convenciones de IDs
 

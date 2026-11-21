@@ -27,7 +27,7 @@ Módulos en `src/modules/`: `plan`, `training`, `progression`, `health`, `data`.
 - Las pantallas que usan varios módulos viven en `src/app/pages`.
 
 ## Reglas de trabajo
-- Pruebas primero para `progression` y `health` (dolor lumbar): reglas RN-PRG-* y RN-HLT-* en `docs/modules/`.
+- Pruebas primero para todo comportamiento con ID (P-5, ADR-0015): reglas RN-* y criterios de aceptación verificables por prueba, en cualquier módulo; un fallo se corrige empezando por una prueba que lo reproduce. En `progression` y `health` (dolor lumbar), sin excepciones; en el resto, las excepciones se declaran en `tasks.md` con su motivo.
 - TypeScript estricto. Validar con Zod todo lo que entra por import.
 - UI en español; objetivos táctiles >= 44 px; contraste WCAG 2.2 AA.
 - Tokens visuales en variables CSS (spec 7.4).
