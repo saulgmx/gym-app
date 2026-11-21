@@ -9,12 +9,14 @@ on:
     - cron: '0 0 * * 0' # Weekly scan
 
 permissions:
-  security-events: write
   contents: read
 
 jobs:
   # 1️⃣ Análisis de dependencias con Trivy
   trivy-scan:
+    permissions:
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     name: Trivy Dependency Scan
     steps:
