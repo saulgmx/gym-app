@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { devices, expect, test, type Browser, type Page } from '@playwright/test';
+import { devices, expect, test, type Browser, type Download, type Page } from '@playwright/test';
 import {
   chooseBackup,
   closeMondayWithFlags,
@@ -162,5 +162,71 @@ test.describe('spec 007: el respaldo', () => {
     await expect(backupSection(page).getByRole('status')).toHaveText('Respaldo restaurado.');
     await page.getByRole('link', { name: 'Historial' }).click();
     await expect(page.getByRole('link', { name: /Lun 16 · Full body A/ })).toBeVisible();
+  });
+});
+
+// Spec 008 (plan §7, T13) on the production build: "Exportar series (CSV)" downloads the file with
+// the BOM, the header and one row per done set, also offline, with no CSP violations. The share
+// sheet is removed, so the file always downloads (AC-3). The full content is covered with the real
+// modules in src/app/__tests__/series-csv.test.ts.
+
+const CSV_HEADER =
+  'date,week,session,exercise,metric,setNumber,weightKg,reps,rir,isExtra,completedAt';
+// closeMondayWithFlags: the first set of Full body A, done on Monday 16 at 18:00 (frozen clock).
+const MONDAY_SET =
+  '2026-11-16,1,Full body A,Prensa de piernas,weight,1,40,10,3,false,2026-11-16T18:00:00-06:00';
+
+/** Taps "Exportar series (CSV)" on Ajustes and returns the download, saved to disk. */
+async function exportCsv(page: Page): Promise<Download> {
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Exportar series (CSV)' }).click(),
+  ]);
+  await download.path(); // waits until the file is complete
+  return download;
+}
+
+/** The downloaded CSV: its name and its lines, after checking the BOM and the CRLF ending. */
+async function readCsv(download: Download) {
+  const bytes = await readFile(await download.path());
+  expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]); // RN-DAT-14: UTF-8 BOM
+  const text = bytes.subarray(3).toString('utf8');
+  expect(text.endsWith('\r\n')).toBe(true); // CRLF also after the last line
+  return { name: download.suggestedFilename(), lines: text.slice(0, -2).split('\r\n') };
+}
+
+test.describe('spec 008: el CSV de series', () => {
+  test('AC-1, AC-3, AC-30: con una sesión cerrada, descarga el CSV con sus series y sin violaciones de CSP', async ({
+    page,
+  }) => {
+    await withoutShare(page);
+    await recordCspViolations(page);
+    await closeMondayWithFlags(page);
+
+    await goToSettings(page);
+    await expect(
+      backupSection(page).getByText('Para abrir tus series en una hoja de cálculo.'),
+    ).toBeVisible();
+    const csv = await readCsv(await exportCsv(page));
+
+    expect(csv.name).toBe('gym-series-v1-2026-11-16.csv');
+    expect(csv.lines).toEqual([CSV_HEADER, MONDAY_SET]);
+    await expect(page.getByRole('button', { name: 'Exportar series (CSV)' })).toBeEnabled();
+    await expect(backupSection(page).getByRole('alert')).toHaveCount(0);
+    expect(await cspViolations(page)).toEqual([]);
+  });
+
+  test('AC-28: sin conexión, se descarga igual', async ({ page, context }) => {
+    await withoutShare(page);
+    await closeMondayWithFlags(page, async () => {
+      await waitForControllingWorker(page);
+      await context.setOffline(true);
+    });
+
+    await goToSettings(page);
+    const csv = await readCsv(await exportCsv(page));
+
+    expect(csv.name).toBe('gym-series-v1-2026-11-16.csv');
+    expect(csv.lines).toEqual([CSV_HEADER, MONDAY_SET]);
   });
 });

@@ -451,7 +451,8 @@ test.describe('spec 006 AC-36: el historial', () => {
 });
 
 // Spec 007 AC-40 (§8, decision 18 (f)): Ajustes with an error, the restore preview and the section
-// after restoring: axe, 44 px, and nothing overflows at 320 px.
+// after restoring: axe, 44 px, and nothing overflows at 320 px Since spec 008 the section also has
+// "Exportar series (CSV)" (AC-27).
 test.describe('spec 007 AC-40: Ajustes y la vista previa', () => {
   test.use({ timezoneId: USER_TIME_ZONE });
 
@@ -474,6 +475,8 @@ test.describe('spec 007 AC-40: Ajustes y la vista previa', () => {
       await page.goto('/ajustes');
       const section = page.getByRole('region', { name: 'Respaldo' });
 
+      // Spec 008 AC-27: the CSV button is part of what axe and the width check see.
+      await expect(section.getByRole('button', { name: 'Exportar series (CSV)' })).toBeVisible();
       await chooseBackup(page, NOT_A_BACKUP);
       await expect(section.getByRole('alert')).toBeVisible();
       await expectAccessible(page);

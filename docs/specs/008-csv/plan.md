@@ -1,6 +1,6 @@
 # Plan técnico: Exportar las series a CSV
 
-**Spec:** `specs/008-csv/spec.md` · **Estado:** Aprobado · **Fecha:** 20-nov-2026
+**Spec:** `specs/008-csv/spec.md` · **Estado:** Implementado (20-nov-2026) · **Fecha:** 20-nov-2026
 
 Contratos actualizados al aprobar: `shared.md` §2 (`SeriesRow`, `seriesRows?`), `data.md` v1.7 (`exportSeriesCsv`, detalle del CSV, decisión 7) y `training.md` v1.32 (RN-TRN-31, decisión 34).
 

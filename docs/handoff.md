@@ -1,13 +1,13 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3: specs 005, 005b, 006 y 007 implementadas; spec 008, CSV de series, puntos de control A y B hechos (PR #70 fusionado, PR #73); siguiente: T11 del punto de control C; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 3 cerrada: specs 005, 005b, 006, 007 y 008 implementadas; siguiente: fase 4; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
 - **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.14, `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
-- **Bundle inicial:** 176.66 kB de 200 kB. **E2E:** 146, en Chromium y WebKit.
+- **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
 - **Fases hechas** (detalle en `handoff-history.md` y en cada spec):
 
@@ -21,7 +21,7 @@
 | 3 | `005b-una-sesion-por-dia` | Una sola sesión cerrada por día (RN-TRN-27) | #46 a #50 |
 | 3 | `006-historial` | Pestaña "Historial", lista y detalle | #51 a #57 |
 | 3 | `007-respaldo` | Módulo `data`, pestaña "Ajustes", respaldo JSON | #58 a #65 |
-| 3 | `008-csv` | Spec, plan y tareas aprobados; implementación en curso (A en el PR #70, B en el #73) | #66 a #68, #70, #73 |
+| 3 | `008-csv` | "Exportar series (CSV)" en Ajustes; cierra la fase 3 | #66 a #68, #70, #73, #75 y el de cierre |
 
 ## Decisiones tomadas
 
@@ -64,22 +64,23 @@
 
 ## Siguiente paso
 
-Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
+La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró con el PR de cierre (A en el #70, B en el #73, C en el #75; detalle en `handoff-history.md` y en `docs/specs/008-csv/tasks.md`). En el iPhone ya están el Cierre con dolor lumbar, el historial, el respaldo JSON y el CSV de series.
 
-1. **Spec 008, punto de control C** (rama `feat/008-csv-c`, desde `main` cuando el PR #73 esté fusionado): **T11** (`BackupSection`: párrafo, botón "Exportar series (CSV)", estado `exporting` con "Preparando CSV…", los tres botones bloqueados entre sí, `deliverFile` con `File` `text/csv`, error en la sección; plan §6.6) y **T12** (medir el bundle). Después, D: T13 (E2E), T14 (tuya: iPhone, Numbers y Sheets) y T15 (cierre de la fase 3). Estado:
-   - A (PR #70, fusionado): `SeriesRow` en el kernel, `seriesRows` puro en `training/domain`, `data/domain/csv.ts`.
-   - B (PR #73): `dataPort.seriesRows()` de `training` (`application/series.ts`; casos (i) y (j) en `training.md` v1.34), `data.exportSeriesCsv()` (T9 por Qwen, ver "Piloto Opus → Qwen") y la prueba con los módulos reales (`app/__tests__/series-csv.test.ts`). El CSV ya funciona desde las pruebas; falta el botón.
-   - Spec (AC-1 a AC-31), plan y tareas aprobados; detalle y notas "Hecho" en `docs/specs/008-csv/tasks.md`.
-2. **Pendientes tuyos que no bloquean:**
+**Fase 4, v1.0** (spec §13: progresión, alertas, temporizador, peso corporal, gráficas). Primero, cerrar la pregunta 7 (porcentajes de bajada y ejercicios `isPrimary`, `progression.md` §9) y proponer cómo repartir la fase en specs, como la fase 3 (005 a 008). Pruebas primero en `progression` y `health`.
+
+Además:
+
+1. **Pendientes tuyos que no bloquean:**
    - T20a de la 007 en el iPhone: tocar "Compartir" en Safari con Gym abierta; el aviso "Algo salió mal…" ya no debe salir.
    - T24 de la 005: validar con el traumatólogo los textos de salud y el aviso médico de Ajustes (siguen `[PROPUESTO]`); si cambian, PR de docs y `health/domain/messages.ts`.
-3. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
-4. **Después:** fase 4 (progresión, alertas, temporizador, peso corporal, gráficas; pregunta 7 pendiente).
-5. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
+2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
+3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
 ## Notas para retomar
 
 - Entorno: Node `24.22.3` con mise (`.tool-versions`; `mise install` en un equipo nuevo) y un Node 24 global (`~/.config/mise/config.toml`). Shims de mise en `~/.zshenv` y otra vez en `~/.zprofile`, y `mise activate zsh` en `~/.zshrc`: `path_helper` (`/etc/zprofile`) corre después de `~/.zshenv` y pone `/opt/homebrew/bin` primero, así que sin la línea de `~/.zprofile` un `node` que Homebrew instale como dependencia (pasó con Qwen Code y Volta) gana al fijado. Comprobar con `zsh -lic 'which -a node'`. `npm ci --strict-allow-scripts` en CI; `fsevents` denegado en `allowScripts`. Navegadores de Playwright: `npx playwright install chromium webkit` en local; en CI vienen en la imagen `mcr.microsoft.com/playwright` del job `ci`, con la misma versión que `@playwright/test` (al actualizar Playwright, cambiar la etiqueta y el digest de la imagen en `ci.yml`).
+- Una prueba que dispara una exportación y termina sin esperarla deja la lectura de IndexedDB corriendo: con la suite completa, el archivo llega al `deliverFile` de la prueba siguiente (spec 008 T11). Esperar a que se llame `deliverFile` antes de terminar.
+- El BOM en el código va como escape `\uFEFF`: el carácter literal falla en lint (`no-irregular-whitespace`), y en T11 algo lo convirtió al guardar. Para leerlo en una prueba, `new TextDecoder('utf-8', { ignoreBOM: true })` (por defecto lo quita, igual que `blob.text()`).
 - Al cerrar cada tarea, `npx tsc -b --force`: el `tsc -b` incremental de `npm run typecheck` dejó pasar un error de tipos en T10 que el CI sí vio.
 - Comandos: `npm run test:e2e` (construye y prueba contra `vite preview`), `npm run size`, `npm run icons` (regenera los PNG si cambia `public/icon.svg`).
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
@@ -168,4 +169,4 @@ Fase 3, MVP usable en el gym (spec §13). Cierra con la spec 008.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la fase 3. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/008-csv/spec.md (§4.1 y §6), plan.md (§6.6) y tasks.md, y la página de Ajustes en src/app/pages/settings (BackupSection y sus pruebas). La spec 008, su plan y sus tareas están aprobados; los puntos de control A y B están hechos (PR #70 y #73). Si el PR #73 ya está fusionado, sigue con T11 del punto de control C en la rama feat/008-csv-c; si no, ciérralo primero. Guíame paso a paso, una tarea a la vez."
+"Empezamos la fase 4. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/spec.md (§13 y los requerimientos de la fase 4) y docs/modules/progression.md (§9, pregunta 7). La fase 3 está cerrada. Ayúdame a cerrar la pregunta 7 y propón cómo repartir la fase 4 en specs. Guíame paso a paso, una tarea a la vez."
