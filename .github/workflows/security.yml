@@ -1,4 +1,4 @@
-name: 🔒 Security Analysis
+name: Security Analysis
 
 on:
   push:
@@ -12,7 +12,6 @@ permissions:
   contents: read
 
 jobs:
-  # 1️⃣ Análisis de dependencias con Trivy
   trivy-scan:
     permissions:
       contents: read
@@ -21,10 +20,10 @@ jobs:
     name: Trivy Dependency Scan
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -32,49 +31,48 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false)
+        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
         with:
           sarif_file: 'trivy-results.sarif'
 
-  # 2️⃣ Análisis de secretos con TruffleHog
   secrets-scan:
     runs-on: ubuntu-latest
     name: Secrets Detection
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@d232362a64a09a9e7d58267b8f5acef00ae90e23 # v3.100.0
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && '0000000000000000000000000000000000000000') || '' }}
+          head: ${{ github.event_name == 'pull_request' && 'HEAD' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && 'HEAD') || '' }}
           extra_args: --debug
+          version: v3.100.0
 
-  # 3️⃣ Verificar dependencias seguras
   npm-audit:
     runs-on: ubuntu-latest
     name: NPM Security Audit
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.x'
           cache: 'npm'
 
       - name: Install dependencies
-npm ci --strict-allow-scripts
+        run: npm ci --strict-allow-scripts
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate
-continue-on-error: false
+        continue-on-error: false
 
       - name: Run npm audit fix (dry-run)
         run: npm audit fix --dry-run
