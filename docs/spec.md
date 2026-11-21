@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.14 (borrador) · **Fecha:** 20-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.15 (borrador) · **Fecha:** 20-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -48,8 +48,8 @@ App personal para registrar entrenamientos de hipertrofia siguiendo un plan por 
 | Versión | Contenido |
 |---|---|
 | **MVP (v0.x)** | Plan cargado desde seed, pantalla Hoy, sesión activa, cierre con dolor lumbar, historial, gráfica por ejercicio, exportar/importar JSON, PWA instalable y offline |
-| **v1.0** | Sugerencia de progresión, alertas de dolor, temporizador de descanso, peso corporal, plan editable (ejercicios y rangos), deload sugerido |
-| **v1.1** | Notas por ejercicio, sustituciones de ejercicio, volumen semanal por músculo, recordatorios (notificaciones) |
+| **v1.0** | Sugerencia de progresión, alertas de dolor, temporizador de descanso, peso corporal, gráficas, deload sugerido, ajustes |
+| **v1.1** | Plan editable (ejercicios y rangos), notas por ejercicio, sustituciones de ejercicio, volumen semanal por músculo, recordatorios (notificaciones) |
 | **v2** | Sincronización entre dispositivos (cuenta opcional), calorías y proteína, importar rutinas de otros formatos, widgets |
 
 ---
@@ -152,9 +152,10 @@ Entrada: las últimas sesiones del ejercicio y el rango de repeticiones objetivo
    - Incremento: `+2.5%` redondeado al incremento mínimo del equipo (barra 2.5 kg, mancuerna 2 kg, máquina 5 kg), nunca menos que un paso.
    - Mensaje: "Sube a X kg. La última vez hiciste N × M con Y kg, el tope del rango."
 2. **Mantener peso** si no se llegó al tope en todas las series: "Mantén X kg hasta llegar a N × M".
-3. **Bajar peso (5-10%)** si `reps < min` en 2 sesiones seguidas con el mismo peso, o si el dolor lumbar superó el umbral en una sesión que incluyó ese ejercicio.
+3. **Bajar peso** un 5% si `reps < min` en 2 sesiones seguidas con el mismo peso, o un 10% si el dolor lumbar superó el umbral en una sesión que incluyó ese ejercicio; siempre al menos un paso del equipo (redondeo en RN-PRG-11).
 4. **Sin historial:** primera sesión con RIR 3-4 y sin sugerencia numérica.
-5. En ejercicios medidos en repeticiones (dominadas), la sugerencia es subir 1 repetición por serie hasta el tope; al llegar al tope en todas las series, añadir lastre de 1-2.5 kg.
+5. **Dominadas y fondos** (peso corporal, con asistencia negativa o lastre): mismas reglas, pero el peso se mueve por pasos fijos en lugar de porcentajes: 5 kg de asistencia y 2.5 kg de lastre (RN-PRG-14). Al llegar al tope en todas las series se quita asistencia o se añade lastre, y se vuelve al inicio del rango.
+6. **Ejercicios sin peso** (dead bug en repeticiones; plancha y pallof isométrico en segundos): +1 repetición o +5 s por serie hasta el tope del rango, y mantener en el tope (RN-PRG-12).
 
 ### 6.2 Dolor lumbar
 
@@ -206,7 +207,7 @@ El seed marca ejercicios con `lumbarRisk`:
 
 ### 7.1 Navegación
 
-Barra inferior con **Hoy**, **Historial**, **Progreso** y **Ajustes** (v1.0 añade **Plan**). Historial y Ajustes entran en la fase 3 (specs 006 y 007). La sesión activa es un flujo a pantalla completa sin barra inferior.
+Barra inferior con **Hoy**, **Historial**, **Progreso** y **Ajustes** (v1.1 añade **Plan**). Historial y Ajustes entran en la fase 3 (specs 006 y 007). La sesión activa es un flujo a pantalla completa sin barra inferior.
 
 ### 7.2 Pantallas
 
@@ -218,7 +219,7 @@ Barra inferior con **Hoy**, **Historial**, **Progreso** y **Ajustes** (v1.0 aña
 | Continuar sesión | `/sesion/:workoutId` | Sin pantalla propia: redirige al primer ejercicio con series pendientes (o al último) (spec 002) |
 | Cierre | `/sesion/:workoutId/cierre` | Resumen (minutos, series, ejercicios), selector de dolor 0-10 con mensaje, banderas rojas, notas, "Guardar sesión" y "Volver a la sesión" (spec 005). Fase 4: "Para la próxima sesión" |
 | Progreso | `/progreso` | Selector de ejercicio, gráfica por semana, historial de dolor lumbar, peso corporal |
-| Plan (v1.0) | `/plan` | Bloques, semanas y plantillas; edición |
+| Plan (v1.1) | `/plan` | Bloques, semanas y plantillas; edición |
 | Historial | `/historial` | Sesiones guardadas, de la más reciente a la más antigua, agrupadas por semana del programa (número, bloque y fechas); cada fila con fecha, sesión, resumen y chip de dolor (spec 006) |
 | Detalle de una sesión | `/historial/:workoutId` | Solo lectura: nombre, fecha, día del plan si es otro, resumen, dolor lumbar y señales de alarma (sin consejos), ejercicios con sus series hechas ("Sin series" si no tiene) y notas. Se llega desde la lista y desde los días hechos de "Hoy" (spec 006) |
 | Ajustes | `/ajustes` | Respaldo ("Descargar respaldo" y "Restaurar respaldo" con vista previa y confirmación, spec 007; "Exportar series (CSV)", spec 008) y el aviso "la app no es un dispositivo médico" (spec 007). v1.0: unidades, incrementos, umbral de dolor, recordatorio y borrar datos |
@@ -321,7 +322,7 @@ Casos clave del dominio:
 | 2 | Sesión activa: `SetRow`, guardado por serie, recuperación de sesión | Se puede entrenar y registrar |
 | 2.5 | Rediseño de "Hoy" (spec 003): tarjeta de la sesión con duración, sesión en curso con avance y tira de la semana | "Hoy" dice de un vistazo qué toca y cómo vas |
 | 3 | Cierre con dolor lumbar, historial, exportar/importar | MVP usable en el gym |
-| 4 | Progresión, alertas, temporizador, peso corporal, gráficas | v1.0 |
+| 4 | Temporizador (spec 009), progresión (010), deload (011), gráficas de progreso y dolor (012), peso corporal (013) y ajustes (014). Las alertas de dolor llegaron con la spec 005 | v1.0 |
 | 5 | Edición de plan, volumen semanal, recordatorios | v1.1 |
 | 6 | Sincronización opcional (por ejemplo, Supabase) | v2 |
 
