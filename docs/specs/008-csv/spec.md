@@ -1,6 +1,6 @@
 # Spec: Exportar las series a CSV
 
-**ID:** 008 · **Estado:** Aprobada · **Fecha:** 20-nov-2026
+**ID:** 008 · **Estado:** Implementada (20-nov-2026) · **Fecha:** 20-nov-2026
 **Requerimientos cubiertos:** RF-40 (parte CSV), RNF-01, RNF-04, RNF-05, RNF-09 · **Fase:** 3 (spec §13), cuarta y última parte
 **Fuente de diseño:** sin tablero propio; un botón más en la sección "Respaldo" de Ajustes (spec 007)
 **ADRs aplicados:** 0002, 0005, 0009, 0010, 0013
