@@ -1,6 +1,6 @@
 # Contrato del módulo `progression`
 
-**Versión del contrato:** 1.1 · **Depende de:** `training`, `plan`, `health` (API), `shared` · **Lo usan:** `app`, `training` (vía puerto `SuggestionProvider`)
+**Depende de:** `training`, `plan`, `health` (API), `shared` · **Lo usan:** `app`, `training` (vía puerto `SuggestionProvider`)
 
 ## 1. Responsabilidad
 
@@ -165,5 +165,6 @@ Cerradas el 20-nov-2026, al empezar la fase 4 (contrato v1.1):
 2. **Ejercicios `isPrimary`:** los 9 que ya marca el seed desde la spec 001: prensa de piernas, hack squat, press de banca con barra y con mancuernas, press inclinado con mancuernas y en máquina, dominadas, jalón al pecho y remo con apoyo de pecho (la propuesta más sus alternativas, porque la serie registra el ejercicio usado). El press de hombro no entra. "Progreso" según RN-PRG-21, que deja de ser propuesta.
 3. **Ejercicios por tiempo y por reps:** +5 s o +1 rep por serie hasta el tope y mantener en el tope (RN-PRG-12). Se quita `add_load`: esas métricas no guardan peso.
 4. **Asistencia y lastre:** escalera de pasos fijos, 5 kg de asistencia y 2.5 kg de lastre (RN-PRG-14, `assistanceStepKg`, `incrementsKg.bodyweight` de 1.25 a 2.5). RN-PRG-12 decía que Dominadas y Fondos son `metric: 'reps'`, pero el seed los tiene en `weight` con asistencia negativa desde la spec 002.
+5. **Fin de la numeración (21-nov-2026):** el contrato deja de llevar número de versión (último: v1.1); el historial es git (`docs/README.md`, "Versiones y registro de cambios"; retro X-1).
 
 Preguntas abiertas: ninguna.

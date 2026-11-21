@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.7 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
+**Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 

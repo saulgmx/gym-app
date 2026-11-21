@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.17 (borrador) · **Fecha:** 21-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Estado:** borrador · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
