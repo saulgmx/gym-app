@@ -14,7 +14,7 @@ Dos o tres frases.
 
 ## 3. Cambios de contrato
 
-API, eventos, puertos o tablas que cambian. **Actualizar `modules/*.md` antes de escribir código.**
+API, eventos, puertos o tablas que cambian. **Actualizar `modules/*.md` antes de escribir código** y agregar una entrada en la sección Decisiones del contrato.
 
 ## 4. Datos
 

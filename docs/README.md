@@ -7,7 +7,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | Documento | Responde a | Cambia |
 |---|---|---|
 | [`constitution.md`](constitution.md) | ¿Qué reglas no se negocian nunca? | Casi nunca (enmienda explícita) |
-| [`spec.md`](spec.md) | ¿Qué hace la app y por qué? (requerimientos, reglas de negocio, UX, criterios de aceptación) | Por versión de producto |
+| [`spec.md`](spec.md) | ¿Qué hace la app y por qué? (requerimientos, reglas de negocio, UX, criterios de aceptación) | Cuando cambia un requerimiento o una regla |
 | [`architecture.md`](architecture.md) | ¿Cómo está construida? (módulos, capas, flujos, datos, calidad) | Cuando cambia una decisión estructural |
 | [`adr/`](adr/README.md) | ¿Por qué elegimos X y no Y? | Un ADR nuevo por decisión; los aceptados no se editan, se reemplazan |
 | [`modules/`](modules/) | ¿Qué contrato expone cada módulo? (API, tablas, eventos, puertos, invariantes) | Antes de cambiar la API de un módulo |
@@ -69,3 +69,10 @@ Las pruebas citan el ID en su nombre, por ejemplo `it('RN-PRG-01: sube peso al t
 
 - `[POR DEFINIR]`: falta una decisión; bloquea la puerta Spec → Plan.
 - `[PROPUESTO]`: propuesta de diseño pendiente de confirmación del dueño del producto.
+
+## Versiones y registro de cambios
+
+- `spec.md`, `architecture.md` y `modules/*.md` no llevan número de versión ni fecha en la cabecera: su historial es git. Para citar un estado concreto se usa la fecha o el commit.
+- Cada contrato conserva su sección "Decisiones" como registro de cambios: una entrada por cambio de API, tablas, eventos, puertos o reglas, con la fecha y la spec que lo origina (`**Plan de la spec 010 (21-nov-2026):** …`). Las erratas y aclaraciones no llevan entrada.
+- Solo llevan versión la constitución (por enmienda, con su tabla) y los formatos que la app vuelve a leer: `schemaVersion` de Dexie, `DataPort.version` de cada módulo y la versión del CSV (P-2, ADR-0013). Esas versiones no cambian con esta regla.
+- Hasta el 21-nov-2026 los documentos llevaban versión (por ejemplo, `training.md` v1.36). Esas citas, en las decisiones de los contratos y en las specs 000 a 009, se quedan como registro histórico. El commit de una versión se encuentra con `git log -S 'contrato:** 1.36' -- docs/modules/training.md`.
