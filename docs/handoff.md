@@ -1,11 +1,11 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3 cerrada; fase 4 repartida en las specs 009 a 014 y preguntas de `progression` cerradas; siguiente: spec 009, temporizador) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.16, `architecture.md` v1.6, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.35, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.16, `architecture.md` v1.7, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.36, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -64,6 +64,7 @@ Nada. La pregunta 7 (porcentajes de bajada e `isPrimary`) y las preguntas 3 y 4 
   - La evidencia registra la causa de cada fallo: brief, prueba, modelo o infraestructura.
   - Delegar solo si la salida es grande frente al contexto: UI, estilos, código repetitivo (como referencia, más de unas 50 líneas o varios archivos parecidos). Una tarea de ~15 líneas con mucho contexto no ahorra nada: T5 y T9 sirvieron para calibrar, no para ahorrar.
   - Modo no interactivo con `--output-format stream-json` para contar los errores de herramienta.
+- **Spec 009 (tareas escritas el 20-nov):** T10 (`RestTimer`, cuerpo y CSS) es la calibración de UI; en un worktree aparte (`--detach`) con calentamiento JIT previo, mientras Opus hace T11. Detalle en `docs/specs/009-temporizador/tasks.md`, notas. Criterio de ADR-0014 cambiado (aprobado el 20-nov): pasa a `Aceptado` después de la spec 012, con varias tareas `Q` en olas; se edita el ADR en T16 de la 009.
 - **Al escribir las tareas de la fase 4:**
   - Asignar `Q` con el criterio anterior y dividir pensando en quién ejecuta: la "hoja" de UI para Qwen; los estados compartidos, las conexiones entre módulos y `compose` para Opus.
   - Cada tarea `Q` lleva su columna de archivos permitidos.
@@ -89,7 +90,7 @@ La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró co
 
 Hasta la 014, los incrementos, el paso de asistencia y el umbral son constantes del dominio. El plan editable (RF-04) queda en la fase 5 (v1.1; spec §3 corregida). Las alertas de dolor ya llegaron con la spec 005.
 
-**Siguiente:** el plan técnico de la 009 (`docs/specs/009-temporizador/plan.md`). La spec está aprobada (20-nov): RN-TRN-32 a 35 en `training` v1.35, el descanso se calcula de la última serie hecha (sin tablas ni migración) y Wake Lock solo durante el descanso. El plan fija la función del dominio, el store de `app`, el sonido (Web Audio) y `RestTimer`. Pruebas primero en `progression` y `health`.
+**Siguiente:** T1 de la spec 009 (pruebas de `restOf` y `restTimer`, RN-TRN-32 a 34), en una rama nueva tras fusionar el PR de la spec, el plan y las tareas. Plan aprobado (20-nov): `restOf`/`restTimer` y `restSignal` puros en `training` (el ajuste lleva el `setId` de su serie), `useSessionStore` y tic de 250 ms en `app`, `RestSound` (Web Audio, `unlock` en `onClickCapture` de la sesión), `ScreenWake` solo durante el descanso, `RestTimer` de presentación en el pie fijo. Contrato `training` v1.36 (decisión 38) y `architecture.md` v1.7 (§7.2). Tareas en 4 puntos de control (A dominio, B servicios de `app`, C tarjeta, D verificación); pruebas primero en el dominio.
 
 Además:
 
@@ -190,4 +191,4 @@ Además:
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con el plan técnico de la spec 009 (temporizador de descanso). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/009-temporizador/spec.md, docs/modules/training.md (RN-TRN-32 a 35), docs/architecture.md §7.8 y docs/templates/feature-plan.md. Ayúdame a escribir el plan. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la spec 009 (temporizador de descanso), punto de control A. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/009-temporizador/plan.md (§6.1 y §6.3), docs/specs/009-temporizador/tasks.md (A y notas) y docs/modules/training.md (RN-TRN-32 a 35, decisión 38). Empezamos por T1. Guíame paso a paso, una tarea a la vez."
