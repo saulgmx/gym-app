@@ -1,11 +1,11 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 20-nov-2026 (fase 3 cerrada: specs 005, 005b, 006, 007 y 008 implementadas; siguiente: fase 4; Node con mise en lugar de Volta) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
+**Fecha:** 20-nov-2026 (fase 3 cerrada; fase 4 repartida en las specs 009 a 014 y preguntas de `progression` cerradas; siguiente: spec 009, temporizador) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. La historia detallada de cada fase está en [`handoff-history.md`](handoff-history.md); solo hace falta si una tarea toca algo antiguo y su spec o contrato no lo aclaran.
 
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.14, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `plan` v1.22, `training` v1.34, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.15, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.34, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -49,9 +49,7 @@
 
 ## Pendiente de confirmar (bloquea las fases indicadas)
 
-| # | Pregunta | Propuesta | Dónde | Fase |
-|---|---|---|---|---|
-| 7 | Porcentajes de bajada (5% rendimiento, 10% dolor) y ejercicios `isPrimary` | Ver contrato | progression.md §9 | 4 |
+Nada. La pregunta 7 (porcentajes de bajada e `isPrimary`) y las preguntas 3 y 4 de `progression.md` §9 (plancha y asistencia) se cerraron el 20-nov (contrato v1.1, §9).
 
 ## Piloto Opus → Qwen
 
@@ -78,7 +76,20 @@
 
 La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró con el PR de cierre (A en el #70, B en el #73, C en el #75; detalle en `handoff-history.md` y en `docs/specs/008-csv/tasks.md`). En el iPhone ya están el Cierre con dolor lumbar, el historial, el respaldo JSON y el CSV de series.
 
-**Fase 4, v1.0** (spec §13: progresión, alertas, temporizador, peso corporal, gráficas). Primero, cerrar la pregunta 7 (porcentajes de bajada y ejercicios `isPrimary`, `progression.md` §9) y proponer cómo repartir la fase en specs, como la fase 3 (005 a 008). Pruebas primero en `progression` y `health`.
+**Fase 4, v1.0**, repartida en 6 specs (acordado el 20-nov; spec §13):
+
+| Spec | Contenido | RF | Depende de |
+|---|---|---|---|
+| 009 `temporizador` | Temporizador de descanso al completar una serie; calibración de UI de Qwen (ADR-0014) | RF-15 | — |
+| 010 `progresion` | Dominio RN-PRG-00 a 14 (pruebas primero), tabla `suggestions` (base v4), prellenado del peso, `SuggestionBanner`, "Para la próxima sesión" en el Cierre, "Hoy subes" | RF-12, 24, 30 | — |
+| 011 `deload` | RN-PRG-20 y 21, aviso en "Hoy", deload manual, 50% de series | RF-36, RF-05 | 010 |
+| 012 `progreso` | Pestaña "Progreso": gráfica por ejercicio y de dolor; `shared/ui/Chart` con uPlot cargado aparte (bundle en 177 de 200 kB) | RF-31, RF-33 | — |
+| 013 `peso-corporal` | Tabla `bodyMetrics` (base v5), registro y gráfica con meta semanal, respaldo | RF-34 | 012 |
+| 014 `ajustes` | Incrementos por equipo y paso de asistencia, umbral de dolor, recordatorio de respaldo, borrar datos | RF-50, 51, 42, 43 | 010 |
+
+Hasta la 014, los incrementos, el paso de asistencia y el umbral son constantes del dominio. El plan editable (RF-04) queda en la fase 5 (v1.1; spec §3 corregida). Las alertas de dolor ya llegaron con la spec 005.
+
+**Siguiente:** escribir `docs/specs/009-temporizador/spec.md` con la plantilla. Pruebas primero en `progression` y `health`.
 
 Además:
 
@@ -179,4 +190,4 @@ Además:
 
 ## Prompt sugerido para un chat nuevo
 
-"Empezamos la fase 4. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/spec.md (§13 y los requerimientos de la fase 4) y docs/modules/progression.md (§9, pregunta 7). La fase 3 está cerrada. Ayúdame a cerrar la pregunta 7 y propón cómo repartir la fase 4 en specs. Guíame paso a paso, una tarea a la vez."
+"Empezamos la spec 009 (temporizador de descanso) de la fase 4. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/spec.md (RF-15, §7.2 y §7.5) y docs/templates/. Ayúdame a escribir la spec de feature. Guíame paso a paso, una tarea a la vez."
