@@ -1,6 +1,6 @@
 # Constitución del proyecto
 
-**Versión:** 1.1 · **Fecha:** 20-nov-2026
+**Versión:** 1.2 · **Fecha:** 21-nov-2026
 
 Principios no negociables. Cada spec, plan, ADR y PR se revisa contra esta lista. Una excepción requiere enmendar este documento (ver al final), no un comentario en el código.
 
@@ -58,7 +58,7 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 
 - UI y documentación en español. Código, identificadores, nombres técnicos y commits en inglés.
 - TypeScript estricto (`strict: true`, `noUncheckedIndexedAccess: true`). Sin `any` en APIs públicas.
-- Todo dato que entra desde fuera (import JSON, seed) se valida con Zod ([ADR-0007](adr/0007-zod-en-fronteras.md)).
+- Todo dato que entra desde fuera (import JSON, seed) se valida con Zod ([ADR-0012](adr/0012-validacion-del-seed-zod-y-dominio.md)).
 
 ---
 
@@ -83,3 +83,4 @@ El usuario tiene espondilolistesis L5-S1 grado I.
 |---|---|---|
 | 1.0 | 16-nov-2026 | Versión inicial |
 | 1.1 | 20-nov-2026 | P-2: toda exportación lleva la versión de su formato; el CSV, en el nombre del archivo (ADR-0013, spec 008) |
+| 1.2 | 21-nov-2026 | P-8: el enlace pasa de ADR-0007 a ADR-0012, que lo reemplazó; el principio no cambia (corrección editorial, sin ADR) |

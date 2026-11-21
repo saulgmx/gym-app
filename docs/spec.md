@@ -1,6 +1,6 @@
 # App de seguimiento de entrenamiento: especificación de diseño y arquitectura
 
-**Versión:** 0.16 (borrador) · **Fecha:** 20-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
+**Versión:** 0.17 (borrador) · **Fecha:** 21-nov-2026 · **Stack:** React + TypeScript (PWA, offline-first) · **Estilo:** monolito modular
 
 Este documento define **qué** hace la app y **por qué**. El **cómo** está en [`architecture.md`](architecture.md), los contratos por módulo en [`modules/`](modules/), las decisiones en [`adr/`](adr/README.md) y las reglas no negociables en [`constitution.md`](constitution.md). Flujo de trabajo: [`README.md`](README.md).
 
@@ -261,7 +261,7 @@ Movida a [`architecture.md`](architecture.md) (v1.0) y a los ADRs. Resumen:
 
 - Monolito modular: `plan`, `training`, `progression`, `health`, `data`, más `shared` y `app` ([ADR-0001](adr/0001-monolito-modular.md)).
 - PWA offline-first con Dexie ([ADR-0002](adr/0002-pwa-offline-first-dexie.md)); comunicación por API pública, puertos y eventos ([ADR-0003](adr/0003-comunicacion-entre-modulos.md)).
-- uPlot ([ADR-0004](adr/0004-graficas-uplot.md)), CSS Modules + variables CSS ([ADR-0005](adr/0005-css-modules-variables.md)), Zustand ([ADR-0006](adr/0006-estado-zustand.md)), Zod ([ADR-0007](adr/0007-zod-en-fronteras.md)), fronteras en CI ([ADR-0008](adr/0008-verificacion-de-fronteras.md)).
+- uPlot ([ADR-0004](adr/0004-graficas-uplot.md)), CSS Modules + variables CSS ([ADR-0005](adr/0005-css-modules-variables.md)), Zustand ([ADR-0006](adr/0006-estado-zustand.md)), Zod ([ADR-0012](adr/0012-validacion-del-seed-zod-y-dominio.md)), fronteras en CI ([ADR-0008](adr/0008-verificacion-de-fronteras.md)).
 
 ## 9. Modelo de datos
 
