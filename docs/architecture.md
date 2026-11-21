@@ -1,6 +1,6 @@
 # Arquitectura
 
-**Versión:** 1.6 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
+**Versión:** 1.7 · **Fecha:** 20-nov-2026 · **Basado en:** `spec.md` v0.6 · **Formato:** arc42 reducido
 
 Este documento describe **cómo** está construida la app. El **qué** está en [`spec.md`](spec.md); los **porqués** en [`adr/`](adr/README.md); el contrato detallado de cada módulo en [`modules/`](modules/).
 
@@ -260,7 +260,7 @@ Catálogo completo en cada contrato de módulo; resumen:
 
 | Evento | Publica | Escuchan |
 |---|---|---|
-| `training/WorkoutStarted` | training | app (Wake Lock, v1.0) |
+| `training/WorkoutStarted` | training | — (el Wake Lock depende del descanso, que `app` calcula; spec 009 plan §6.5) |
 | `training/SetLogged` | training | progression (volumen, v1.1) |
 | `training/WorkoutCompleted` | training | progression |
 | `training/WorkoutDiscarded` | training | progression |
