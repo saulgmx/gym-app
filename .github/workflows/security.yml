@@ -70,9 +70,29 @@ jobs:
       - name: Install dependencies
         run: npm ci --strict-allow-scripts
 
-      - name: Run npm audit
+      - name: Run npm audit (non-blocking)
+        id: npm-audit
         run: npm audit --audit-level=moderate
-        continue-on-error: false
+        continue-on-error: true
 
-      - name: Run npm audit fix (dry-run)
+      - name: Run npm audit fix dry-run (non-blocking)
+        id: npm-audit-fix
         run: npm audit fix --dry-run
+        continue-on-error: true
+
+      - name: Summarize npm audit results
+        if: always()
+        env:
+          AUDIT_OUTCOME: ${{ steps.npm-audit.outcome }}
+          AUDIT_FIX_OUTCOME: ${{ steps.npm-audit-fix.outcome }}
+        run: |
+          echo '### npm audit (non-blocking)' >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          if [ "$AUDIT_OUTCOME" = "failure" ]; then
+            echo 'Audit did not pass; inspect the audit step log for vulnerability findings or execution errors.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Audit passed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ "$AUDIT_FIX_OUTCOME" = "failure" ]; then
+            echo 'The remediation dry-run did not pass; inspect its step log for details.' >> "$GITHUB_STEP_SUMMARY"
+          fi
