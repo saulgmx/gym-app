@@ -47,7 +47,7 @@ Una contradicción es un bug de documentación: se corrige el documento de menor
 Puertas de control (no se avanza si fallan):
 
 - **Spec → Plan:** cada requerimiento tiene criterio de aceptación verificable; no hay "[POR DEFINIR]" sin resolver; si la spec tiene interfaz, su **Fuente de diseño** nombra un diseño ya elegido (`design-*.md` y tablero) o las piezas existentes que reutiliza. Sin diseño elegido no se escribe el plan.
-- **Plan → Tareas:** el plan respeta la constitución y el grafo de dependencias; los contratos afectados están actualizados.
+- **Plan → Tareas:** el plan respeta la constitución y el grafo de dependencias; cada regla nueva o cambiada tiene sus casos de borde cerrados (plan §7); los contratos afectados están actualizados, con esos casos incluidos.
 - **Tareas → Código:** todo comportamiento con ID tiene su prueba antes que el código (P-5); las excepciones están declaradas en `tasks.md`.
 - **Código → Hecho:** CI verde (tsc, lint, fronteras, pruebas, build) y criterios de aceptación cubiertos por pruebas, o por la verificación manual que declara `tasks.md` (P-5).
 
