@@ -5,7 +5,7 @@
 ## Estado actual
 
 - **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.15, `architecture.md` v1.5, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.34, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **Documentos y versiones:** `constitution.md` v1.1 (P-2 enmendado, ADR-0013), `spec.md` v0.16, `architecture.md` v1.6, ADR-0001 a 0014 (0014 propuesto) (0007 reemplazado por 0012). Contratos: `progression` v1.1 (sin preguntas abiertas), `plan` v1.22, `training` v1.35, `health` v1.15 (textos validados), `data` v1.7, `shared` (§2 con `SeriesRow`). Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -89,7 +89,7 @@ La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró co
 
 Hasta la 014, los incrementos, el paso de asistencia y el umbral son constantes del dominio. El plan editable (RF-04) queda en la fase 5 (v1.1; spec §3 corregida). Las alertas de dolor ya llegaron con la spec 005.
 
-**Siguiente:** escribir `docs/specs/009-temporizador/spec.md` con la plantilla. Pruebas primero en `progression` y `health`.
+**Siguiente:** el plan técnico de la 009 (`docs/specs/009-temporizador/plan.md`). La spec está aprobada (20-nov): RN-TRN-32 a 35 en `training` v1.35, el descanso se calcula de la última serie hecha (sin tablas ni migración) y Wake Lock solo durante el descanso. El plan fija la función del dominio, el store de `app`, el sonido (Web Audio) y `RestTimer`. Pruebas primero en `progression` y `health`.
 
 Además:
 
@@ -190,4 +190,4 @@ Además:
 
 ## Prompt sugerido para un chat nuevo
 
-"Empezamos la spec 009 (temporizador de descanso) de la fase 4. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/spec.md (RF-15, §7.2 y §7.5) y docs/templates/. Ayúdame a escribir la spec de feature. Guíame paso a paso, una tarea a la vez."
+"Seguimos con el plan técnico de la spec 009 (temporizador de descanso). Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/009-temporizador/spec.md, docs/modules/training.md (RN-TRN-32 a 35), docs/architecture.md §7.8 y docs/templates/feature-plan.md. Ayúdame a escribir el plan. Guíame paso a paso, una tarea a la vez."
