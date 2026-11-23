@@ -39,10 +39,10 @@ Reglas:
    | Ambiente | Se despliega desde | Dominio | Datos |
    |---|---|---|---|
    | Preview | cada PR | `*.vercel.app` | solo para revisar |
-   | Desarrollo | `main`, en cada merge | subdominio propio, por ejemplo `dev.<dominio>` | de prueba |
+   | Desarrollo | `main`, en cada merge | `dev.gym.<dominio>` | de prueba |
    | Producción | rama `production` | `gym.<dominio>` (ADR-0011) | reales |
 
-   El ambiente de desarrollo usa el dominio propio para tener una URL fija e instalable. Ahí se prueban las migraciones, los imports y las specs nuevas durante varios días. Nunca se guardan datos reales en él.
+   El ambiente de desarrollo usa el dominio propio para tener una URL fija e instalable. Es otro origen, así que no comparte IndexedDB, service worker ni PWA con producción. El registro DNS apunta a Vercel sin proxy intermedio (por ejemplo, *DNS only* en Cloudflare, cuyo certificado gratuito no cubre dos niveles de subdominio). Ahí se prueban las migraciones, los imports y las specs nuevas durante varios días. Nunca se guardan datos reales en él.
 3. **Versiones:** SemVer con tags anotados `vX.Y.Z` sobre un merge commit de `main` que pasó CI. Mientras la versión sea `0.x`: *minor* por spec cerrada, *patch* por corrección. Cada versión tiene su PR `chore/release-vX.Y.Z`, que sube `package.json` y mueve la sección `[Sin publicar]` de `CHANGELOG.md` a la versión nueva. El tag se crea después de integrar ese PR.
 4. **Publicar en producción:** mover `production` al commit del tag (`git push origin vX.Y.Z^{}:production`). Solo se publican tags; nunca se hace commit directo en `production`.
 5. **Protección:**
