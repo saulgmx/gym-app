@@ -21,9 +21,10 @@ Reglas:
 | [0008](0008-verificacion-de-fronteras.md) | Fronteras verificadas con eslint-plugin-boundaries y dependency-cruiser | Aceptado |
 | [0009](0009-ids-y-tiempo.md) | IDs UUIDv7, fechas locales y reloj inyectado | Aceptado |
 | [0010](0010-manejo-de-errores-result.md) | Errores esperados con `Result<T, E>` | Aceptado |
-| [0011](0011-hosting-vercel-origen-estable.md) | Hosting en Vercel con origen estable en dominio propio | Aceptado |
+| [0011](0011-hosting-vercel-origen-estable.md) | Hosting en Vercel con origen estable en dominio propio | Aceptado (regla 4 modificada por ADR-0017) |
 | [0012](0012-validacion-del-seed-zod-y-dominio.md) | Validación en las fronteras con Zod (forma) y el dominio (reglas) | Aceptado |
 | [0013](0013-version-de-formato-en-exportaciones.md) | Versión de formato en todas las exportaciones | Aceptado |
 | [0014](0014-ejecucion-delegada-modelo-local.md) | Ejecución de tareas delegada a un modelo local | Propuesto |
 | [0015](0015-pruebas-primero.md) | Pruebas primero para todo comportamiento con ID | Aceptado |
 | [0016](0016-analisis-de-seguridad-en-ci.md) | Análisis de seguridad en CI con Trivy y TruffleHog | Aceptado |
+| [0017](0017-ambientes-y-flujo-de-ramas.md) | Trunk-based con ambiente de desarrollo y producción por versión | Propuesto |
