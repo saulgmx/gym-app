@@ -2,7 +2,7 @@
 
 - **Estado:** Aceptado
 - **Fecha:** 23-nov-2026
-- **Relacionado:** P-2, P-7, RNF-09, ADR-0002, ADR-0011 (modifica su regla 4), ADR-0016; `CHANGELOG.md`; tag `v0.1.0` (PR #86)
+- **Relacionado:** P-2, P-7, RNF-09, ADR-0002, ADR-0011 (modifica su regla 4 y hace una excepción a su regla 1), ADR-0016; `CHANGELOG.md`; tag `v0.1.0` (PR #86)
 
 ## Contexto
 
@@ -38,11 +38,11 @@ Reglas:
 
    | Ambiente | Se despliega desde | Dominio | Datos |
    |---|---|---|---|
-   | Preview | cada PR | `*.vercel.app` | solo para revisar |
-   | Desarrollo | `main`, en cada merge | `dev.gym.<dominio>` | de prueba |
+   | Preview | cada PR | `*.vercel.app` (URL por despliegue) | solo para revisar |
+   | Desarrollo | `main`, en cada merge | `gym-dev.vercel.app` (alias fijo asignado a `main`) | de prueba |
    | Producción | rama `production` | `gym.<dominio>` (ADR-0011) | reales |
 
-   El ambiente de desarrollo usa el dominio propio para tener una URL fija e instalable. Es otro origen, así que no comparte IndexedDB, service worker ni PWA con producción. El registro DNS apunta a Vercel sin proxy intermedio (por ejemplo, *DNS only* en Cloudflare, cuyo certificado gratuito no cubre dos niveles de subdominio). Ahí se prueban las migraciones, los imports y las specs nuevas durante varios días. Nunca se guardan datos reales en él.
+   El ambiente de desarrollo tiene un alias fijo en `vercel.app` para poder instalarlo. Es otro origen (`vercel.app` está en la Public Suffix List), así que no comparte IndexedDB, service worker ni PWA con producción. No necesita DNS. La regla 1 de ADR-0011 (origen estable en dominio propio; URLs de `vercel.app` solo para revisar) sigue aplicando a producción y a las previews por PR, pero no a este alias: en desarrollo los datos son desechables, y si se cambia de proveedor basta con reinstalar la PWA de desarrollo en la URL nueva. Ahí se prueban las migraciones, los imports y las specs nuevas durante varios días. Nunca se guardan datos reales en él.
 3. **Versiones:** SemVer con tags anotados `vX.Y.Z` sobre un merge commit de `main` que pasó CI. Mientras la versión sea `0.x`: *minor* por spec cerrada, *patch* por corrección. Cada versión tiene su PR `chore/release-vX.Y.Z`, que sube `package.json` y mueve la sección `[Sin publicar]` de `CHANGELOG.md` a la versión nueva. El tag se crea después de integrar ese PR.
 4. **Publicar en producción:** mover `production` al commit del tag (`git push origin vX.Y.Z^{}:production`). Solo se publican tags; nunca se hace commit directo en `production`.
 5. **Protección:**
@@ -66,5 +66,5 @@ Reglas:
 - (−) Una rama larga más que proteger.
 - (−) Producción se construye otra vez desde el código fuente. El riesgo es bajo con `npm ci` y el lockfile.
 - (−) El ambiente de desarrollo es un despliegue de *preview* para Vercel. Si la *Deployment Protection* del plan Hobby exige iniciar sesión en Vercel, la PWA de desarrollo en el celular puede quedar detrás de ese login. Se verifica al implementar.
-- Pendientes de implementación: configurar Vercel (rama de producción, dominio de desarrollo, protección), los DNS, los rulesets de GitHub para `production` y `v*`, actualizar architecture §8 y escribir el checklist de release.
+- Pendientes de implementación: configurar Vercel (rama de producción, alias `gym-dev.vercel.app`, protección), los rulesets de GitHub para `production` y `v*`, actualizar architecture §8 y escribir el checklist de release.
 - Revisar esta decisión si se migra a S3 + CloudFront: con GitHub Actions y OIDC (credenciales temporales, rol limitado al bucket y a la distribución, confianza restringida a `refs/tags/v*`) la opción B deja de tener su principal contra y probablemente conviene más.
