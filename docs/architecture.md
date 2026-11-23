@@ -363,14 +363,28 @@ El temporizador de descanso no guarda nada: se calcula con el `completedAt` de l
 
 ```mermaid
 flowchart LR
-  dev[Push / PR] --> ci[GitHub Actions<br/>tsc · lint · fronteras · vitest · build · bundle size · playwright]
-  ci -->|PR verde → main| host[Vercel<br/>gym.&lt;dominio&gt;]
+  pr[PR] --> ci[GitHub Actions<br/>tsc · lint · fronteras · vitest · build · bundle size · playwright]
+  pr --> prev[Vercel preview<br/>*.vercel.app]
+  ci -->|PR verde → merge| main[main]
+  main -->|cada merge| dev[Vercel desarrollo<br/>gym-dev.vercel.app]
+  main -->|tag vX.Y.Z| prod[rama production]
+  prod --> host[Vercel producción<br/>gym.&lt;dominio&gt;]
   host --> phone[Celular: Añadir a inicio]
 ```
 
-Hosting: Vercel (Hobby) servido desde un subdominio de un dominio propio, para que el origen (y con él IndexedDB y la PWA instalada) sobreviva a un cambio de proveedor ([ADR-0011](adr/0011-hosting-vercel-origen-estable.md)).
+Hosting: Vercel (Hobby). Producción se sirve desde un subdominio de un dominio propio, para que el origen (y con él IndexedDB y la PWA instalada) sobreviva a un cambio de proveedor ([ADR-0011](adr/0011-hosting-vercel-origen-estable.md)).
 
-- `main` protegida: cambios por PR con CI obligatorio; Vercel despliega producción desde `main` y previews por PR (solo para revisar, no para instalar).
+Ambientes y ramas ([ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md)), con trunk-based development:
+
+| Ambiente | Se despliega desde | Dominio | Datos |
+|---|---|---|---|
+| Preview | cada PR | `*.vercel.app` (URL por despliegue) | solo para revisar, no para instalar |
+| Desarrollo | `main`, en cada merge | `gym-dev.vercel.app` | de prueba; instalable |
+| Producción | rama `production` | `gym.<dominio>` | reales |
+
+- `main` protegida: cambios por PR con CI obligatorio y merge commit. Es la única rama de integración.
+- `production` solo avanza (*fast-forward*) hasta el commit de un tag `vX.Y.Z`; nunca recibe commits directos. Los tags `v*` no se mueven ni se borran.
+- Publicar, hacer rollback y aplicar un hotfix siguen [`release.md`](release.md).
 - Headers, aplicados por `vercel.json`: los de §7.10 en todas las rutas; `Cache-Control: no-cache` en toda ruta fuera de `/assets/` (incluye `/`, rutas de la SPA, `sw.js` y `manifest.webmanifest`: Vercel aplica headers por la ruta pedida, no por el archivo servido); `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html` solo para rutas sin extensión.
 - Sin funciones exclusivas de Vercel: el artefacto es solo `dist/`.
 

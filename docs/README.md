@@ -15,6 +15,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | [`templates/`](templates/) | Plantillas para specs de feature, planes, tareas y ADRs | Rara vez |
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
 | `design-*.md` | ¿Cómo se ve cada pantalla? (diseño elegido y sus tableros) | Antes de la spec que construye o cambia la pantalla |
+| [`release.md`](release.md) | ¿Cómo se publica una versión? (checklist de release, rollback, hotfix) | Cuando cambia el flujo de ambientes (ADR-0017) |
 | [`handoff.md`](handoff.md) | Estado actual y siguiente paso | Al final de cada sesión de trabajo |
 | [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (índice de specs y PRs; no hace falta para retomar) | Al cerrar una spec, se agrega su fila |
 
@@ -86,5 +87,6 @@ Las pruebas citan el ID en su nombre, por ejemplo `it('RN-PRG-01: sube peso al t
 
 - `spec.md`, `architecture.md` y `modules/*.md` no llevan número de versión ni fecha en la cabecera: su historial es git. Para citar un estado concreto se usa la fecha o el commit.
 - Cada contrato conserva su sección "Decisiones" como registro de cambios: una entrada por cambio de API, tablas, eventos, puertos o reglas, con la fecha y la spec que lo origina (`**Plan de la spec 010 (21-nov-2026):** …`). Las erratas y aclaraciones no llevan entrada.
+- La app lleva versión SemVer: `version` en `package.json`, tag anotado `vX.Y.Z` y una entrada en [`CHANGELOG.md`](../CHANGELOG.md) por versión publicada. Proceso en [`release.md`](release.md).
 - Solo llevan versión la constitución (por enmienda, con su tabla) y los formatos que la app vuelve a leer: `schemaVersion` de Dexie, `DataPort.version` de cada módulo y la versión del CSV (P-2, ADR-0013). Esas versiones no cambian con esta regla.
 - Hasta el 21-nov-2026 los documentos llevaban versión (por ejemplo, `training.md` v1.36). Esas citas, en las decisiones de los contratos y en las specs 000 a 009, se quedan como registro histórico. El commit de una versión se encuentra con `git log -S 'contrato:** 1.36' -- docs/modules/training.md`.

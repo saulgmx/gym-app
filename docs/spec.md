@@ -307,8 +307,8 @@ Casos clave del dominio:
 ## 12. CI/CD y entrega
 
 - **CI (GitHub Actions):** `tsc`, ESLint, Vitest, build, Playwright en cada PR.
-- **CD:** despliegue automático a Vercel desde `main`, servido desde un dominio propio (ADR-0011).
-- **Versionado:** SemVer; el `schemaVersion` de datos va aparte.
+- **CD:** cada merge a `main` se despliega automáticamente en el ambiente de desarrollo; producción, servida desde un dominio propio, solo cambia al publicar una versión (ADR-0011, ADR-0017).
+- **Versionado:** SemVer con tags `vX.Y.Z` y `CHANGELOG.md`; el `schemaVersion` de datos va aparte. Proceso en [`release.md`](release.md).
 - **Instalación:** "Añadir a pantalla de inicio" en iOS y Android.
 
 ---
