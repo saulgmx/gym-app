@@ -1,8 +1,9 @@
+# What is scanned, what blocks and how risks are accepted: docs/adr/0016-analisis-de-seguridad-en-ci.md
 name: Security Analysis
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
   schedule:
@@ -17,16 +18,25 @@ jobs:
       contents: read
       security-events: write
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     name: Trivy Dependency Scan
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Run Trivy scan
+      # Two passes over the same cached DB: a full report for the Security tab that never fails,
+      # then a gate that fails the job. Accepted findings live in .trivyignore (reason + expiry)
+      # and are left out of both.
+      - name: Trivy report (all severities)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          # Secrets are TruffleHog's job.
+          scanners: 'vuln'
+          trivyignores: '.trivyignore'
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -36,20 +46,36 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
+      # Fails on new MEDIUM+ findings, like the old `npm audit --audit-level=moderate`.
+      - name: Trivy gate (MEDIUM+)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'vuln'
+          trivyignores: '.trivyignore'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          exit-code: '1'
+          format: 'table'
+          skip-setup-trivy: true
+
   secrets-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     name: Secrets Detection
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run TruffleHog
         uses: trufflesecurity/trufflehog@d232362a64a09a9e7d58267b8f5acef00ae90e23 # v3.100.0
+        # No base/head: the action picks the range per event (PR: base..head, push:
+        # before..after, schedule: full history).
         with:
           path: ./
-          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && '0000000000000000000000000000000000000000') || '' }}
-          head: ${{ github.event_name == 'pull_request' && 'HEAD' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && 'HEAD') || '' }}
-          extra_args: --debug
+          # Docker image tag the action runs; it defaults to "latest", so it stays pinned here.
+          # Dependabot bumps only the SHA above: update this to the same release in that PR.
           version: 3.100.0
