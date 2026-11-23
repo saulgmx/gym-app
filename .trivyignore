@@ -1,0 +1,7 @@
+# Accepted vulnerabilities. Each entry cites where the risk was assessed and expires, so the
+# security workflow fails again on that date and forces a review.
+
+# glob 11 / minimatch 10 via workbox-build (vite-plugin-pwa): build-only, own patterns, never
+# reach the bundle (docs/specs/000-fase-0/plan.md, risks). Fixed only in glob 14 / minimatch 11.
+CVE-2026-118764 exp:2027-02-28
+CVE-2026-118773 exp:2027-02-28

@@ -30,6 +30,15 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          # Secrets are TruffleHog's job.
+          scanners: 'vuln'
+          # Fails on new MEDIUM+ findings, like the old `npm audit --audit-level=moderate`.
+          # Accepted ones live in .trivyignore, each with its reason and expiry date.
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          exit-code: '1'
+          trivyignores: '.trivyignore'
+          # Without this the action drops `severity` for SARIF and LOW findings would fail the job.
+          limit-severities-for-sarif: true
           format: 'sarif'
           output: 'trivy-results.sarif'
 
