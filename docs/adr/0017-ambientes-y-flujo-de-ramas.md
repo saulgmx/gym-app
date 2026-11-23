@@ -1,6 +1,6 @@
 # ADR-0017: Trunk-based con ambiente de desarrollo y producción por versión
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 23-nov-2026
 - **Relacionado:** P-2, P-7, RNF-09, ADR-0002, ADR-0011 (modifica su regla 4), ADR-0016; `CHANGELOG.md`; tag `v0.1.0` (PR #86)
 

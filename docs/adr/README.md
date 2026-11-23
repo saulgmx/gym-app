@@ -27,4 +27,4 @@ Reglas:
 | [0014](0014-ejecucion-delegada-modelo-local.md) | Ejecución de tareas delegada a un modelo local | Propuesto |
 | [0015](0015-pruebas-primero.md) | Pruebas primero para todo comportamiento con ID | Aceptado |
 | [0016](0016-analisis-de-seguridad-en-ci.md) | Análisis de seguridad en CI con Trivy y TruffleHog | Aceptado |
-| [0017](0017-ambientes-y-flujo-de-ramas.md) | Trunk-based con ambiente de desarrollo y producción por versión | Propuesto |
+| [0017](0017-ambientes-y-flujo-de-ramas.md) | Trunk-based con ambiente de desarrollo y producción por versión | Aceptado |
