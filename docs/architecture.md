@@ -366,7 +366,7 @@ flowchart LR
   pr[PR] --> ci[GitHub Actions<br/>tsc · lint · fronteras · vitest · build · bundle size · playwright]
   pr --> prev[Vercel preview<br/>*.vercel.app]
   ci -->|PR verde → merge| main[main]
-  main -->|cada merge| dev[Vercel desarrollo<br/>gym-dev.vercel.app]
+  main -->|cada merge| dev[Vercel desarrollo<br/>gym-dev-saulgmx.vercel.app]
   main -->|tag vX.Y.Z| prod[rama production]
   prod --> host[Vercel producción<br/>gym.&lt;dominio&gt;]
   host --> phone[Celular: Añadir a inicio]
@@ -379,12 +379,13 @@ Ambientes y ramas ([ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md)), con trun
 | Ambiente | Se despliega desde | Dominio | Datos |
 |---|---|---|---|
 | Preview | cada PR | `*.vercel.app` (URL por despliegue) | solo para revisar, no para instalar |
-| Desarrollo | `main`, en cada merge | `gym-dev.vercel.app` | de prueba; instalable |
+| Desarrollo | `main`, en cada merge | `gym-dev-saulgmx.vercel.app` | de prueba; instalable |
 | Producción | rama `production` | `gym.<dominio>` | reales |
 
 - `main` protegida: cambios por PR con CI obligatorio y merge commit. Es la única rama de integración.
 - `production` solo avanza (*fast-forward*) hasta el commit de un tag `vX.Y.Z`; nunca recibe commits directos. Los tags `v*` no se mueven ni se borran.
 - Publicar, hacer rollback y aplicar un hotfix siguen [`release.md`](release.md).
+- *Deployment Protection* (Vercel Authentication) desactivada: las previews y el ambiente de desarrollo son públicos, para instalar la PWA de desarrollo sin login. No expone nada: el repo es público y la app no tiene backend ni secretos.
 - Headers, aplicados por `vercel.json`: los de §7.10 en todas las rutas; `Cache-Control: no-cache` en toda ruta fuera de `/assets/` (incluye `/`, rutas de la SPA, `sw.js` y `manifest.webmanifest`: Vercel aplica headers por la ruta pedida, no por el archivo servido); `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html` solo para rutas sin extensión.
 - Sin funciones exclusivas de Vercel: el artefacto es solo `dist/`.
 
