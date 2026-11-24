@@ -1,11 +1,11 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 21-nov-2026 (fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de lo hecho por fase está en [`handoff-history.md`](handoff-history.md); el detalle, en la spec de cada fase.
+**Fecha:** 23-nov-2026 (MVP publicado como `v0.1.0`; fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de lo hecho por fase está en [`handoff-history.md`](handoff-history.md); el detalle, en la spec de cada fase.
 
 ## Estado actual
 
-- **App en producción:** https://gym.saulgmx.com (Vercel, `main` protegida con CI), instalada en el iPhone. Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos:** `constitution.md` v1.2 (P-2 enmendado, ADR-0013; P-5 enmendado, ADR-0015; P-8 enlaza a ADR-0012), ADR-0001 a 0015 (0014 propuesto) (0007 reemplazado por 0012). `spec.md`, `architecture.md` y los contratos ya no llevan número de versión: el historial es git (`docs/README.md`, "Versiones y registro de cambios"). `progression` sin preguntas abiertas, `health` con textos validados, `shared` §2 con `SeriesRow`. Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
+- **App en producción:** https://gym.saulgmx.com (Vercel, desde la rama `production`), instalada en el iPhone. **Desarrollo:** https://gym-dev-saulgmx.vercel.app (Vercel, desde `main` en cada merge; solo datos de prueba). Ver "Versiones y ambientes". Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
+- **Documentos:** `constitution.md` v1.2 (P-2 enmendado, ADR-0013; P-5 enmendado, ADR-0015; P-8 enlaza a ADR-0012), ADR-0001 a 0017 (0014 propuesto) (0007 reemplazado por 0012). `spec.md`, `architecture.md` y los contratos ya no llevan número de versión: el historial es git (`docs/README.md`, "Versiones y registro de cambios"). `progression` sin preguntas abiertas, `health` con textos validados, `shared` §2 con `SeriesRow`. Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
@@ -34,7 +34,19 @@
   - Vercel: la app de GitHub tiene acceso solo a `gym-app`; framework Vite, Node 24.x por `engines`. `installCommand` vive en `vercel.json` y una prueba exige que sea el mismo `npm ci` de CI (plan §6.3).
   - Dominio `saulgmx.com` en Cloudflare Registrar. `gym` es un CNAME al valor propio del proyecto (`….vercel-dns-017.com`) en modo **DNS only** (nube gris): con proxy, Cloudflare se pondría en medio del TLS y podría inyectar scripts que la CSP bloquea. Certificado de Let's Encrypt emitido y renovado por Vercel.
 - Node con **mise** en lugar de Volta (20-nov, Volta dejó de mantenerse): `.tool-versions` es la única fuente de la versión, para mise en local y `setup-node` en CI; npm va con Node (24.22.3 trae 11.19.1). Sin ADR: es del entorno de desarrollo, no de la app (detalle en spec 000 plan §6 y §8).
+- Versiones y ambientes (23-nov, ADR-0017; detalle en "Versiones y ambientes"): trunk-based, SemVer con tags anotados y `CHANGELOG.md`; producción solo cambia al mover la rama `production` a un tag. Opción A (rama como puntero, sin secretos) en vez de una Action con token de Vercel.
 - Forma de trabajo: el usuario quiere ser guiado paso a paso; ejecuta con Claude Code o su terminal.
+
+## Versiones y ambientes
+
+- **Versión actual:** `v0.1.0` (MVP, specs 000 a 008), tag anotado en `4ae07d9` (PR #86). `package.json` en `0.1.0`; `CHANGELOG.md` con `[Sin publicar]` vacía.
+- **Proceso:** [`release.md`](release.md) (checklist, rollback y hotfix); ambientes en `architecture.md` §8; decisión en ADR-0017 (PR #87 a #89). Al cerrar cada spec se publica un *minor*: la 009 será `v0.2.0`.
+- **Ambientes:** preview por PR (`*.vercel.app`); desarrollo en `gym-dev-saulgmx.vercel.app` desde `main`; producción en `gym.saulgmx.com` desde `production`. *Deployment Protection* de Vercel desactivada (repo público, sin backend), para instalar la PWA de desarrollo sin login.
+- **Vercel (23-nov):** rama de producción `production` (Settings → Environments → Production → Branch Tracking); alias `gym-dev-saulgmx.vercel.app` asignado a `main` (Settings → Domains). Probado con el merge de #89: salió como *Preview* y producción no cambió.
+- **Producción hoy** sirve el último despliegue hecho desde `main` antes del cambio (`5f6c7ff`), con el mismo código de la app que `v0.1.0` (solo cambiaron docs). El primer despliegue desde `production` será `v0.2.0`.
+- **GitHub:** rulesets `production` (sin borrado y solo *fast-forward*, también para el admin) y `release-tags` (tags `v*` sin borrado ni cambios). Verificados por API (`current_user_can_bypass: never`), no con un push real. Para corregir un tag mal creado hay que desactivar el ruleset un momento.
+- **Sin hacer, a propósito:** exigir `ci` para actualizar `production` (bloquearía los hotfix, cuyas ramas no corren CI; requiere agregar `hotfix/**` a `ci.yml`).
+- **Riesgo:** una versión que sube `schemaVersion` no admite rollback una vez abierta la base en el iPhone (IndexedDB no abre una versión menor): respaldo y corrección hacia delante. Probar las migraciones en desarrollo antes de publicar.
 
 ## Pendiente de confirmar (bloquea las fases indicadas)
 
@@ -85,7 +97,7 @@ Además:
 
 1. **Ya sin pendientes tuyos (20-nov):** T20a de la 007 verificada en el iPhone (el aviso ya no sale al tocar "Compartir" en Safari) y T24 de la 005 hecha (el traumatólogo validó sin cambios los textos de salud y el aviso médico de Ajustes; `health.md` v1.15).
 2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
-3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec. El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
+3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec; revisar también ADR-0017 (en S3 + CloudFront, una Action con OIDC en el tag probablemente conviene más que la rama `production`). El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
 ## Notas para retomar
 
@@ -123,6 +135,7 @@ Además:
 - `eslint-plugin-boundaries` v7: el descriptor `layer` va primero con `exclusive: true`; el grafo de módulos vive en `config/module-graph.json`.
 - Al fusionar PR: "Create a merge commit".
 - `main` protegida: ni un push directo ni un PR con `ci` en rojo entran, tampoco como admin. Para una emergencia, desactivar temporalmente en Settings → Branches.
+- `production` y los tags `v*` tienen rulesets (Settings → Rules → Rulesets), no protección clásica. Publicar: `git push origin vX.Y.Z^{}:production`; nunca `--force` (`release.md`).
 - zsh no divide variables sin comillas: opciones de `curl` en una variable van como array, `R=(--resolve a)` y `curl "${R[@]}"`. Lo mismo con varios archivos de prueba en un script de mutantes: `T=(a.test.ts b.test.ts)` y `npx vitest run "${T[@]}"`; con `$T`, Vitest recibe una sola ruta, no encuentra nada y todos los mutantes "sobreviven" (spec 005b T4).
 - DNS: si el Mac preguntó por un nombre antes de que existiera, guarda el "no existe" (~30 min). Verificar con `dig +short nombre @1.1.1.1` y `curl --resolve nombre:443:IP`, o limpiar con `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder`.
 - En la fase 0 solo hay 2 pestañas (Hoy y Progreso); Sesión y Cierre se abren por URL.
