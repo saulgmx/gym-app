@@ -2,7 +2,7 @@
 
 Checklist para llevar `main` a producción, según [ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md). Ambientes y ramas: [architecture §8](architecture.md#8-despliegue).
 
-> **Transición:** hasta configurar la rama `production` y el alias `gym-dev.vercel.app` en Vercel (pendientes de ADR-0017), Vercel sigue desplegando producción desde `main`. Mientras tanto, los pasos 1 y 2 (PR de release y tag) ya aplican; el 3 todavía no.
+> **Transición:** hasta configurar la rama `production` y el alias `gym-dev-saulgmx.vercel.app` en Vercel (pendientes de ADR-0017), Vercel sigue desplegando producción desde `main`. Mientras tanto, los pasos 1 y 2 (PR de release y tag) ya aplican; el 3 todavía no.
 
 ## Cuándo
 
@@ -16,7 +16,7 @@ Lo que esté en `main` al crear el tag entra en la versión. No se publica con u
 
 - [ ] La spec está cerrada: todos sus checkpoints integrados en `main` y `handoff.md` actualizado.
 - [ ] El último commit de `main` tiene el check `ci` en verde.
-- [ ] La versión se usó en `gym-dev.vercel.app`: el flujo principal funciona y, si cambió `schemaVersion` o un formato de exportación, se probó la migración con datos de prueba y un respaldo importado.
+- [ ] La versión se usó en `gym-dev-saulgmx.vercel.app`: el flujo principal funciona y, si cambió `schemaVersion` o un formato de exportación, se probó la migración con datos de prueba y un respaldo importado.
 
 ## 1. PR de release
 
@@ -61,7 +61,7 @@ git push origin vX.Y.Z^{}:production     # avanza production al commit del tag
 1. De inmediato: en Vercel, *Instant Rollback* al despliegue de producción anterior. No reconstruye ni mueve `production`.
 2. La corrección se hace en `main` con su PR y se publica como versión de *patch* (pasos 1 a 4). `production` siempre avanza; nunca se retrocede con `--force`.
 
-**Ojo con el esquema:** si la versión mala subió `schemaVersion` y ya abrió la base en el celular, el rollback no sirve. IndexedDB no deja abrir una base con una versión menor que la guardada, así que la versión anterior no podría leer los datos. En ese caso no se hace rollback: se exporta un respaldo desde la app y se corrige hacia delante con una versión de *patch*. Por eso las migraciones se prueban en `gym-dev.vercel.app` antes de publicar.
+**Ojo con el esquema:** si la versión mala subió `schemaVersion` y ya abrió la base en el celular, el rollback no sirve. IndexedDB no deja abrir una base con una versión menor que la guardada, así que la versión anterior no podría leer los datos. En ese caso no se hace rollback: se exporta un respaldo desde la app y se corrige hacia delante con una versión de *patch*. Por eso las migraciones se prueban en `gym-dev-saulgmx.vercel.app` antes de publicar.
 
 ## Hotfix
 

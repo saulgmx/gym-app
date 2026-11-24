@@ -366,7 +366,7 @@ flowchart LR
   pr[PR] --> ci[GitHub Actions<br/>tsc · lint · fronteras · vitest · build · bundle size · playwright]
   pr --> prev[Vercel preview<br/>*.vercel.app]
   ci -->|PR verde → merge| main[main]
-  main -->|cada merge| dev[Vercel desarrollo<br/>gym-dev.vercel.app]
+  main -->|cada merge| dev[Vercel desarrollo<br/>gym-dev-saulgmx.vercel.app]
   main -->|tag vX.Y.Z| prod[rama production]
   prod --> host[Vercel producción<br/>gym.&lt;dominio&gt;]
   host --> phone[Celular: Añadir a inicio]
@@ -379,7 +379,7 @@ Ambientes y ramas ([ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md)), con trun
 | Ambiente | Se despliega desde | Dominio | Datos |
 |---|---|---|---|
 | Preview | cada PR | `*.vercel.app` (URL por despliegue) | solo para revisar, no para instalar |
-| Desarrollo | `main`, en cada merge | `gym-dev.vercel.app` | de prueba; instalable |
+| Desarrollo | `main`, en cada merge | `gym-dev-saulgmx.vercel.app` | de prueba; instalable |
 | Producción | rama `production` | `gym.<dominio>` | reales |
 
 - `main` protegida: cambios por PR con CI obligatorio y merge commit. Es la única rama de integración.
