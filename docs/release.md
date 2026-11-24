@@ -2,8 +2,6 @@
 
 Checklist para llevar `main` a producción, según [ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md). Ambientes y ramas: [architecture §8](architecture.md#8-despliegue).
 
-> **Transición:** hasta configurar la rama `production` y el alias `gym-dev-saulgmx.vercel.app` en Vercel (pendientes de ADR-0017), Vercel sigue desplegando producción desde `main`. Mientras tanto, los pasos 1 y 2 (PR de release y tag) ya aplican; el 3 todavía no.
-
 ## Cuándo
 
 - Al cerrar una spec: sube el *minor* (`0.1.0` → `0.2.0`).
