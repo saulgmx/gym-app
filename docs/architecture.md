@@ -382,12 +382,44 @@ Ambientes y ramas ([ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md)), con trun
 | Desarrollo | `main`, en cada merge | `gym-dev-saulgmx.vercel.app` | de prueba; instalable |
 | Producción | rama `production` | `gym.<dominio>` | reales |
 
-- `main` protegida: cambios por PR con CI obligatorio y merge commit. Es la única rama de integración.
+- `main` protegida: cambios por PR con los checks requeridos en verde y merge commit. Es la única rama de integración.
 - `production` solo avanza (*fast-forward*) hasta el commit de un tag `vX.Y.Z`; nunca recibe commits directos. Los tags `v*` no se mueven ni se borran.
 - Publicar, hacer rollback y aplicar un hotfix siguen [`release.md`](release.md).
 - *Deployment Protection* (Vercel Authentication) desactivada: las previews y el ambiente de desarrollo son públicos, para instalar la PWA de desarrollo sin login. No expone nada: el repo es público y la app no tiene backend ni secretos.
 - Headers, aplicados por `vercel.json`: los de §7.10 en todas las rutas; `Cache-Control: no-cache` en toda ruta fuera de `/assets/` (incluye `/`, rutas de la SPA, `sw.js` y `manifest.webmanifest`: Vercel aplica headers por la ruta pedida, no por el archivo servido); `public, max-age=31536000, immutable` para `/assets/*`; fallback de SPA a `/index.html` solo para rutas sin extensión.
 - Sin funciones exclusivas de Vercel: el artefacto es solo `dist/`.
+
+### 8.1 Configuración fuera del repositorio
+
+Lo que vive en GitHub, Vercel y Cloudflare, y no en el código. Si se pierde (por ejemplo, al migrar o recrear el repositorio), se rehace desde aquí.
+
+**GitHub, protección de `main`** (protección de rama clásica, configurada con `gh api`):
+
+- Solo por PR, con 0 aprobaciones: GitHub no deja aprobar tus propios PR.
+- Checks requeridos, y solo si los publica GitHub Actions (`app_id 15368`): `ci`, `Trivy Dependency Scan`, `Secrets Detection` y `Pinned Tool Advisories` ([ADR-0019](adr/0019-postura-de-seguridad-del-repositorio.md), con sus advertencias al renombrar jobs o filtrar rutas).
+- Rama al día con `main` antes del merge (`strict`).
+- `enforce_admins`: la regla también aplica al admin. Ni un push directo ni un PR con un check requerido en rojo entran. Para una emergencia, desactivar temporalmente en Settings → Branches.
+- Sin force push ni borrado.
+
+**GitHub, rulesets** (Settings → Rules → Rulesets, [ADR-0017](adr/0017-ambientes-y-flujo-de-ramas.md)):
+
+- `production`: sin borrado y solo *fast-forward*, también para el admin.
+- `release-tags`: los tags `v*` no se borran ni se cambian. Para corregir un tag mal creado hay que desactivar el ruleset un momento.
+- Verificados por API (`current_user_can_bypass: never`), no con un push real.
+
+**GitHub, seguridad** ([ADR-0019](adr/0019-postura-de-seguridad-del-repositorio.md)): CodeQL con *default setup*, *private vulnerability reporting* activo, alertas y actualizaciones de Dependabot.
+
+**Vercel:**
+
+- La app de GitHub tiene acceso solo a `gym-app`. Framework Vite; la versión de Node la fija `engines` en `package.json`.
+- `installCommand` vive en `vercel.json`, y una prueba exige que sea el mismo `npm ci` de CI (plan de la spec 000 §6.3).
+- Rama de producción `production` (Settings → Environments → Production → Branch Tracking); alias `gym-dev-saulgmx.vercel.app` asignado a `main` (Settings → Domains).
+- *Deployment Protection* desactivada (ver arriba).
+
+**Dominio y DNS:**
+
+- El dominio está en Cloudflare Registrar. `gym` es un CNAME al valor propio del proyecto en Vercel (`….vercel-dns-017.com`), en modo **DNS only** (nube gris): con proxy, Cloudflare se pondría en medio del TLS y podría inyectar scripts que la CSP bloquea.
+- El certificado (Let's Encrypt) lo emite y lo renueva Vercel.
 
 ## 9. Escenarios de calidad
 
