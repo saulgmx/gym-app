@@ -26,5 +26,6 @@ Reglas:
 | [0013](0013-version-de-formato-en-exportaciones.md) | Versión de formato en todas las exportaciones | Aceptado |
 | [0014](0014-ejecucion-delegada-modelo-local.md) | Ejecución de tareas delegada a un modelo local | Propuesto |
 | [0015](0015-pruebas-primero.md) | Pruebas primero para todo comportamiento con ID | Aceptado |
-| [0016](0016-analisis-de-seguridad-en-ci.md) | Análisis de seguridad en CI con Trivy y TruffleHog | Aceptado |
+| [0016](0016-analisis-de-seguridad-en-ci.md) | Análisis de seguridad en CI con Trivy y TruffleHog | Aceptado (regla de TruffleHog modificada por ADR-0018) |
 | [0017](0017-ambientes-y-flujo-de-ramas.md) | Trunk-based con ambiente de desarrollo y producción por versión | Aceptado |
+| [0018](0018-versiones-fijadas-de-herramientas-de-ci.md) | Versiones fijadas de las herramientas de CI, revisadas contra avisos de seguridad | Aceptado |
