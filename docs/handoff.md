@@ -60,15 +60,6 @@ Además:
 2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
 3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec; revisar también ADR-0017 (en S3 + CloudFront, una Action con OIDC en el tag probablemente conviene más que la rama `production`). El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
 
-## Notas para retomar
-
-- Al cerrar cada tarea, `npx tsc -b --force`: el `tsc -b` incremental de `npm run typecheck` dejó pasar un error de tipos en T10 que el CI sí vio.
-- Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
-- Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
-- Al fusionar PR: "Create a merge commit".
-- **Correr los E2E en local antes de abrir un PR que toca algo compartido** (barra de pestañas, rutas, "Hoy", componentes de varias páginas), no solo en la tarea de E2E: la pestaña "Historial" rompió `shell.spec.ts` (contaba 2 pestañas) y el CI falló en el PR #55.
-- Una spec puede contradecir un contrato de más rango: gana el contrato (`docs/README.md`) y se corrige la spec antes del código (spec 006 decisión 10, RN-TRN-17).
-
 ## Prompt sugerido para un chat nuevo
 
 "Seguimos con la spec 009 (temporizador de descanso), punto de control A. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/009-temporizador/plan.md (§6.1 y §6.3), docs/specs/009-temporizador/tasks.md (A y notas) y docs/modules/training.md (RN-TRN-32 a 35, decisión 38). Empezamos por T1. Guíame paso a paso, una tarea a la vez."
