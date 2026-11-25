@@ -29,3 +29,4 @@ Reglas:
 | [0016](0016-analisis-de-seguridad-en-ci.md) | Análisis de seguridad en CI con Trivy y TruffleHog | Aceptado (regla de TruffleHog modificada por ADR-0018) |
 | [0017](0017-ambientes-y-flujo-de-ramas.md) | Trunk-based con ambiente de desarrollo y producción por versión | Aceptado |
 | [0018](0018-versiones-fijadas-de-herramientas-de-ci.md) | Versiones fijadas de las herramientas de CI, revisadas contra avisos de seguridad | Aceptado |
+| [0019](0019-postura-de-seguridad-del-repositorio.md) | Postura de seguridad del repositorio: checks requeridos, reporte privado y CodeQL, sin Scorecard | Aceptado |
