@@ -13,7 +13,7 @@ Lo que esté en `main` al crear el tag entra en la versión. No se publica con u
 ## Antes de empezar
 
 - [ ] La spec está cerrada: todos sus checkpoints integrados en `main` y `handoff.md` actualizado.
-- [ ] El último commit de `main` tiene el check `ci` en verde.
+- [ ] El último commit de `main` tiene en verde los checks requeridos (`ci` y los de seguridad; [architecture §8.1](architecture.md#81-configuración-fuera-del-repositorio)).
 - [ ] La versión se usó en `gym-dev-saulgmx.vercel.app`: el flujo principal funciona y, si cambió `schemaVersion` o un formato de exportación, se probó la migración con datos de prueba y un respaldo importado.
 
 ## 1. PR de release
@@ -76,3 +76,5 @@ Si el fallo está en producción y `main` ya tiene trabajo sin publicar:
 3. En esa rama se sube la versión a `0.2.1` y se actualiza `CHANGELOG.md` (como en el paso 1). El CI no corre sobre esta rama por sí solo, así que antes del tag se verifica en local: `npm run typecheck && npm run lint && npm test && npm run build && npm run size && npm run test:e2e`.
 4. Se crea el tag `v0.2.1` sobre el último commit de la rama y se publica (pasos 2 a 4, creando el tag desde la rama `hotfix/v0.2.1` en vez de `main`).
 5. La rama `hotfix/v0.2.1` se integra en `main` con un PR y merge commit, para que la siguiente versión siga siendo *fast-forward* de `production`.
+
+Por eso, a propósito, actualizar `production` no exige el check `ci`: bloquearía los hotfix, cuyas ramas no corren CI. Exigirlo requeriría agregar `hotfix/**` a `ci.yml`.

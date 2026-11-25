@@ -20,7 +20,7 @@
 - La app nunca sugiere ejercicios `lumbarRisk: 'high'` (P-1, RN-PLN-07, RN-PRG-00).
 - IDs UUIDv7 propios y monótonos; `Instant` nunca se compara como string (ADR-0009).
 - Errores esperados con `Result` y códigos tipados por módulo; mensajes al usuario solo desde el mapa en `app` (ADR-0010).
-- Hosting en Vercel servido desde un dominio propio; `main` protegida con CI obligatorio; sin funciones exclusivas de Vercel (ADR-0011). Dominio `saulgmx.com` (Bloque D).
+- Hosting en Vercel servido desde un dominio propio; sin funciones exclusivas de Vercel (ADR-0011). Configuración de GitHub, Vercel y DNS en `architecture.md` §8.1.
 - Bloque C (17-nov, aprobado durante la implementación; detalle en spec 000 §6–§7, plan §5, §6.3 y §6.10–§6.12, architecture §7.10 y modules/shared.md §4):
   - Nombres de tokens y tres hojas globales en `shared/ui` (`tokens.css`, `fonts.css`, `base.css`); `tokens.css` es el único archivo con colores literales. Clases de `*.module.css` en camelCase.
   - `cx()` en `shared/ui` para clases de CSS Modules (con `noUncheckedIndexedAccess` cada clase es `string | undefined`).
@@ -29,10 +29,6 @@
   - PWA: nombre "Gym", ícono de mancuerna (`public/icon.svg`), aviso de actualización con "Actualizar" y "Ahora no".
   - CSP con `frame-ancestors 'none'`, más `nosniff` y `no-referrer`; `no-cache` en toda ruta fuera de `/assets/`.
   - Aceptadas 4 vulnerabilidades moderadas de `glob`/`minimatch` vía `workbox-build` (solo build; plan §8).
-- Bloque D (17-nov):
-  - `main` protegida (protección de rama clásica, `gh api`): solo por PR, 0 aprobaciones (GitHub no deja aprobar tus propios PR), check `ci` obligatorio y solo si lo publica GitHub Actions (`app_id 15368`), rama al día con `main` (`strict`), `enforce_admins` (la regla también aplica al admin), sin force push ni borrado.
-  - Vercel: la app de GitHub tiene acceso solo a `gym-app`; framework Vite, Node 24.x por `engines`. `installCommand` vive en `vercel.json` y una prueba exige que sea el mismo `npm ci` de CI (plan §6.3).
-  - Dominio `saulgmx.com` en Cloudflare Registrar. `gym` es un CNAME al valor propio del proyecto (`….vercel-dns-017.com`) en modo **DNS only** (nube gris): con proxy, Cloudflare se pondría en medio del TLS y podría inyectar scripts que la CSP bloquea. Certificado de Let's Encrypt emitido y renovado por Vercel.
 - Node con **mise** en lugar de Volta (20-nov, Volta dejó de mantenerse): `.tool-versions` es la única fuente de la versión, para mise en local y `setup-node` en CI; npm va con Node (24.22.3 trae 11.19.1). Sin ADR: es del entorno de desarrollo, no de la app (detalle en spec 000 plan §6 y §8).
 - Versiones y ambientes (23-nov, ADR-0017; detalle en "Versiones y ambientes"): trunk-based, SemVer con tags anotados y `CHANGELOG.md`; producción solo cambia al mover la rama `production` a un tag. Opción A (rama como puntero, sin secretos) en vez de una Action con token de Vercel.
 - Forma de trabajo: el usuario quiere ser guiado paso a paso; ejecuta con Claude Code o su terminal.
@@ -40,13 +36,7 @@
 ## Versiones y ambientes
 
 - **Versión actual:** `v0.1.0` (MVP, specs 000 a 008), tag anotado en `4ae07d9` (PR #86). `package.json` en `0.1.0`; `CHANGELOG.md` con `[Sin publicar]` vacía.
-- **Proceso:** [`release.md`](release.md) (checklist, rollback y hotfix); ambientes en `architecture.md` §8; decisión en ADR-0017 (PR #87 a #89). Al cerrar cada spec se publica un *minor*: la 009 será `v0.2.0`.
-- **Ambientes:** preview por PR (`*.vercel.app`); desarrollo en `gym-dev-saulgmx.vercel.app` desde `main`; producción en `gym.saulgmx.com` desde `production`. *Deployment Protection* de Vercel desactivada (repo público, sin backend), para instalar la PWA de desarrollo sin login.
-- **Vercel (23-nov):** rama de producción `production` (Settings → Environments → Production → Branch Tracking); alias `gym-dev-saulgmx.vercel.app` asignado a `main` (Settings → Domains). Probado con el merge de #89: salió como *Preview* y producción no cambió.
 - **Producción hoy** sirve el último despliegue hecho desde `main` antes del cambio (`5f6c7ff`), con el mismo código de la app que `v0.1.0` (solo cambiaron docs). El primer despliegue desde `production` será `v0.2.0`.
-- **GitHub:** rulesets `production` (sin borrado y solo *fast-forward*, también para el admin) y `release-tags` (tags `v*` sin borrado ni cambios). Verificados por API (`current_user_can_bypass: never`), no con un push real. Para corregir un tag mal creado hay que desactivar el ruleset un momento.
-- **Sin hacer, a propósito:** exigir `ci` para actualizar `production` (bloquearía los hotfix, cuyas ramas no corren CI; requiere agregar `hotfix/**` a `ci.yml`).
-- **Riesgo:** una versión que sube `schemaVersion` no admite rollback una vez abierta la base en el iPhone (IndexedDB no abre una versión menor): respaldo y corrección hacia delante. Probar las migraciones en desarrollo antes de publicar.
 
 ## Pendiente de confirmar (bloquea las fases indicadas)
 
@@ -76,8 +66,6 @@ Además:
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
 - Al fusionar PR: "Create a merge commit".
-- `main` protegida: ni un push directo ni un PR con `ci` en rojo entran, tampoco como admin. Para una emergencia, desactivar temporalmente en Settings → Branches.
-- `production` y los tags `v*` tienen rulesets (Settings → Rules → Rulesets), no protección clásica. Publicar: `git push origin vX.Y.Z^{}:production`; nunca `--force` (`release.md`).
 - **Correr los E2E en local antes de abrir un PR que toca algo compartido** (barra de pestañas, rutas, "Hoy", componentes de varias páginas), no solo en la tarea de E2E: la pestaña "Historial" rompió `shell.spec.ts` (contaba 2 pestañas) y el CI falló en el PR #55.
 - Una spec puede contradecir un contrato de más rango: gana el contrato (`docs/README.md`) y se corrige la spec antes del código (spec 006 decisión 10, RN-TRN-17).
 
