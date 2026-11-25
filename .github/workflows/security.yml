@@ -1,4 +1,5 @@
 # What is scanned, what blocks and how risks are accepted: docs/adr/0016-analisis-de-seguridad-en-ci.md
+# Pinned tool versions and their advisory check: docs/adr/0018-versiones-fijadas-de-herramientas-de-ci.md
 name: Security Analysis
 
 on:
@@ -12,7 +13,37 @@ on:
 permissions:
   contents: read
 
+# Tools the actions download at runtime. Dependabot only bumps the action SHAs, so these are
+# updated by hand; the tool-advisories job fails when a pinned version has a known advisory.
+env:
+  TRIVY_VERSION: 'v0.76.2'
+  TRUFFLEHOG_VERSION: '3.100.0'
+
 jobs:
+  tool-advisories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Pinned Tool Advisories
+    steps:
+      - name: Check pinned tool versions against GitHub advisories
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=0
+          for pkg in "github.com/aquasecurity/trivy@${TRIVY_VERSION#v}" \
+                     "github.com/trufflesecurity/trufflehog/v3@${TRUFFLEHOG_VERSION}"; do
+            hits=$(gh api "/advisories?ecosystem=go&affects=${pkg}&per_page=100" \
+              --jq '.[] | "\(.ghsa_id) \(.severity) \(.summary)"')
+            if [ -n "$hits" ]; then
+              echo "::error::${pkg} has known advisories"
+              echo "$hits"
+              status=1
+            else
+              echo "${pkg}: no known advisories"
+            fi
+          done
+          exit "$status"
+
   trivy-scan:
     permissions:
       contents: read
@@ -37,6 +68,8 @@ jobs:
           # Secrets are TruffleHog's job.
           scanners: 'vuln'
           trivyignores: '.trivyignore'
+          # The action defaults to an older Trivy; the gate below reuses this binary.
+          version: ${{ env.TRIVY_VERSION }}
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -76,6 +109,6 @@ jobs:
         # before..after, schedule: full history).
         with:
           path: ./
-          # Docker image tag the action runs; it defaults to "latest", so it stays pinned here.
-          # Dependabot bumps only the SHA above: update this to the same release in that PR.
-          version: 3.100.0
+          # Docker image tag the action runs; it defaults to "latest", so it stays pinned in env.
+          # Dependabot bumps only the SHA above: update TRUFFLEHOG_VERSION to the same release in that PR.
+          version: ${{ env.TRUFFLEHOG_VERSION }}
