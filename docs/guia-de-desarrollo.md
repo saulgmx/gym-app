@@ -48,6 +48,7 @@ Se agrega una nota cuando algo costó tiempo y puede volver a pasar. Se borra cu
 ### Formularios y archivos
 
 - `user.upload(input, [])` no dispara `change`: para "cerrar el selector sin elegir", `fireEvent.change(input, { target: { files: [] } })`. El valor de un `<input type="file">` se limpia con `value = ''` para poder elegir el mismo archivo otra vez.
+- En jsdom, comparar bytes como arrays: un `Uint8Array` de jsdom y uno de Node no son `toEqual` (spec 008 T9).
 - El BOM en el código va como escape `﻿`: el carácter literal falla en lint (`no-irregular-whitespace`), y en T11 algo lo convirtió al guardar. Para leerlo en una prueba, `new TextDecoder('utf-8', { ignoreBOM: true })` (por defecto lo quita, igual que `blob.text()`).
 
 ### Kernel y eventos

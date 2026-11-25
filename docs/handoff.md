@@ -52,27 +52,9 @@
 
 Nada. La pregunta 7 (porcentajes de bajada e `isPrimary`) y las preguntas 3 y 4 de `progression.md` §9 (plancha y asistencia) se cerraron el 20-nov (contrato v1.1, §9).
 
-## Piloto Opus → Qwen
+## Ejecución delegada a Qwen
 
-- **Calibración T5 (spec 008):** 1 intento (~3 min), 1 ronda de revisión (~2 min), 0 violaciones, 19/19 pruebas, 7/7 mutaciones.
-- **T9 (spec 008), sin supervisión:** Claude lanza `qwen` en modo no interactivo (prompt posicional; `-p` está obsoleto en la 0.28.0) con `--approval-mode auto-edit --exclude-tools run_shell_command --max-wall-time 20m --max-session-turns 40`; briefs, logs y script de mutaciones en `~/qwen-calib/008-T9/`. Intento 1 (119 s) falló en lint (`unbound-method`) por una línea de ejemplo del brief; intento 2 (962 s, con un `ETIMEDOUT` y reintento) pasó. 0 archivos fuera de lo permitido, 8/8 mutaciones; Claude solo retocó el orden de un import y un comentario. El `ETIMEDOUT` probablemente no fue de LM Studio: la petición de las 16:47:43 generó sin parar unos 10 min (la caché de LM Studio crecía cada minuto) y el cliente la cortó a los 600 s del timeout del SDK, como en un bucle de razonamiento. Por eso no se subió el timeout: se limitó `max_tokens`. En jsdom, comparar bytes como arrays (`Uint8Array` de jsdom y de Node no son `toEqual`).
-- **Script para las próximas delegaciones:** `~/qwen-calib/run-qwen.sh <tarea> <intento>` (fuera del repo, aprobado el 20-nov; primer uso real en la fase 4). Lee `~/qwen-calib/<tarea>/brief-N.md` y `allowed.txt`; pasa el brief por stdin con los mismos límites que T9 más `--max-tool-calls 80` y `--output-format stream-json` (para contar los errores de herramienta); mide lo que cambió Qwen contra una foto del árbol y deja `attempt-N.log`, `.jsonl`, `.stderr`, `.patch` y `summary.tsv`. No carga modelos a mano (JIT). Lanzarlo en segundo plano: puede pasar de 10 min. En su primer uso, confirmar en el `.jsonl` los eventos `tool_use`, `tool_result.is_error` y `result` (vistos solo en el código de `qwen`). Los briefs y logs van en `~/qwen-calib/<tarea>/`, no en `/tmp` (se borra al reiniciar).
-- **Entorno (20-nov):** LM Studio con JIT y un solo modelo en memoria (no cargar modelos a mano). El 35B con contexto 131072 y `samplingParams` en `~/.qwen/settings.json` (temperature 0.6, top_p 0.95, top_k 20, `max_tokens` 16384), porque Qwen Code manda su propia temperatura; `budget_tokens` sigue en 32000 y LM Studio no se queja, pero el tope efectivo es 16384. Sin servidores MCP. Memoria automática apagada en los tres subsistemas (auto-memory, auto-dream y auto-skill) y memorias guardadas borradas: había memorias de otro proyecto (Rust) que se inyectaban en los briefs. Costo fijo de Qwen Code: unos 13.8k tokens de contexto por ejecución antes del brief.
-- **Pendiente:** el 27B falla al formatear llamadas a herramientas.
-- **Lecciones para ADR-0014, antes de aceptarlo:**
-  - El código de ejemplo del brief pasa lint y typecheck antes de enviarse.
-  - El brief apunta a las pruebas en lugar de copiarlas: Qwen las lee.
-  - La evidencia registra la causa de cada fallo: brief, prueba, modelo o infraestructura.
-  - Delegar solo si la salida es grande frente al contexto: UI, estilos, código repetitivo (como referencia, más de unas 50 líneas o varios archivos parecidos). Una tarea de ~15 líneas con mucho contexto no ahorra nada: T5 y T9 sirvieron para calibrar, no para ahorrar.
-  - Modo no interactivo con `--output-format stream-json` para contar los errores de herramienta.
-- **Spec 009 (tareas escritas el 20-nov):** T10 (`RestTimer`, cuerpo y CSS) es la calibración de UI; en un worktree aparte (`--detach`) con calentamiento JIT previo, mientras Opus hace T11. Detalle en `docs/specs/009-temporizador/tasks.md`, notas. Criterio de ADR-0014 cambiado (aprobado el 20-nov): pasa a `Aceptado` después de la spec 012, con varias tareas `Q` en olas; se edita el ADR en T16 de la 009.
-- **Al escribir las tareas de la fase 4:**
-  - Asignar `Q` con el criterio anterior y dividir pensando en quién ejecuta: la "hoja" de UI para Qwen; los estados compartidos, las conexiones entre módulos y `compose` para Opus.
-  - Cada tarea `Q` lleva su columna de archivos permitidos.
-  - Trabajo en olas dentro de cada punto de control: primero todas las pruebas de Opus y después la ola de Qwen, para dejarla corriendo con `run-qwen.sh`.
-  - Riesgo alto, con pruebas de Opus y revisión por tarea: todo lo de `progression` y `health` (sugerencia de progresión, alertas de dolor, deload) y cualquier cambio de esquema de Dexie (peso corporal, plan editable). La restricción lumbar (P-1, RN-PRG-00) nunca se delega.
-  - Tercera calibración (la de UI, que ADR-0014 pide para aceptarse): el temporizador de descanso.
-- La sección "Ejecución delegada" de `docs/README.md`, `QWEN.md` y la columna `Q` de `templates/tasks.md` se agregan cuando ADR-0014 pase a `Aceptado`.
+ADR-0014 sigue en `Propuesto`; la spec 009 hace su calibración de UI en T10 y registra la evidencia en T16 (detalle en las notas de `docs/specs/009-temporizador/tasks.md`). Entorno y script: `~/qwen-calib/README.md`.
 
 ## Siguiente paso
 
@@ -93,7 +75,6 @@ Además:
 - Al cerrar cada tarea, `npx tsc -b --force`: el `tsc -b` incremental de `npm run typecheck` dejó pasar un error de tipos en T10 que el CI sí vio.
 - Pruebas primero: el commit en rojo se hace local **sin push**; se sube junto con la tarea que lo pone en verde. Las tareas de herramientas o solo de pruebas (T20–T22) van en un solo commit.
 - Antes de escribir pruebas, revisar si el contrato deja comportamientos sin definir; proponerlos, y con la aprobación escribirlos en los docs antes del código.
-- Código implementado por otro modelo (spec 008 T5, Qwen): se verifica con las mutaciones de la tarea y el commit lleva el trailer `Implemented-by: <modelo> (attempt N/3)` además del `Co-Authored-By`.
 - Al fusionar PR: "Create a merge commit".
 - `main` protegida: ni un push directo ni un PR con `ci` en rojo entran, tampoco como admin. Para una emergencia, desactivar temporalmente en Settings → Branches.
 - `production` y los tags `v*` tienen rulesets (Settings → Rules → Rulesets), no protección clásica. Publicar: `git push origin vX.Y.Z^{}:production`; nunca `--force` (`release.md`).
