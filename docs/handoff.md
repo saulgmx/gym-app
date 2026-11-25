@@ -1,6 +1,6 @@
 # Handoff: estado del proyecto Gym app
 
-**Fecha:** 23-nov-2026 (MVP publicado como `v0.1.0`; fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de lo hecho por fase está en [`handoff-history.md`](handoff-history.md); el detalle, en la spec de cada fase.
+**Fecha:** 23-nov-2026 (MVP publicado como `v0.1.0`; fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de specs (hechas y por hacer) está en [`specs/README.md`](specs/README.md); el detalle, en la spec de cada fase.
 
 ## Estado actual
 
@@ -9,7 +9,7 @@
 - **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
 - **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
 - **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
-- **Fases hechas:** 0 a 3 (specs 000 a 008). Índice con enlaces y PRs en `handoff-history.md`.
+- **Fases hechas:** 0 a 3 (specs 000 a 008). Índice con enlaces, estado y PRs en [`specs/README.md`](specs/README.md).
 - **Retrospectiva del MVP** ([`retros/mvp-fases-0-3.md`](retros/mvp-fases-0-3.md), 21-nov): aplicadas F-1, F-2, S-1, S-2, S-5, X-1 y X-3. Pendientes de decidir: S-3, S-4, S-6, S-7, S-8, X-2, X-4, F-3 y las preguntas abiertas de §5.
 
 ## Decisiones tomadas
@@ -76,20 +76,9 @@ Nada. La pregunta 7 (porcentajes de bajada e `isPrimary`) y las preguntas 3 y 4 
 
 ## Siguiente paso
 
-La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró con el PR de cierre (A en el #70, B en el #73, C en el #75; detalle en `handoff-history.md` y en `docs/specs/008-csv/tasks.md`). En el iPhone ya están el Cierre con dolor lumbar, el historial, el respaldo JSON y el CSV de series.
+La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró con el PR de cierre (A en el #70, B en el #73, C en el #75; detalle en `docs/specs/008-csv/tasks.md`). En el iPhone ya están el Cierre con dolor lumbar, el historial, el respaldo JSON y el CSV de series.
 
-**Fase 4, v1.0**, repartida en 6 specs (acordado el 20-nov; spec §13):
-
-| Spec | Contenido | RF | Depende de |
-|---|---|---|---|
-| 009 `temporizador` | Temporizador de descanso al completar una serie; calibración de UI de Qwen (ADR-0014) | RF-15 | — |
-| 010 `progresion` | Dominio RN-PRG-00 a 14 (pruebas primero), tabla `suggestions` (base v4), prellenado del peso, `SuggestionBanner`, "Para la próxima sesión" en el Cierre, "Hoy subes" | RF-12, 24, 30 | — |
-| 011 `deload` | RN-PRG-20 y 21, aviso en "Hoy", deload manual, 50% de series | RF-36, RF-05 | 010 |
-| 012 `progreso` | Pestaña "Progreso": gráfica por ejercicio y de dolor; `shared/ui/Chart` con uPlot cargado aparte (bundle en 177 de 200 kB) | RF-31, RF-33 | — |
-| 013 `peso-corporal` | Tabla `bodyMetrics` (base v5), registro y gráfica con meta semanal, respaldo | RF-34 | 012 |
-| 014 `ajustes` | Incrementos por equipo y paso de asistencia, umbral de dolor, recordatorio de respaldo, borrar datos | RF-50, 51, 42, 43 | 010 |
-
-Hasta la 014, los incrementos, el paso de asistencia y el umbral son constantes del dominio. El plan editable (RF-04) queda en la fase 5 (v1.1; spec §3 corregida). Las alertas de dolor ya llegaron con la spec 005.
+**Fase 4, v1.0**, repartida en las specs 009 a 014 (acordado el 20-nov): tabla, dependencias y notas en [`specs/README.md`](specs/README.md).
 
 **Siguiente:** T1 de la spec 009 (pruebas de `restOf` y `restTimer`, RN-TRN-32 a 34), en una rama nueva tras fusionar el PR de la spec, el plan y las tareas. Plan aprobado (20-nov): `restOf`/`restTimer` y `restSignal` puros en `training` (el ajuste lleva el `setId` de su serie), `useSessionStore` y tic de 250 ms en `app`, `RestSound` (Web Audio, `unlock` en `onClickCapture` de la sesión), `ScreenWake` solo durante el descanso, `RestTimer` de presentación en el pie fijo. Contrato `training` v1.36 (decisión 38) y `architecture.md` v1.7 (§7.2). Tareas en 4 puntos de control (A dominio, B servicios de `app`, C tarjeta, D verificación); pruebas primero en el dominio.
 

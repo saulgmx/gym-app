@@ -11,14 +11,13 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | [`architecture.md`](architecture.md) | ¿Cómo está construida? (módulos, capas, flujos, datos, calidad) | Cuando cambia una decisión estructural |
 | [`adr/`](adr/README.md) | ¿Por qué elegimos X y no Y? | Un ADR nuevo por decisión; los aceptados no se editan, se reemplazan |
 | [`modules/`](modules/) | ¿Qué contrato expone cada módulo? (API, tablas, eventos, puertos, invariantes) | Antes de cambiar la API de un módulo |
-| `specs/NNN-<feature>/` | Spec, plan y tareas de una feature o fase concreta | Por feature |
+| [`specs/`](specs/README.md) | ¿Qué specs hay, en qué estado y con qué PRs? (índice); spec, plan y tareas de cada feature en `specs/NNN-<feature>/` | El índice, al empezar o cerrar una spec; cada carpeta, por feature |
 | [`templates/`](templates/) | Plantillas para specs de feature, planes, tareas y ADRs | Rara vez |
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
 | `design-*.md` | ¿Cómo se ve cada pantalla? (diseño elegido y sus tableros) | Antes de la spec que construye o cambia la pantalla |
 | [`release.md`](release.md) | ¿Cómo se publica una versión? (checklist de release, rollback, hotfix) | Cuando cambia el flujo de ambientes (ADR-0017) |
 | [`guia-de-desarrollo.md`](guia-de-desarrollo.md) | ¿Qué trampas conocidas hay al probar, depurar o configurar? (lecciones por tema) | Cuando algo costó tiempo y puede volver a pasar; se borra lo que el código ya impide |
 | [`handoff.md`](handoff.md) | Estado actual y siguiente paso | Al final de cada sesión de trabajo |
-| [`handoff-history.md`](handoff-history.md) | ¿Qué se hizo en cada fase ya terminada? (índice de specs y PRs; no hace falta para retomar) | Al cerrar una spec, se agrega su fila |
 
 ## Jerarquía de autoridad
 
