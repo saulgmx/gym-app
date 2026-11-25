@@ -1,65 +1,24 @@
-# Handoff: estado del proyecto Gym app
+# Handoff: siguiente tarea
 
-**Fecha:** 23-nov-2026 (MVP publicado como `v0.1.0`; fase 4 en curso: spec 009, temporizador, con spec, plan y tareas aprobados; siguiente: T1) · **Lee primero:** `docs/README.md` (cómo trabajamos), `docs/constitution.md` y este archivo. El índice de specs (hechas y por hacer) está en [`specs/README.md`](specs/README.md); el detalle, en la spec de cada fase.
+**Fecha:** 24-nov-2026 · Este archivo solo lleva lo que necesita la siguiente tarea; lo demás está en su documento (`docs/README.md`, "El handoff"). Índice de specs y su estado: [`specs/README.md`](specs/README.md).
 
-## Estado actual
+## Estado
 
-- **App en producción:** https://gym.saulgmx.com (Vercel, desde la rama `production`), instalada en el iPhone. **Desarrollo:** https://gym-dev-saulgmx.vercel.app (Vercel, desde `main` en cada merge; solo datos de prueba). Ver "Versiones y ambientes". Repo `saulgmx/gym-app` (público). Prototipo visual: https://claude.ai/artifact/4n7JmYVCDFjgH558Foi2Zk
-- **Documentos:** `constitution.md` v1.2 (P-2 enmendado, ADR-0013; P-5 enmendado, ADR-0015; P-8 enlaza a ADR-0012), ADR-0001 a 0019 (0014 propuesto) (0007 reemplazado por 0012). `spec.md`, `architecture.md` y los contratos ya no llevan número de versión: el historial es git (`docs/README.md`, "Versiones y registro de cambios"). `progression` sin preguntas abiertas, `health` con textos validados, `shared` §2 con `SeriesRow`. Diseños elegidos en `docs/design-hoy.md`, `design-sesion-activa.md` y `design-cierre.md`.
-- **Base Dexie `gym-app` v3** (tablas de `plan`, `workouts`, `sets`, `painEntries`); seed real en `src/app/seed/plan-seed.json` (36 ejercicios, 4 bloques, 11 plantillas). En el iPhone el plan empezó el lunes 16-nov-2026.
-- **Bundle inicial:** 177.49 kB de 200 kB. **E2E:** 150, en Chromium y WebKit.
-- **Piloto de ejecución delegada** a Qwen 3.6 35B local (ADR-0014 propuesto, PR #72); ver "Piloto Opus → Qwen".
-- **Fases hechas:** 0 a 3 (specs 000 a 008). Índice con enlaces, estado y PRs en [`specs/README.md`](specs/README.md).
-- **Retrospectiva del MVP** ([`retros/mvp-fases-0-3.md`](retros/mvp-fases-0-3.md), 21-nov): aplicadas F-1, F-2, S-1, S-2, S-5, X-1 y X-3. Pendientes de decidir: S-3, S-4, S-6, S-7, S-8, X-2, X-4, F-3 y las preguntas abiertas de §5.
+- **Versión:** `v0.1.0` (MVP, specs 000 a 008); `CHANGELOG.md` con `[Sin publicar]` vacía.
+- **Producción** (https://gym.saulgmx.com) sirve todavía el último despliegue hecho desde `main` antes de ADR-0017 (`5f6c7ff`), con el mismo código de la app que `v0.1.0`. El primer despliegue desde `production` será `v0.2.0`, al cerrar la spec 009. **Desarrollo:** https://gym-dev-saulgmx.vercel.app.
+- **Spec en curso:** 009, temporizador de descanso. Spec, plan y tareas aprobados y fusionados (#79, #80); ningún punto de control empezado.
 
-## Decisiones tomadas
+## Siguiente tarea
 
-- PWA offline-first con Dexie; sin cuentas en v1 (ADR-0002).
-- Monolito modular de 5 módulos + `shared` + `app` (ADR-0001); fronteras en CI (ADR-0008).
-- Gráficas con uPlot (ADR-0004), estilos con CSS Modules + variables CSS (ADR-0005), estado efímero con Zustand (ADR-0006), Zod valida la forma y el dominio las reglas (ADR-0012, que reemplaza a ADR-0007).
-- La app nunca sugiere ejercicios `lumbarRisk: 'high'` (P-1, RN-PLN-07, RN-PRG-00).
-- IDs UUIDv7 propios y monótonos; `Instant` nunca se compara como string (ADR-0009).
-- Errores esperados con `Result` y códigos tipados por módulo; mensajes al usuario solo desde el mapa en `app` (ADR-0010).
-- Hosting en Vercel servido desde un dominio propio; sin funciones exclusivas de Vercel (ADR-0011). Configuración de GitHub, Vercel y DNS en `architecture.md` §8.1.
-- Bloque C (17-nov, aprobado durante la implementación; detalle en spec 000 §6–§7, plan §5, §6.3 y §6.10–§6.12, architecture §7.10 y modules/shared.md §4):
-  - Nombres de tokens y tres hojas globales en `shared/ui` (`tokens.css`, `fonts.css`, `base.css`); `tokens.css` es el único archivo con colores literales. Clases de `*.module.css` en camelCase.
-  - `cx()` en `shared/ui` para clases de CSS Modules (con `noUncheckedIndexedAccess` cada clase es `string | undefined`).
-  - Errores de render: `errorElement` en la ruta raíz y `AppErrorBoundary` comparten `ErrorFallback` con "Recargar"; errores async: un solo `AppNotice` no bloqueante.
-  - `compose()` sin bus de eventos hasta que un módulo publique (fase 2); `bootstrap(rootElement, { storage })`.
-  - PWA: nombre "Gym", ícono de mancuerna (`public/icon.svg`), aviso de actualización con "Actualizar" y "Ahora no".
-  - CSP con `frame-ancestors 'none'`, más `nosniff` y `no-referrer`; `no-cache` en toda ruta fuera de `/assets/`.
-  - Aceptadas 4 vulnerabilidades moderadas de `glob`/`minimatch` vía `workbox-build` (solo build; plan §8).
-- Node con **mise** en lugar de Volta (20-nov, Volta dejó de mantenerse): `.tool-versions` es la única fuente de la versión, para mise en local y `setup-node` en CI; npm va con Node (24.22.3 trae 11.19.1). Sin ADR: es del entorno de desarrollo, no de la app (detalle en spec 000 plan §6 y §8).
-- Versiones y ambientes (23-nov, ADR-0017; detalle en "Versiones y ambientes"): trunk-based, SemVer con tags anotados y `CHANGELOG.md`; producción solo cambia al mover la rama `production` a un tag. Opción A (rama como puntero, sin secretos) en vez de una Action con token de Vercel.
-- Forma de trabajo: el usuario quiere ser guiado paso a paso; ejecuta con Claude Code o su terminal.
+**T1 de la spec 009:** pruebas de `restOf` y `restTimer` (RN-TRN-32 a 34). Abre el punto de control A ("rest: domain"), en una rama nueva desde `main`. Pruebas primero: el commit en rojo se queda en local hasta T2.
 
-## Versiones y ambientes
+Leer antes: `docs/specs/009-temporizador/plan.md` (§6.1 y §6.3), `docs/specs/009-temporizador/tasks.md` (A y notas) y `docs/modules/training.md` (RN-TRN-32 a 35, decisión 38).
 
-- **Versión actual:** `v0.1.0` (MVP, specs 000 a 008), tag anotado en `4ae07d9` (PR #86). `package.json` en `0.1.0`; `CHANGELOG.md` con `[Sin publicar]` vacía.
-- **Producción hoy** sirve el último despliegue hecho desde `main` antes del cambio (`5f6c7ff`), con el mismo código de la app que `v0.1.0` (solo cambiaron docs). El primer despliegue desde `production` será `v0.2.0`.
+## Avisos
 
-## Pendiente de confirmar (bloquea las fases indicadas)
-
-Nada. La pregunta 7 (porcentajes de bajada e `isPrimary`) y las preguntas 3 y 4 de `progression.md` §9 (plancha y asistencia) se cerraron el 20-nov (contrato v1.1, §9).
-
-## Ejecución delegada a Qwen
-
-ADR-0014 sigue en `Propuesto`; la spec 009 hace su calibración de UI en T10 y registra la evidencia en T16 (detalle en las notas de `docs/specs/009-temporizador/tasks.md`). Entorno y script: `~/qwen-calib/README.md`.
-
-## Siguiente paso
-
-La fase 3 (MVP usable en el gym, spec §13) está cerrada: la spec 008 cerró con el PR de cierre (A en el #70, B en el #73, C en el #75; detalle en `docs/specs/008-csv/tasks.md`). En el iPhone ya están el Cierre con dolor lumbar, el historial, el respaldo JSON y el CSV de series.
-
-**Fase 4, v1.0**, repartida en las specs 009 a 014 (acordado el 20-nov): tabla, dependencias y notas en [`specs/README.md`](specs/README.md).
-
-**Siguiente:** T1 de la spec 009 (pruebas de `restOf` y `restTimer`, RN-TRN-32 a 34), en una rama nueva tras fusionar el PR de la spec, el plan y las tareas. Plan aprobado (20-nov): `restOf`/`restTimer` y `restSignal` puros en `training` (el ajuste lleva el `setId` de su serie), `useSessionStore` y tic de 250 ms en `app`, `RestSound` (Web Audio, `unlock` en `onClickCapture` de la sesión), `ScreenWake` solo durante el descanso, `RestTimer` de presentación en el pie fijo. Contrato `training` v1.36 (decisión 38) y `architecture.md` v1.7 (§7.2). Tareas en 4 puntos de control (A dominio, B servicios de `app`, C tarjeta, D verificación); pruebas primero en el dominio.
-
-Además:
-
-1. **Ya sin pendientes tuyos (20-nov):** T20a de la 007 verificada en el iPhone (el aviso ya no sale al tocar "Compartir" en Safari) y T24 de la 005 hecha (el traumatólogo validó sin cambios los textos de salud y el aviso médico de Ajustes; `health.md` v1.15).
-2. **Node 26 (pospuesto por el usuario, 20-nov):** Node 26 es el LTS activo desde oct-2026; Node 24 está en mantenimiento hasta abr-2028. Vercel avisa que la configuración del proyecto cambió (probablemente "Node.js Version" a 26.x); no rompe nada, porque `engines.node: "24.x"` manda sobre esa configuración. Cuando toque: PR aparte con `.tool-versions` y `engines.node` a 26, `mise install`, verificación completa (con E2E y `size`), compatibilidad de Vite, Vitest, Playwright, ESLint y `size-limit`, Vercel en 26.x y notas del handoff y del plan de la fase 0.
-3. **Planeado, sin fecha:** migrar el hosting de Vercel a AWS. Requiere un ADR nuevo que reemplace ADR-0011 y su propia spec; revisar también ADR-0017 (en S3 + CloudFront, una Action con OIDC en el tag probablemente conviene más que la rama `production`). El origen `https://gym.saulgmx.com` se mantiene, así que IndexedDB y la PWA instalada no se pierden: en Cloudflare solo cambia el CNAME. Hay que rehacer en AWS los headers y el `Cache-Control` por ruta, el rewrite de SPA (sin servir HTML para `/assets/falta.js`) y el comando de instalación, y cambiar `vite.config.ts` y `tests/architecture/headers.test.ts`, que hoy leen `vercel.json`.
+- **Checks requeridos en `main`:** `ci`, `Trivy Dependency Scan`, `Secrets Detection` y `Pinned Tool Advisories` (ADR-0019). Si un check de seguridad se pone rojo sin relación con el código, es un aviso de seguridad nuevo, no un fallo de la tarea: se sube la versión en el `env` de `security.yml` o se acepta el riesgo en `.trivyignore` (ADR-0016 y ADR-0018), en un PR aparte. CodeQL aparece en los PR, pero no es requerido.
+- **Qwen en esta spec:** T10 (punto de control C) es la calibración de UI de ADR-0014, en un worktree aparte; detalle en las notas de `tasks.md`. Entorno y script: `~/qwen-calib/README.md`.
 
 ## Prompt sugerido para un chat nuevo
 
-"Seguimos con la spec 009 (temporizador de descanso), punto de control A. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md ("Siguiente paso"), y luego docs/specs/009-temporizador/plan.md (§6.1 y §6.3), docs/specs/009-temporizador/tasks.md (A y notas) y docs/modules/training.md (RN-TRN-32 a 35, decisión 38). Empezamos por T1. Guíame paso a paso, una tarea a la vez."
+"Seguimos con la spec 009 (temporizador de descanso), punto de control A. Lee primero docs/README.md, docs/constitution.md y docs/handoff.md, y luego docs/specs/009-temporizador/plan.md (§6.1 y §6.3), docs/specs/009-temporizador/tasks.md (A y notas) y docs/modules/training.md (RN-TRN-32 a 35, decisión 38). Empezamos por T1. Guíame paso a paso, una tarea a la vez."

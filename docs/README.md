@@ -16,6 +16,7 @@ Este proyecto sigue **Spec-Driven Development (SDD)**: primero se escribe la esp
 | [`plan.md`](plan.md) | Plan de entrenamiento (fuente del seed) | Cuando cambia la rutina |
 | `design-*.md` | ¿Cómo se ve cada pantalla? (diseño elegido y sus tableros) | Antes de la spec que construye o cambia la pantalla |
 | [`release.md`](release.md) | ¿Cómo se publica una versión? (checklist de release, rollback, hotfix) | Cuando cambia el flujo de ambientes (ADR-0017) |
+| [`ideas/`](ideas/README.md) | ¿Qué está acordado o pospuesto pero sin spec? | Al posponer algo; se borra cuando se vuelve spec o ADR |
 | [`guia-de-desarrollo.md`](guia-de-desarrollo.md) | ¿Qué trampas conocidas hay al probar, depurar o configurar? (lecciones por tema) | Cuando algo costó tiempo y puede volver a pasar; se borra lo que el código ya impide |
 | [`handoff.md`](handoff.md) | ¿Qué necesito para empezar la siguiente tarea? (estado vigente, siguiente tarea y avisos) | Al final de cada sesión (ver "El handoff") |
 

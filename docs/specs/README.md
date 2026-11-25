@@ -27,5 +27,6 @@ Notas de la fase 4 (acordada el 20-nov-2026):
 - Al cerrar cada spec se publica un *minor*: la 009 será `v0.2.0` ([`release.md`](../release.md)).
 - Hasta la 014, los incrementos, el paso de asistencia y el umbral de dolor son constantes del dominio.
 - El plan editable (RF-04) queda en la fase 5 (v1.1). Las alertas de dolor ya llegaron con la spec 005.
+- Pendientes de la [retrospectiva del MVP](../retros/mvp-fases-0-3.md) por decidir: S-3, S-4, S-6, S-7, S-8, X-2, X-4, F-3 y las preguntas abiertas de su §5. S-4 (Stryker) se decide al planear la 010; S-3, con la aceptación de ADR-0014. Cuándo toca cada uno, en la tabla de la retrospectiva.
 
 La versión narrativa del historial (hasta el 21-nov-2026) está en git: `git show 752b848:docs/handoff-history.md`.
